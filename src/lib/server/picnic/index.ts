@@ -19,7 +19,15 @@ function authKeyFile(): string {
 	return path.join(env.DATA_DIR ?? '.', 'picnic-auth-key');
 }
 
+export type ConnectionState = 'unconfigured' | 'disconnected' | 'needs2FA' | 'connected';
+
 let client: Client | null = null;
+// 2FA ist offen: Auth-Key liegt vor, ist aber erst nach Code-Eingabe voll gültig
+let pending2FA = false;
+
+function hasCredentials(): boolean {
+	return Boolean(env.PICNIC_USERNAME && env.PICNIC_PASSWORD);
+}
 
 function getClient(): Client {
 	if (!client) {
@@ -38,26 +46,46 @@ function persistAuthKey(): void {
 }
 
 export function isLoggedIn(): boolean {
-	return Boolean(getClient().authKey);
+	return Boolean(getClient().authKey) && !pending2FA;
 }
 
-/** Stellt sicher, dass ein Auth-Key vorliegt; loggt bei Bedarf mit den env-Credentials ein. */
+/** Zustand der Picnic-Verbindung für die UI. */
+export function getConnectionState(): ConnectionState {
+	if (!hasCredentials()) return 'unconfigured';
+	if (pending2FA) return 'needs2FA';
+	return getClient().authKey ? 'connected' : 'disconnected';
+}
+
+/**
+ * Stellt sicher, dass eine gültige Verbindung besteht; loggt bei Bedarf ein.
+ * Wirft eine sprechende Fehlermeldung, wenn 2FA offen oder nichts konfiguriert ist.
+ */
 export async function ensureLoggedIn(): Promise<void> {
-	if (!isLoggedIn()) await login();
+	if (isLoggedIn()) return;
+	if (!hasCredentials()) {
+		throw new Error('Keine Picnic-Zugangsdaten konfiguriert (PICNIC_USERNAME/PICNIC_PASSWORD)');
+	}
+	const { needs2FA } = await login();
+	if (needs2FA) {
+		throw new Error('Picnic verlangt eine 2FA-Bestätigung — bitte zuerst den SMS-Code eingeben');
+	}
 }
 
 /**
  * Login mit E-Mail/Passwort aus der Umgebung (PICNIC_USERNAME/PICNIC_PASSWORD).
- * Falls Picnic 2FA verlangt, muss danach verify2FA() aufgerufen werden.
+ * Liefert { needs2FA }: ist es true, muss request2FACode()/verify2FA() folgen.
  */
-export async function login(): Promise<void> {
-	if (!env.PICNIC_USERNAME || !env.PICNIC_PASSWORD) {
+export async function login(): Promise<{ needs2FA: boolean }> {
+	if (!hasCredentials()) {
 		throw new Error('PICNIC_USERNAME und PICNIC_PASSWORD sind nicht gesetzt');
 	}
-	await getClient().auth.login(env.PICNIC_USERNAME, env.PICNIC_PASSWORD);
+	const result = await getClient().auth.login(env.PICNIC_USERNAME!, env.PICNIC_PASSWORD!);
 	persistAuthKey();
+	pending2FA = Boolean(result?.second_factor_authentication_required);
+	return { needs2FA: pending2FA };
 }
 
+/** Fordert einen 2FA-Code per SMS an (setzt einen vorherigen login() voraus). */
 export async function request2FACode(): Promise<void> {
 	await getClient().auth.generate2FACode('SMS');
 }
@@ -65,6 +93,7 @@ export async function request2FACode(): Promise<void> {
 export async function verify2FA(code: string): Promise<void> {
 	await getClient().auth.verify2FACode(code);
 	persistAuthKey();
+	pending2FA = false;
 }
 
 /** Produktsuche, z.B. zur Verknüpfung von Artikeln mit Picnic-IDs */

@@ -1,10 +1,164 @@
+<script lang="ts">
+	import { enhance } from '$app/forms';
+
+	let { data, form } = $props();
+
+	// Auswahl und Mengen pro Vorschlag (Fehlmenge vorbelegt); Initialwerte genügen
+	// svelte-ignore state_referenced_locally
+	let selected = $state<Record<number, boolean>>(
+		Object.fromEntries(data.suggestions.map((s) => [s.id, Boolean(s.picnicId)]))
+	);
+	// svelte-ignore state_referenced_locally
+	let quantities = $state<Record<number, number>>(
+		Object.fromEntries(data.suggestions.map((s) => [s.id, s.needed]))
+	);
+
+	const connectionLabel: Record<string, string> = {
+		unconfigured: 'Keine Zugangsdaten hinterlegt',
+		disconnected: 'Nicht verbunden',
+		needs2FA: 'Bestätigung per SMS-Code nötig',
+		connected: 'Mit Picnic verbunden'
+	};
+
+	// Nach dem 2FA-Code-Versand das Eingabefeld zeigen
+	let codeSent = $state(false);
+	$effect(() => {
+		if (form && 'codeSent' in form && form.codeSent) codeSent = true;
+	});
+
+	const connection = $derived(
+		form && 'connection' in form && form.connection ? form.connection : data.connection
+	);
+
+	const selectedCount = $derived(
+		data.suggestions.filter((s) => selected[s.id] && s.picnicId).length
+	);
+
+	function packageSize(amount: number | null, unit: string | null): string {
+		if (amount == null) return '';
+		return `${amount.toLocaleString('de-DE')} ${unit ?? ''}`.trim();
+	}
+</script>
+
 <svelte:head><title>Bestellen – LebensmittelKumpel</title></svelte:head>
 
 <h1 class="text-2xl font-bold">Bestellen</h1>
-<p class="mt-1 text-sm text-gray-500">Bestellvorschläge für Picnic</p>
+<p class="mt-1 text-sm text-gray-500">Artikel unter Mindestbestand → Picnic-Warenkorb</p>
 
-<div class="mt-8 rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-	Hier entstehen die Bestellvorschläge: Alles unter Mindestbestand landet auf
-	der Vorschlagsliste und wandert nach Bestätigung in den Picnic-Warenkorb.
-	Bestellt wird bewusst nie automatisch — der Checkout bleibt in der Picnic-App.
+<!-- Verbindungspanel -->
+<div class="mt-4 max-w-2xl rounded-xl border border-gray-200 bg-white p-4">
+	<div class="flex items-center gap-2">
+		<span
+			class="h-2.5 w-2.5 shrink-0 rounded-full {connection === 'connected'
+				? 'bg-green-500'
+				: connection === 'needs2FA'
+					? 'bg-amber-500'
+					: 'bg-gray-300'}"
+		></span>
+		<span class="text-sm font-medium">{connectionLabel[connection]}</span>
+	</div>
+
+	{#if connection === 'unconfigured'}
+		<p class="mt-2 text-sm text-gray-500">
+			Hinterlege <code class="rounded bg-gray-100 px-1">PICNIC_USERNAME</code> und
+			<code class="rounded bg-gray-100 px-1">PICNIC_PASSWORD</code> in der Umgebung, um den Warenkorb zu befüllen.
+		</p>
+	{:else if connection === 'disconnected'}
+		<form method="POST" action="?/connect" use:enhance class="mt-3">
+			<button type="submit" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+				Mit Picnic verbinden
+			</button>
+		</form>
+	{:else if connection === 'needs2FA'}
+		<div class="mt-3 space-y-3">
+			<form method="POST" action="?/send2FACode" use:enhance>
+				<button type="submit" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+					{codeSent ? 'Code erneut senden' : 'SMS-Code anfordern'}
+				</button>
+			</form>
+			<form method="POST" action="?/verify2FA" use:enhance class="flex gap-2">
+				<input
+					name="code"
+					type="text"
+					inputmode="numeric"
+					placeholder="SMS-Code"
+					class="block w-40 rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
+				/>
+				<button type="submit" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+					Bestätigen
+				</button>
+			</form>
+		</div>
+	{/if}
 </div>
+
+{#if form?.message}
+	<div class="mt-4 max-w-2xl rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{form.message}</div>
+{/if}
+{#if form && 'added' in form && form.added}
+	<div class="mt-4 max-w-2xl rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">
+		{form.totalUnits} Gebinde ({form.added} Artikel) in den Picnic-Warenkorb gelegt.
+		Der Checkout bleibt bewusst in der Picnic-App.
+		{#if form.skipped.length > 0}
+			<div class="mt-1 text-green-700">Ohne Picnic-Verknüpfung übersprungen: {form.skipped.join(', ')}</div>
+		{/if}
+	</div>
+{/if}
+
+<!-- Vorschlagsliste -->
+{#if data.suggestions.length === 0}
+	<div class="mt-6 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
+		Alles ausreichend bevorratet — keine Vorschläge. Mindestbestände legst du je Artikel fest.
+	</div>
+{:else}
+	<form method="POST" action="?/addToCart" use:enhance class="mt-6 max-w-2xl">
+		<ul class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
+			{#each data.suggestions as item (item.id)}
+				<li class="flex items-center gap-3 px-4 py-3">
+					<input
+						type="checkbox"
+						name="selected"
+						value={item.id}
+						checked={selected[item.id]}
+						disabled={!item.picnicId}
+						onchange={(e) => (selected[item.id] = e.currentTarget.checked)}
+						class="h-5 w-5 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-600 disabled:opacity-40"
+					/>
+					{#if item.imagePath}
+						<img src={`/api/images/${item.imagePath}`} alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-lg border border-gray-100 object-contain" />
+					{:else}
+						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">📦</div>
+					{/if}
+					<div class="min-w-0 flex-1">
+						<div class="truncate font-medium">{item.name}</div>
+						<div class="text-xs text-gray-500">
+							{packageSize(item.amount, item.unit)} · Bestand {item.stock}/{item.minStock}
+							{#if !item.picnicId}
+								· <a href={`/artikel/${item.id}`} class="text-amber-600 underline">Picnic verknüpfen</a>
+							{/if}
+						</div>
+					</div>
+					<input
+						type="number"
+						name={`quantity_${item.id}`}
+						min="1"
+						value={quantities[item.id]}
+						oninput={(e) => (quantities[item.id] = Number(e.currentTarget.value))}
+						class="w-16 shrink-0 rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
+					/>
+				</li>
+			{/each}
+		</ul>
+
+		<button
+			type="submit"
+			disabled={connection !== 'connected' || selectedCount === 0}
+			class="mt-4 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 sm:w-auto"
+		>
+			{selectedCount} Artikel in den Picnic-Warenkorb
+		</button>
+		{#if connection !== 'connected'}
+			<p class="mt-2 text-xs text-gray-500">Zum Übertragen zuerst oben mit Picnic verbinden.</p>
+		{/if}
+	</form>
+{/if}
