@@ -9,6 +9,9 @@ import PicnicClient from 'picnic-api';
 import { env } from '$env/dynamic/private';
 import fs from 'node:fs';
 import path from 'node:path';
+import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
+
+export type { DeliveryChecklistItem };
 
 type Client = InstanceType<typeof PicnicClient>;
 type AddProductsItems = Parameters<Client['cart']['addProductsToCart']>[0];
@@ -116,4 +119,39 @@ export async function addToCart(items: AddProductsItems): Promise<void> {
 
 export async function getCart() {
 	return getClient().cart.getCart();
+}
+
+export type DeliverySummary = {
+	id: string;
+	creationTime: string;
+	deliveryStart: string | null;
+	status: string;
+	totalPrice: number;
+};
+
+/** Jüngste Lieferungen als schlanke Zusammenfassung für die Übersicht. */
+export async function getRecentDeliveries(limit = 10): Promise<DeliverySummary[]> {
+	await ensureLoggedIn();
+	const deliveries = await getClient().delivery.getDeliveries();
+	return deliveries.slice(0, limit).map((delivery) => ({
+		id: delivery.delivery_id,
+		creationTime: delivery.creation_time,
+		deliveryStart: delivery.delivery_time?.start ?? delivery.eta2?.start ?? null,
+		status: delivery.status,
+		// Summe der Bestellwerte der (Teil-)Bestellungen dieser Lieferung
+		totalPrice: (delivery.orders ?? []).reduce(
+			(sum, order) => sum + ((order as { total_price?: number }).total_price ?? 0),
+			0
+		)
+	}));
+}
+
+/**
+ * Sollliste einer Lieferung: alle Positionen über sämtliche (Teil-)Bestellungen
+ * hinweg, je Produkt-ID aggregiert.
+ */
+export async function getDeliveryChecklist(deliveryId: string): Promise<DeliveryChecklistItem[]> {
+	await ensureLoggedIn();
+	const detail = await getClient().delivery.getDelivery(deliveryId);
+	return aggregateChecklist(detail.orders);
 }

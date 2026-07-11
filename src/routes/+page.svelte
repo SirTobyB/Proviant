@@ -6,10 +6,20 @@
 
 <svelte:head><title>Lager – LebensmittelKumpel</title></svelte:head>
 
-<h1 class="text-2xl font-bold">Lager</h1>
-<p class="mt-1 text-sm text-gray-500">
-	{data.stockCount} Gebinde im Bestand · {data.articleCount} Artikel im Stamm
-</p>
+<div class="flex items-start justify-between gap-3">
+	<div>
+		<h1 class="text-2xl font-bold">Lager</h1>
+		<p class="mt-1 text-sm text-gray-500">
+			{data.stockCount} Gebinde im Bestand · {data.articleCount} Artikel im Stamm
+		</p>
+	</div>
+	<a
+		href="/lieferung"
+		class="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 md:hidden"
+	>
+		🚚 Lieferung
+	</a>
+</div>
 
 {#if data.expiring.length > 0}
 	<section class="mt-6 max-w-2xl">

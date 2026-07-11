@@ -72,6 +72,16 @@
 				</svg>
 				Scannen
 			</a>
+			<a
+				href="/lieferung"
+				class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
+					{isActive('/lieferung') ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100'}"
+			>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-6m2.25-13.5h5.379c.621 0 1.129.504 1.09 1.124M14.25 5.25v13.5m0-13.5H5.625c-.621 0-1.125.504-1.125 1.125v10.5" />
+				</svg>
+				Lieferung prüfen
+			</a>
 		</nav>
 	</aside>
 
