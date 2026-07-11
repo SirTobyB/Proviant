@@ -41,6 +41,11 @@ export function isLoggedIn(): boolean {
 	return Boolean(getClient().authKey);
 }
 
+/** Stellt sicher, dass ein Auth-Key vorliegt; loggt bei Bedarf mit den env-Credentials ein. */
+export async function ensureLoggedIn(): Promise<void> {
+	if (!isLoggedIn()) await login();
+}
+
 /**
  * Login mit E-Mail/Passwort aus der Umgebung (PICNIC_USERNAME/PICNIC_PASSWORD).
  * Falls Picnic 2FA verlangt, muss danach verify2FA() aufgerufen werden.
