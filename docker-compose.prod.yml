@@ -1,0 +1,47 @@
+# Produktions-Compose für den Server: zieht das fertige Image aus der
+# GitHub Container Registry statt lokal zu bauen.
+#
+# Einmalig:  docker login ghcr.io -u SirTobyB   (PAT mit Scope read:packages)
+# Start:     docker compose -f docker-compose.prod.yml up -d
+# Update:    docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
+#
+# Traefik-Anbindung: setzt voraus, dass Traefik im externen Netzwerk "proxy"
+# hängt und einen websecure-Entrypoint + Certresolver "tls_resolver" hat.
+# Passe die mit "<-- anpassen" markierten Stellen an.
+#
+# Erster Start: Beim ersten Öffnen der Seite "Bestellen" einmal mit Picnic
+# verbinden (Login + SMS-2FA). Der Auth-Key wird im Volume ./data abgelegt
+# und übersteht Neustarts — die 2FA fällt danach nur noch selten an.
+services:
+  lebensmittel-kumpel:
+    image: ghcr.io/sirtobyb/lebensmittelkumpel:latest
+    container_name: lebensmittel-kumpel
+    restart: unless-stopped
+    # Direkter Port nicht nötig, da Traefik den Traffic reinreicht.
+    # Für lokales Debugging kannst du die Zeilen wieder einkommentieren.
+    # ports:
+    #   - "3000:3000"
+    volumes:
+      # Enthält SQLite-Datenbank, Artikelbilder und den Picnic-Auth-Key
+      - ./data:/data
+    environment:
+      # Öffentliche URL der App — adapter-node braucht sie für den
+      # CSRF-Schutz der Formulare. MUSS zur Host-Regel unten passen.
+      ORIGIN: "https://lebensmittel.tobiasbestier.de" # <-- anpassen
+      # Picnic-Zugangsdaten. Werte immer in doppelte Anführungszeichen setzen —
+      # in YAML startet ein unquotiertes # einen Kommentar (dein Passwort enthält
+      # eins). In "..." bleibt das # erhalten.
+      PICNIC_USERNAME: "deine-picnic-email@example.de" # <-- anpassen
+      PICNIC_PASSWORD: "dein-picnic-passwort" # <-- anpassen
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lebensmittel.rule=Host(`lebensmittel.tobiasbestier.de`)" # <-- anpassen
+      - "traefik.http.routers.lebensmittel.entrypoints=websecure"
+      - "traefik.http.routers.lebensmittel.tls.certresolver=tls_resolver"
+      - "traefik.http.services.lebensmittel.loadbalancer.server.port=3000"
+
+networks:
+  proxy:
+    external: true

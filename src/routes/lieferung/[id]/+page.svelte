@@ -6,6 +6,13 @@
 
 	type Item = (typeof data.items)[number];
 
+	// Bildquelle: eigenes Artikelbild bevorzugt, sonst das Picnic-Produktbild
+	function itemImage(item: Item): string | null {
+		if (item.imagePath) return `/api/images/${item.imagePath}`;
+		if (item.imageId) return `/api/picnic/image/${item.imageId}`;
+		return null;
+	}
+
 	// Geprüfte (und ggf. eingebuchte) Anzahl je Produkt; Initialwert genügt
 	// svelte-ignore state_referenced_locally
 	let checked = $state<Record<string, number>>(
@@ -133,8 +140,8 @@
 		{@const item = pending.item}
 		<div class="rounded-xl border border-gray-200 bg-white p-4">
 			<div class="flex items-center gap-3">
-				{#if item.imagePath}
-					<img src={`/api/images/${item.imagePath}`} alt="" class="h-12 w-12 shrink-0 rounded-lg border border-gray-100 object-contain" />
+				{#if itemImage(item)}
+					<img src={itemImage(item)} alt="" class="h-12 w-12 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
 				{:else}
 					<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-lg">📦</div>
 				{/if}
@@ -186,8 +193,8 @@
 	{#each data.items as item (item.productId)}
 		{@const done = itemStatus(item) === 'done'}
 		<li class="flex items-center gap-3 px-4 py-2.5 {done ? 'bg-green-50/50' : ''}">
-			{#if item.imagePath}
-				<img src={`/api/images/${item.imagePath}`} alt="" loading="lazy" class="h-9 w-9 shrink-0 rounded-lg border border-gray-100 object-contain" />
+			{#if itemImage(item)}
+				<img src={itemImage(item)} alt="" loading="lazy" class="h-9 w-9 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
 			{:else}
 				<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm">📦</div>
 			{/if}
