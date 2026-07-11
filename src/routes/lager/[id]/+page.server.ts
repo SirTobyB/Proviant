@@ -1,0 +1,99 @@
+import { db } from '$lib/server/db';
+import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
+import { and, eq } from 'drizzle-orm';
+import { error, fail } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
+
+function getLocation(id: string) {
+	const locationId = Number(id);
+	if (!Number.isInteger(locationId)) throw error(404, 'Lagerort nicht gefunden');
+	const location = db.select().from(storageLocations).where(eq(storageLocations.id, locationId)).get();
+	if (!location) throw error(404, 'Lagerort nicht gefunden');
+	return location;
+}
+
+export const load: PageServerLoad = ({ params }) => {
+	const location = getLocation(params.id);
+
+	const entries = db
+		.select({
+			id: stockEntries.id,
+			articleId: articles.id,
+			articleName: articles.name,
+			imagePath: articles.imagePath,
+			amount: articles.amount,
+			unit: articles.unit,
+			quantity: stockEntries.quantity,
+			bestBefore: stockEntries.bestBefore
+		})
+		.from(stockEntries)
+		.innerJoin(articles, eq(articles.id, stockEntries.articleId))
+		.where(eq(stockEntries.locationId, location.id))
+		.orderBy(articles.name)
+		.all();
+
+	// Chargen nach Artikel gruppieren
+	const byArticle = new Map<number, { articleId: number; articleName: string; imagePath: string | null; amount: number | null; unit: string | null; entries: typeof entries }>();
+	for (const entry of entries) {
+		let group = byArticle.get(entry.articleId);
+		if (!group) {
+			group = {
+				articleId: entry.articleId,
+				articleName: entry.articleName,
+				imagePath: entry.imagePath,
+				amount: entry.amount,
+				unit: entry.unit,
+				entries: []
+			};
+			byArticle.set(entry.articleId, group);
+		}
+		group.entries.push(entry);
+	}
+
+	return { location, articles: [...byArticle.values()] };
+};
+
+/** Lädt eine Charge und stellt sicher, dass sie zu diesem Lagerort gehört. */
+function getEntry(locationId: number, entryId: unknown) {
+	const id = Number(entryId);
+	if (!Number.isInteger(id)) return null;
+	return db
+		.select()
+		.from(stockEntries)
+		.where(and(eq(stockEntries.id, id), eq(stockEntries.locationId, locationId)))
+		.get();
+}
+
+export const actions: Actions = {
+	updateEntry: async ({ params, request }) => {
+		const location = getLocation(params.id);
+		const formData = await request.formData();
+		const entry = getEntry(location.id, formData.get('entryId'));
+		if (!entry) return fail(404, { message: 'Charge nicht gefunden' });
+
+		const quantity = Number(formData.get('quantity'));
+		if (!Number.isInteger(quantity) || quantity < 0) {
+			return fail(400, { message: 'Anzahl ist ungültig' });
+		}
+		const bestBeforeRaw = formData.get('bestBefore');
+		const bestBefore =
+			typeof bestBeforeRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(bestBeforeRaw)
+				? bestBeforeRaw
+				: null;
+
+		if (quantity === 0) {
+			db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
+		} else {
+			db.update(stockEntries).set({ quantity, bestBefore }).where(eq(stockEntries.id, entry.id)).run();
+		}
+		return { ok: true };
+	},
+
+	deleteEntry: async ({ params, request }) => {
+		const location = getLocation(params.id);
+		const entry = getEntry(location.id, (await request.formData()).get('entryId'));
+		if (!entry) return fail(404, { message: 'Charge nicht gefunden' });
+		db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
+		return { ok: true };
+	}
+};
