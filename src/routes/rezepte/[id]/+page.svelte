@@ -53,13 +53,30 @@
 		{/if}
 		<div>
 			<h1 class="text-2xl font-bold">{data.recipe.name}</h1>
-			<p class="mt-1 text-sm text-gray-500">{data.recipe.category === 'cake' ? 'Kuchen' : 'Warme Mahlzeit'}</p>
-			<span class="mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-medium {cookable ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-800'}">
+			<p class="mt-1 text-sm text-gray-500">
+				{data.recipe.category === 'cake' ? 'Kuchen' : 'Warme Mahlzeit'}
+				{#if data.recipe.lastCookedAt}
+					· zuletzt gekocht {new Date(data.recipe.lastCookedAt).toLocaleDateString('de-DE')}
+				{/if}
+			</p>
+			{#if data.tags.length > 0}
+				<div class="mt-1.5 flex flex-wrap gap-1">
+					{#each data.tags as tag (tag)}
+						<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{tag}</span>
+					{/each}
+				</div>
+			{/if}
+			<span class="mt-1.5 inline-block rounded-full px-2.5 py-1 text-xs font-medium {cookable ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-800'}">
 				{cookable ? '✓ Kochbar mit aktuellem Vorrat' : `${missingCount} Zutat(en) fehlen`}
 			</span>
 		</div>
 	</div>
-	<a href={`/rezepte/${data.recipe.id}/bearbeiten`} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Bearbeiten</a>
+	<div class="flex gap-2">
+		<form method="POST" action="?/markCooked" use:enhance>
+			<button type="submit" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">🍽 Heute gekocht</button>
+		</form>
+		<a href={`/rezepte/${data.recipe.id}/bearbeiten`} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Bearbeiten</a>
+	</div>
 </div>
 
 <!-- Portionswähler -->
@@ -77,6 +94,9 @@
 
 {#if form?.message}
 	<div class="mt-4 max-w-xl rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{form.message}</div>
+{/if}
+{#if form && 'cooked' in form && form.cooked}
+	<div class="mt-4 max-w-xl rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">Als heute gekocht vermerkt.</div>
 {/if}
 {#if form && 'added' in form && form.added}
 	<div class="mt-4 max-w-xl rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">

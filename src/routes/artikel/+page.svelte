@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
+
 	let { data } = $props();
 
 	function packageSize(amount: number | null, unit: string | null): string {
@@ -39,8 +41,8 @@
 {:else}
 	<ul class="mt-4 max-w-2xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
 		{#each data.articles as article (article.id)}
-			<li>
-				<a href={`/artikel/${article.id}`} class="flex items-center gap-3 px-4 py-3 hover:bg-green-50">
+			<li class="flex items-center gap-2 pr-3 hover:bg-green-50">
+				<a href={`/artikel/${article.id}`} class="flex min-w-0 flex-1 items-center gap-3 py-3 pl-4">
 					{#if article.imagePath}
 						<img
 							src={`/api/images/${article.imagePath}`}
@@ -65,15 +67,22 @@
 							{/if}
 						</span>
 					</span>
-					<span class="shrink-0 text-right">
-						<span class="block text-sm font-semibold {article.stock === 0 ? 'text-gray-400' : ''}">
-							{article.stock}×
-						</span>
-						{#if article.minStock > 0 && article.stock < article.minStock}
-							<span class="block text-xs text-amber-600">min. {article.minStock}</span>
-						{/if}
-					</span>
 				</a>
+				<!-- Schnell-Bestandskorrektur -->
+				<form method="POST" action="?/bookOut" use:enhance>
+					<input type="hidden" name="articleId" value={article.id} />
+					<button type="submit" disabled={article.stock === 0} class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30" aria-label="Ausbuchen">−</button>
+				</form>
+				<div class="w-10 shrink-0 text-center">
+					<span class="block text-sm font-semibold {article.stock === 0 ? 'text-gray-400' : ''}">{article.stock}×</span>
+					{#if article.minStock > 0 && article.stock < article.minStock}
+						<span class="block text-[10px] text-amber-600">min. {article.minStock}</span>
+					{/if}
+				</div>
+				<form method="POST" action="?/bookIn" use:enhance>
+					<input type="hidden" name="articleId" value={article.id} />
+					<button type="submit" class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Einbuchen">+</button>
+				</form>
 			</li>
 		{/each}
 	</ul>

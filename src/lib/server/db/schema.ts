@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, primaryKey } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 /** Lagerorte (Küchenschrank, Kühlschrank, Gefrierschrank, Vorratsregal) */
@@ -63,6 +63,8 @@ export const recipes = sqliteTable('recipes', {
 	servings: integer('servings').notNull().default(4),
 	imagePath: text('image_path'),
 	instructions: text('instructions'),
+	/** Wann zuletzt gekocht/bestellt; steuert die 2-Wochen-Sperre beim Vorschlag */
+	lastCookedAt: integer('last_cooked_at', { mode: 'timestamp' }),
 	createdAt: integer('created_at', { mode: 'timestamp' })
 		.notNull()
 		.default(sql`(unixepoch())`),
@@ -87,3 +89,23 @@ export const recipeIngredients = sqliteTable('recipe_ingredients', {
 	unit: text('unit'),
 	sortOrder: integer('sort_order').notNull().default(0)
 });
+
+/** Frei vergebbare Rezept-Tags (z.B. „vegetarisch", „schnell", „deftig"). */
+export const tags = sqliteTable('tags', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	name: text('name').notNull().unique()
+});
+
+/** Zuordnung Rezept ↔ Tag. */
+export const recipeTags = sqliteTable(
+	'recipe_tags',
+	{
+		recipeId: integer('recipe_id')
+			.notNull()
+			.references(() => recipes.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' })
+	},
+	(table) => [primaryKey({ columns: [table.recipeId, table.tagId] })]
+);

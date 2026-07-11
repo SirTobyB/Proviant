@@ -2,6 +2,7 @@ import { db } from '$lib/server/db';
 import { recipes, recipeIngredients } from '$lib/server/db/schema';
 import { getRecipe, getRecipeIngredients } from '$lib/server/recipeData';
 import { parseRecipeForm } from '$lib/server/recipeForm';
+import { allTagNames, setRecipeTags, tagsForRecipe } from '$lib/server/tags';
 import { deleteImage } from '$lib/server/images';
 import { eq } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
@@ -17,13 +18,18 @@ function loadRecipeOr404(idParam: string) {
 
 export const load: PageServerLoad = ({ params }) => {
 	const recipe = loadRecipeOr404(params.id);
-	return { recipe, ingredients: getRecipeIngredients(recipe.id) };
+	return {
+		recipe,
+		ingredients: getRecipeIngredients(recipe.id),
+		tags: tagsForRecipe(recipe.id),
+		allTags: allTagNames()
+	};
 };
 
 export const actions: Actions = {
 	default: async ({ params, request }) => {
 		const recipe = loadRecipeOr404(params.id);
-		const { values, ingredients, imagePath, error: message } = await parseRecipeForm(await request.formData());
+		const { values, ingredients, tags, imagePath, error: message } = await parseRecipeForm(await request.formData());
 		if (message) return fail(400, { message });
 
 		db.update(recipes)
@@ -38,6 +44,7 @@ export const actions: Actions = {
 				.values(ingredients.map((ing) => ({ ...ing, recipeId: recipe.id })))
 				.run();
 		}
+		setRecipeTags(recipe.id, tags);
 
 		if (imagePath !== undefined && recipe.imagePath) deleteImage(recipe.imagePath);
 

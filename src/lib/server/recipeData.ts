@@ -4,6 +4,7 @@
  */
 import { db } from '$lib/server/db';
 import { articles, recipeIngredients, recipes, stockEntries } from '$lib/server/db/schema';
+import { coverage, scaleAmount } from '$lib/units';
 import { eq, sql } from 'drizzle-orm';
 
 export type RecipeIngredientDetail = {
@@ -22,6 +23,20 @@ export type RecipeIngredientDetail = {
 
 export function getRecipe(id: number) {
 	return db.select().from(recipes).where(eq(recipes.id, id)).get();
+}
+
+/**
+ * Kochbar = alle verknüpften Zutaten mit vergleichbarer Einheit sind durch den
+ * Vorrat gedeckt. Freitext- und nicht vergleichbare Zutaten blockieren nicht.
+ */
+export function isRecipeCookable(ingredients: RecipeIngredientDetail[], baseServings: number, servings: number): boolean {
+	for (const ing of ingredients) {
+		if (!ing.articleId || ing.amount == null) continue;
+		const scaled = scaleAmount(ing.amount, baseServings, servings) ?? 0;
+		const cov = coverage(scaled, ing.unit, ing.packageAmount, ing.packageUnit, ing.stockPackages);
+		if (cov.comparable && !cov.covered) return false;
+	}
+	return true;
 }
 
 export function getRecipeIngredients(recipeId: number): RecipeIngredientDetail[] {

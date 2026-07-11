@@ -1,7 +1,9 @@
 import { db } from '$lib/server/db';
-import { articles, stockEntries } from '$lib/server/db/schema';
+import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
+import { bookIn, bookOut } from '$lib/server/stock';
 import { eq, sql } from 'drizzle-orm';
-import type { PageServerLoad } from './$types';
+import { fail } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ url }) => {
 	const query = url.searchParams.get('q')?.trim() ?? '';
@@ -16,6 +18,7 @@ export const load: PageServerLoad = ({ url }) => {
 			ean: articles.ean,
 			picnicId: articles.picnicId,
 			minStock: articles.minStock,
+			defaultLocationId: articles.defaultLocationId,
 			stock: sql<number>`coalesce(sum(${stockEntries.quantity}), 0)`
 		})
 		.from(articles)
@@ -30,4 +33,31 @@ export const load: PageServerLoad = ({ url }) => {
 		.all();
 
 	return { articles: rows, query };
+};
+
+function getArticle(formData: FormData) {
+	const id = Number(formData.get('articleId'));
+	return Number.isInteger(id) ? db.select().from(articles).where(eq(articles.id, id)).get() : undefined;
+}
+
+export const actions: Actions = {
+	// Schnell +1: in den Standard-Lagerort (oder ersten Lagerort), ohne MHD
+	bookIn: async ({ request }) => {
+		const article = getArticle(await request.formData());
+		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
+		const locationId =
+			article.defaultLocationId ??
+			db.select({ id: storageLocations.id }).from(storageLocations).orderBy(storageLocations.sortOrder).get()?.id;
+		if (!locationId) return fail(400, { message: 'Kein Lagerort vorhanden' });
+		bookIn(article.id, locationId, 1, null);
+		return { adjusted: article.id };
+	},
+
+	// Schnell −1: FEFO (nächstes MHD zuerst)
+	bookOut: async ({ request }) => {
+		const article = getArticle(await request.formData());
+		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
+		bookOut(article.id, 1);
+		return { adjusted: article.id };
+	}
 };

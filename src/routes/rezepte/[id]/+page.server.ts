@@ -1,6 +1,7 @@
 import { db } from '$lib/server/db';
 import { recipes } from '$lib/server/db/schema';
 import { getRecipe, getRecipeIngredients } from '$lib/server/recipeData';
+import { tagsForRecipe } from '$lib/server/tags';
 import { deleteImage } from '$lib/server/images';
 import { addToCart, getConnectionState } from '$lib/server/picnic';
 import { coverage, scaleAmount } from '$lib/units';
@@ -21,6 +22,7 @@ export const load: PageServerLoad = ({ params }) => {
 	return {
 		recipe,
 		ingredients: getRecipeIngredients(recipe.id),
+		tags: tagsForRecipe(recipe.id),
 		connection: getConnectionState()
 	};
 };
@@ -70,12 +72,22 @@ export const actions: Actions = {
 			return fail(502, { message: err instanceof Error ? err.message : 'Warenkorb-Übergabe fehlgeschlagen' });
 		}
 
+		// Bestellt = gekocht: Zeitpunkt für die 2-Wochen-Sperre merken
+		db.update(recipes).set({ lastCookedAt: new Date() }).where(eq(recipes.id, recipe.id)).run();
+
 		return {
 			added: items.length,
 			totalPackages: items.reduce((sum, i) => sum + i.quantity, 0),
 			unlinked,
 			incomparable
 		};
+	},
+
+	// Manuell als heute gekocht markieren (Vorrat gereicht, keine Bestellung nötig)
+	markCooked: ({ params }) => {
+		const recipe = loadRecipeOr404(params.id);
+		db.update(recipes).set({ lastCookedAt: new Date() }).where(eq(recipes.id, recipe.id)).run();
+		return { cooked: true };
 	},
 
 	delete: ({ params }) => {

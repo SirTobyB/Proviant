@@ -11,6 +11,7 @@
 		servings: data.recipe.servings,
 		instructions: data.recipe.instructions,
 		imagePath: data.recipe.imagePath,
+		tags: data.tags,
 		ingredients: data.ingredients.map((i) => ({
 			articleId: i.articleId,
 			articleName: i.articleName,
@@ -28,4 +29,4 @@
 </div>
 <h1 class="mt-1 text-2xl font-bold">Rezept bearbeiten</h1>
 
-<RecipeForm recipe={recipeValues} submitLabel="Speichern" errorMessage={form?.message ?? null} />
+<RecipeForm recipe={recipeValues} allTags={data.allTags} submitLabel="Speichern" errorMessage={form?.message ?? null} />

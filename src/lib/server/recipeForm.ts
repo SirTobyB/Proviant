@@ -20,10 +20,21 @@ export type RecipeFormResult = {
 		instructions: string | null;
 	};
 	ingredients: ParsedIngredient[];
+	tags: string[];
 	/** Neuer Bild-Dateiname; undefined = Bild unverändert lassen */
 	imagePath: string | undefined;
 	error: string | null;
 };
+
+function parseTags(formData: FormData): string[] {
+	try {
+		const raw = JSON.parse((formData.get('tags') as string) || '[]');
+		if (!Array.isArray(raw)) return [];
+		return [...new Set(raw.map((t) => String(t).trim()).filter(Boolean))];
+	} catch {
+		return [];
+	}
+}
 
 export async function parseRecipeForm(formData: FormData): Promise<RecipeFormResult> {
 	const text = (key: string) => {
@@ -31,9 +42,10 @@ export async function parseRecipeForm(formData: FormData): Promise<RecipeFormRes
 		return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 	};
 
+	const tags = parseTags(formData);
 	const name = text('name');
 	const empty = { name: '', category: 'meal' as const, servings: 4, instructions: null };
-	if (!name) return { values: empty, ingredients: [], imagePath: undefined, error: 'Name ist erforderlich' };
+	if (!name) return { values: empty, ingredients: [], tags, imagePath: undefined, error: 'Name ist erforderlich' };
 
 	const category = text('category') === 'cake' ? 'cake' : 'meal';
 	const servings = Math.max(1, parseInt(text('servings') ?? '4', 10) || 4);
@@ -65,6 +77,7 @@ export async function parseRecipeForm(formData: FormData): Promise<RecipeFormRes
 		return {
 			values: { name, category, servings, instructions: text('instructions') },
 			ingredients: [],
+			tags,
 			imagePath: undefined,
 			error: 'Zutatenliste konnte nicht gelesen werden'
 		};
@@ -79,6 +92,7 @@ export async function parseRecipeForm(formData: FormData): Promise<RecipeFormRes
 			return {
 				values: { name, category, servings, instructions: text('instructions') },
 				ingredients,
+				tags,
 				imagePath: undefined,
 				error: `Bild: ${err instanceof Error ? err.message : 'Fehler'}`
 			};
@@ -88,6 +102,7 @@ export async function parseRecipeForm(formData: FormData): Promise<RecipeFormRes
 	return {
 		values: { name, category, servings, instructions: text('instructions') },
 		ingredients,
+		tags,
 		imagePath,
 		error: null
 	};
