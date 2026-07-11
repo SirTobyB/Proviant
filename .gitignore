@@ -25,6 +25,7 @@ vite.config.ts.timestamp-*
 *.db
 *.db-*
 
-# Persistente Daten (Docker-Volume, Picnic-Auth)
+# Persistente Daten (Docker-Volume, Picnic-Auth, lokale Artikelbilder)
 /data
+/images
 picnic-auth-key
