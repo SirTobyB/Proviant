@@ -35,6 +35,10 @@
 	function isActive(href: string): boolean {
 		return href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
 	}
+
+	// Heroicons: qr-code (als Scan-Symbol)
+	const scanIcon =
+		'M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z';
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -59,6 +63,15 @@
 					{item.label}
 				</a>
 			{/each}
+			<a
+				href="/scan"
+				class="mt-2 flex items-center gap-3 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
+			>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+					<path stroke-linecap="round" stroke-linejoin="round" d={scanIcon} />
+				</svg>
+				Scannen
+			</a>
 		</nav>
 	</aside>
 
@@ -78,7 +91,7 @@
 		<nav
 			class="fixed inset-x-0 bottom-0 z-10 flex border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
 		>
-			{#each navItems as item (item.href)}
+			{#snippet navLink(item: (typeof navItems)[number])}
 				<a
 					href={item.href}
 					class="flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium
@@ -89,6 +102,20 @@
 					</svg>
 					{item.label}
 				</a>
+			{/snippet}
+			{#each navItems.slice(0, 2) as item (item.href)}
+				{@render navLink(item)}
+			{/each}
+			<!-- Mittiger, hervorgehobener Scan-Button -->
+			<a href="/scan" aria-label="Scannen" class="relative -top-3 flex flex-1 flex-col items-center">
+				<span class="flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-7 w-7">
+						<path stroke-linecap="round" stroke-linejoin="round" d={scanIcon} />
+					</svg>
+				</span>
+			</a>
+			{#each navItems.slice(2) as item (item.href)}
+				{@render navLink(item)}
 			{/each}
 		</nav>
 	</div>

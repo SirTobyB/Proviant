@@ -6,14 +6,16 @@
 
 <h1 class="text-2xl font-bold">Lager</h1>
 <p class="mt-1 text-sm text-gray-500">
-	{data.stockCount} Bestandseinträge · {data.articleCount} Artikel im Stamm
+	{data.stockCount} Gebinde im Bestand · {data.articleCount} Artikel im Stamm
 </p>
 
 <div class="mt-6 grid grid-cols-2 gap-3 md:max-w-2xl">
 	{#each data.locations as location (location.id)}
 		<div class="rounded-xl border border-gray-200 bg-white p-4">
 			<div class="font-semibold">{location.name}</div>
-			<div class="mt-1 text-sm text-gray-500">Noch keine Bestände</div>
+			<div class="mt-1 text-sm {location.quantity === 0 ? 'text-gray-400' : 'text-gray-600'}">
+				{location.quantity === 0 ? 'Keine Bestände' : `${location.quantity} Gebinde`}
+			</div>
 		</div>
 	{/each}
 </div>
