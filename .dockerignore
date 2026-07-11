@@ -1,0 +1,14 @@
+node_modules
+build
+.svelte-kit
+data
+local.db*
+.env
+.env.*
+!.env.example
+.git
+.github
+.vscode
+Dockerfile
+docker-compose.yml
+README.md

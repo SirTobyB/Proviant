@@ -1,0 +1,16 @@
+services:
+  lebensmittelkumpel:
+    build: .
+    container_name: lebensmittelkumpel
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      # Öffentliche URL der App; adapter-node braucht das für den
+      # CSRF-Schutz bei Formularen (hinter Traefik anpassen).
+      ORIGIN: "http://localhost:3000"
+      # Zugangsdaten für den Picnic-Account
+      PICNIC_USERNAME: ""
+      PICNIC_PASSWORD: ""
