@@ -2,6 +2,7 @@ import { db } from '$lib/server/db';
 import { recipes } from '$lib/server/db/schema';
 import { getRecipe, getRecipeIngredients } from '$lib/server/recipeData';
 import { tagsForRecipe } from '$lib/server/tags';
+import { auditEdit } from '$lib/server/audit';
 import { deleteImage } from '$lib/server/images';
 import { addToCart, getConnectionState } from '$lib/server/picnic';
 import { coverage, scaleAmount } from '$lib/units';
@@ -29,7 +30,7 @@ export const load: PageServerLoad = ({ params }) => {
 
 export const actions: Actions = {
 	// Fehlende Zutaten (aufgerundet auf Gebinde) in den Picnic-Warenkorb legen
-	addToCart: async ({ params, request }) => {
+	addToCart: async ({ params, request, locals }) => {
 		const recipe = loadRecipeOr404(params.id);
 		const portions = Math.max(1, Number((await request.formData()).get('portions')) || recipe.servings);
 		const ingredients = getRecipeIngredients(recipe.id);
@@ -73,7 +74,10 @@ export const actions: Actions = {
 		}
 
 		// Bestellt = gekocht: Zeitpunkt für die 2-Wochen-Sperre merken
-		db.update(recipes).set({ lastCookedAt: new Date() }).where(eq(recipes.id, recipe.id)).run();
+		db.update(recipes)
+			.set({ lastCookedAt: new Date(), ...auditEdit(locals.user?.username) })
+			.where(eq(recipes.id, recipe.id))
+			.run();
 
 		return {
 			added: items.length,
@@ -84,9 +88,12 @@ export const actions: Actions = {
 	},
 
 	// Manuell als heute gekocht markieren (Vorrat gereicht, keine Bestellung nötig)
-	markCooked: ({ params }) => {
+	markCooked: ({ params, locals }) => {
 		const recipe = loadRecipeOr404(params.id);
-		db.update(recipes).set({ lastCookedAt: new Date() }).where(eq(recipes.id, recipe.id)).run();
+		db.update(recipes)
+			.set({ lastCookedAt: new Date(), ...auditEdit(locals.user?.username) })
+			.where(eq(recipes.id, recipe.id))
+			.run();
 		return { cooked: true };
 	},
 

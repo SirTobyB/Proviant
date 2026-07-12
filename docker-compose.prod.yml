@@ -33,6 +33,11 @@ services:
       # eins). In "..." bleibt das # erhalten.
       PICNIC_USERNAME: "deine-picnic-email@example.de" # <-- anpassen
       PICNIC_PASSWORD: "dein-picnic-passwort" # <-- anpassen
+      # Erster Admin-Benutzer — nur beim allerersten Start angelegt (wenn noch
+      # kein Benutzer existiert). Danach über die App verwalten.
+      ADMIN_USERNAME: "admin" # <-- anpassen
+      ADMIN_PASSWORD: "bitte-aendern" # <-- anpassen
+      ADMIN_EMAIL: "admin@example.de" # <-- anpassen
     networks:
       - proxy
     labels:

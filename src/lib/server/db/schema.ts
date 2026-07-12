@@ -1,11 +1,46 @@
 import { sqliteTable, text, integer, real, primaryKey } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
+// Wiederverwendbare Audit-Spalten. created_by/updated_by halten den Benutzernamen
+// des anlegenden bzw. zuletzt ändernden Users (kein FK, damit gelöschte User
+// die Historie nicht kaputtmachen).
+const createdAtCol = () =>
+	integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`);
+const updatedAtCol = () =>
+	integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`);
+const auditFull = () => ({
+	createdAt: createdAtCol(),
+	createdBy: text('created_by'),
+	updatedAt: updatedAtCol(),
+	updatedBy: text('updated_by')
+});
+
+/** Benutzer für die Authentifizierung; Benutzername ist der Primärschlüssel. */
+export const users = sqliteTable('users', {
+	username: text('username').primaryKey(),
+	email: text('email').notNull(),
+	passwordHash: text('password_hash').notNull(),
+	role: text('role', { enum: ['user', 'admin'] })
+		.notNull()
+		.default('user'),
+	...auditFull()
+});
+
+/** Angemeldete Sitzungen (technisch, ohne Audit). */
+export const sessions = sqliteTable('sessions', {
+	token: text('token').primaryKey(),
+	username: text('username')
+		.notNull()
+		.references(() => users.username, { onDelete: 'cascade' }),
+	expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull()
+});
+
 /** Lagerorte (Küchenschrank, Kühlschrank, Gefrierschrank, Vorratsregal) */
 export const storageLocations = sqliteTable('storage_locations', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull().unique(),
-	sortOrder: integer('sort_order').notNull().default(0)
+	sortOrder: integer('sort_order').notNull().default(0),
+	...auditFull()
 });
 
 /** Artikelstamm */
@@ -24,12 +59,7 @@ export const articles = sqliteTable('articles', {
 	/** Mindestbestand (Anzahl Gebinde); 0 = kein Bestellvorschlag */
 	minStock: integer('min_stock').notNull().default(0),
 	defaultLocationId: integer('default_location_id').references(() => storageLocations.id),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`)
+	...auditFull()
 });
 
 /**
@@ -48,9 +78,7 @@ export const stockEntries = sqliteTable('stock_entries', {
 	quantity: integer('quantity').notNull().default(1),
 	/** MHD als ISO-Datum (YYYY-MM-DD), null = kein MHD erfasst */
 	bestBefore: text('best_before'),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`)
+	...auditFull()
 });
 
 /** Rezepte (warme Mahlzeiten und Kuchen) */
@@ -65,12 +93,7 @@ export const recipes = sqliteTable('recipes', {
 	instructions: text('instructions'),
 	/** Wann zuletzt gekocht/bestellt; steuert die 2-Wochen-Sperre beim Vorschlag */
 	lastCookedAt: integer('last_cooked_at', { mode: 'timestamp' }),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`)
+	...auditFull()
 });
 
 /**
@@ -87,16 +110,18 @@ export const recipeIngredients = sqliteTable('recipe_ingredients', {
 	/** Benötigte Menge in der Einheit `unit` (nicht Gebinde!) */
 	amount: real('amount'),
 	unit: text('unit'),
-	sortOrder: integer('sort_order').notNull().default(0)
+	sortOrder: integer('sort_order').notNull().default(0),
+	...auditFull()
 });
 
 /** Frei vergebbare Rezept-Tags (z.B. „vegetarisch", „schnell", „deftig"). */
 export const tags = sqliteTable('tags', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
-	name: text('name').notNull().unique()
+	name: text('name').notNull().unique(),
+	...auditFull()
 });
 
-/** Zuordnung Rezept ↔ Tag. */
+/** Zuordnung Rezept ↔ Tag (Link-Tabelle, nur Anlage-Audit). */
 export const recipeTags = sqliteTable(
 	'recipe_tags',
 	{
@@ -105,7 +130,9 @@ export const recipeTags = sqliteTable(
 			.references(() => recipes.id, { onDelete: 'cascade' }),
 		tagId: integer('tag_id')
 			.notNull()
-			.references(() => tags.id, { onDelete: 'cascade' })
+			.references(() => tags.id, { onDelete: 'cascade' }),
+		createdAt: createdAtCol(),
+		createdBy: text('created_by')
 	},
 	(table) => [primaryKey({ columns: [table.recipeId, table.tagId] })]
 );

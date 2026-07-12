@@ -42,22 +42,22 @@ function getArticle(formData: FormData) {
 
 export const actions: Actions = {
 	// Schnell +1: in den Standard-Lagerort (oder ersten Lagerort), ohne MHD
-	bookIn: async ({ request }) => {
+	bookIn: async ({ request, locals }) => {
 		const article = getArticle(await request.formData());
 		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
 		const locationId =
 			article.defaultLocationId ??
 			db.select({ id: storageLocations.id }).from(storageLocations).orderBy(storageLocations.sortOrder).get()?.id;
 		if (!locationId) return fail(400, { message: 'Kein Lagerort vorhanden' });
-		bookIn(article.id, locationId, 1, null);
+		bookIn(article.id, locationId, 1, null, locals.user?.username ?? null);
 		return { adjusted: article.id };
 	},
 
 	// Schnell −1: FEFO (nächstes MHD zuerst)
-	bookOut: async ({ request }) => {
+	bookOut: async ({ request, locals }) => {
 		const article = getArticle(await request.formData());
 		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
-		bookOut(article.id, 1);
+		bookOut(article.id, 1, locals.user?.username ?? null);
 		return { adjusted: article.id };
 	}
 };

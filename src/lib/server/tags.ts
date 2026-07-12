@@ -3,6 +3,7 @@
  */
 import { db } from '$lib/server/db';
 import { recipeTags, tags } from '$lib/server/db/schema';
+import { auditLink, auditNew } from '$lib/server/audit';
 import { eq, inArray, sql } from 'drizzle-orm';
 
 /** Alle vorhandenen Tag-Namen (für Autocomplete), alphabetisch. */
@@ -28,11 +29,11 @@ export function tagsForRecipe(recipeId: number): string[] {
 }
 
 /** Legt fehlende Tags an und gibt alle Tag-IDs zu den Namen zurück. */
-function ensureTagIds(names: string[]): number[] {
+function ensureTagIds(names: string[], user: string | null): number[] {
 	const clean = [...new Set(names.map((n) => n.trim()).filter(Boolean))];
 	if (clean.length === 0) return [];
 	db.insert(tags)
-		.values(clean.map((name) => ({ name })))
+		.values(clean.map((name) => ({ name, ...auditNew(user) })))
 		.onConflictDoNothing()
 		.run();
 	return db
@@ -44,12 +45,12 @@ function ensureTagIds(names: string[]): number[] {
 }
 
 /** Ersetzt die Tags eines Rezepts vollständig durch die übergebenen Namen. */
-export function setRecipeTags(recipeId: number, names: string[]): void {
+export function setRecipeTags(recipeId: number, names: string[], user: string | null): void {
 	db.delete(recipeTags).where(eq(recipeTags.recipeId, recipeId)).run();
-	const tagIds = ensureTagIds(names);
+	const tagIds = ensureTagIds(names, user);
 	if (tagIds.length > 0) {
 		db.insert(recipeTags)
-			.values(tagIds.map((tagId) => ({ recipeId, tagId })))
+			.values(tagIds.map((tagId) => ({ recipeId, tagId, ...auditLink(user) })))
 			.onConflictDoNothing()
 			.run();
 	}

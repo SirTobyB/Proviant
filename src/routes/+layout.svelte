@@ -3,7 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { page } from '$app/state';
 
-	let { children } = $props();
+	let { children, data } = $props();
 
 	const navItems = [
 		{
@@ -39,94 +39,136 @@
 	// Heroicons: qr-code (als Scan-Symbol)
 	const scanIcon =
 		'M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z';
+
+	// Konto-Icon (Heroicons: user-circle)
+	const userIcon =
+		'M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z';
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-<div class="min-h-dvh bg-gray-50 text-gray-900 md:flex">
-	<!-- Sidebar (Desktop) -->
-	<aside class="hidden w-56 shrink-0 flex-col border-r border-gray-200 bg-white md:flex">
-		<div class="flex items-center gap-2 px-4 py-5">
-			<img src="/icon.svg" alt="" class="h-8 w-8" />
-			<span class="text-lg font-bold">LebensmittelKumpel</span>
-		</div>
-		<nav class="flex flex-col gap-1 px-2">
-			{#each navItems as item (item.href)}
+{#if !data.user}
+	<!-- Ohne angemeldeten User (z.B. Login-Seite): keine App-Navigation -->
+	{@render children()}
+{:else}
+	<div class="min-h-dvh bg-gray-50 text-gray-900 md:flex">
+		<!-- Sidebar (Desktop) -->
+		<aside class="hidden w-56 shrink-0 flex-col border-r border-gray-200 bg-white md:flex">
+			<div class="flex items-center gap-2 px-4 py-5">
+				<img src="/icon.svg" alt="" class="h-8 w-8" />
+				<span class="text-lg font-bold">LebensmittelKumpel</span>
+			</div>
+			<nav class="flex flex-1 flex-col gap-1 px-2">
+				{#each navItems as item (item.href)}
+					<a
+						href={item.href}
+						class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
+							{isActive(item.href) ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100'}"
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+							<path stroke-linecap="round" stroke-linejoin="round" d={item.icon} />
+						</svg>
+						{item.label}
+					</a>
+				{/each}
 				<a
-					href={item.href}
-					class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
-						{isActive(item.href) ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100'}"
+					href="/scan"
+					class="mt-2 flex items-center gap-3 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
 				>
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
-						<path stroke-linecap="round" stroke-linejoin="round" d={item.icon} />
-					</svg>
-					{item.label}
-				</a>
-			{/each}
-			<a
-				href="/scan"
-				class="mt-2 flex items-center gap-3 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
-			>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
-					<path stroke-linecap="round" stroke-linejoin="round" d={scanIcon} />
-				</svg>
-				Scannen
-			</a>
-			<a
-				href="/lieferung"
-				class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
-					{isActive('/lieferung') ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100'}"
-			>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-6m2.25-13.5h5.379c.621 0 1.129.504 1.09 1.124M14.25 5.25v13.5m0-13.5H5.625c-.621 0-1.125.504-1.125 1.125v10.5" />
-				</svg>
-				Lieferung prüfen
-			</a>
-		</nav>
-	</aside>
-
-	<div class="flex min-h-dvh flex-1 flex-col">
-		<!-- Header (Mobile) -->
-		<header class="flex items-center gap-2 border-b border-gray-200 bg-white px-4 py-3 md:hidden">
-			<img src="/icon.svg" alt="" class="h-7 w-7" />
-			<span class="text-base font-bold">LebensmittelKumpel</span>
-		</header>
-
-		<!-- Inhalt; unten Platz für die Bottom-Nav auf Mobile -->
-		<main class="flex-1 p-4 pb-24 md:p-8 md:pb-8">
-			{@render children()}
-		</main>
-
-		<!-- Bottom-Nav (Mobile) -->
-		<nav
-			class="fixed inset-x-0 bottom-0 z-10 flex border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
-		>
-			{#snippet navLink(item: (typeof navItems)[number])}
-				<a
-					href={item.href}
-					class="flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium
-						{isActive(item.href) ? 'text-green-700' : 'text-gray-500'}"
-				>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6">
-						<path stroke-linecap="round" stroke-linejoin="round" d={item.icon} />
-					</svg>
-					{item.label}
-				</a>
-			{/snippet}
-			{#each navItems.slice(0, 2) as item (item.href)}
-				{@render navLink(item)}
-			{/each}
-			<!-- Mittiger, hervorgehobener Scan-Button -->
-			<a href="/scan" aria-label="Scannen" class="relative -top-3 flex flex-1 flex-col items-center">
-				<span class="flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-7 w-7">
 						<path stroke-linecap="round" stroke-linejoin="round" d={scanIcon} />
 					</svg>
-				</span>
-			</a>
-			{#each navItems.slice(2) as item (item.href)}
-				{@render navLink(item)}
-			{/each}
-		</nav>
+					Scannen
+				</a>
+				<a
+					href="/lieferung"
+					class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
+						{isActive('/lieferung') ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100'}"
+				>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-6m2.25-13.5h5.379c.621 0 1.129.504 1.09 1.124M14.25 5.25v13.5m0-13.5H5.625c-.621 0-1.125.504-1.125 1.125v10.5" />
+					</svg>
+					Lieferung prüfen
+				</a>
+			</nav>
+
+			<!-- Konto-Bereich -->
+			<div class="border-t border-gray-100 p-2">
+				{#if data.user.role === 'admin'}
+					<a
+						href="/benutzer"
+						class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
+							{isActive('/benutzer') ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100'}"
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+						</svg>
+						Benutzer
+					</a>
+				{/if}
+				<a
+					href="/konto"
+					class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
+						{isActive('/konto') ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100'}"
+				>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+						<path stroke-linecap="round" stroke-linejoin="round" d={userIcon} />
+					</svg>
+					<span class="min-w-0 flex-1 truncate">{data.user.username}</span>
+				</a>
+			</div>
+		</aside>
+
+		<div class="flex min-h-dvh flex-1 flex-col">
+			<!-- Header (Mobile) -->
+			<header class="flex items-center justify-between gap-2 border-b border-gray-200 bg-white px-4 py-3 md:hidden">
+				<div class="flex items-center gap-2">
+					<img src="/icon.svg" alt="" class="h-7 w-7" />
+					<span class="text-base font-bold">LebensmittelKumpel</span>
+				</div>
+				<a href="/konto" class="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm text-gray-600 hover:bg-gray-100" aria-label="Konto">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6">
+						<path stroke-linecap="round" stroke-linejoin="round" d={userIcon} />
+					</svg>
+				</a>
+			</header>
+
+			<!-- Inhalt; unten Platz für die Bottom-Nav auf Mobile -->
+			<main class="flex-1 p-4 pb-24 md:p-8 md:pb-8">
+				{@render children()}
+			</main>
+
+			<!-- Bottom-Nav (Mobile) -->
+			<nav
+				class="fixed inset-x-0 bottom-0 z-10 flex border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
+			>
+				{#snippet navLink(item: (typeof navItems)[number])}
+					<a
+						href={item.href}
+						class="flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium
+							{isActive(item.href) ? 'text-green-700' : 'text-gray-500'}"
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6">
+							<path stroke-linecap="round" stroke-linejoin="round" d={item.icon} />
+						</svg>
+						{item.label}
+					</a>
+				{/snippet}
+				{#each navItems.slice(0, 2) as item (item.href)}
+					{@render navLink(item)}
+				{/each}
+				<!-- Mittiger, hervorgehobener Scan-Button -->
+				<a href="/scan" aria-label="Scannen" class="relative -top-3 flex flex-1 flex-col items-center">
+					<span class="flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white shadow-lg">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-7 w-7">
+							<path stroke-linecap="round" stroke-linejoin="round" d={scanIcon} />
+						</svg>
+					</span>
+				</a>
+				{#each navItems.slice(2) as item (item.href)}
+					{@render navLink(item)}
+				{/each}
+			</nav>
+		</div>
 	</div>
-</div>
+{/if}

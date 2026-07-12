@@ -51,7 +51,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 export const actions: Actions = {
 	// Bucht ein einzelnes gescanntes Gebinde beim Auspacken ein
-	book: async ({ request }) => {
+	book: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const articleId = Number(formData.get('articleId'));
 		const locationId = Number(formData.get('locationId'));
@@ -74,7 +74,7 @@ export const actions: Actions = {
 				? bestBeforeRaw
 				: null;
 
-		bookIn(article.id, locationId, quantity, bestBefore);
+		bookIn(article.id, locationId, quantity, bestBefore, locals.user?.username ?? null);
 		return { booked: true, articleId, quantity };
 	}
 };

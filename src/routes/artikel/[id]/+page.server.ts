@@ -1,6 +1,7 @@
 import { db } from '$lib/server/db';
 import { articles, storageLocations } from '$lib/server/db/schema';
 import { parseArticleForm } from '$lib/server/articleForm';
+import { auditEdit } from '$lib/server/audit';
 import { deleteImage } from '$lib/server/images';
 import { eq } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
@@ -22,7 +23,7 @@ export const load: PageServerLoad = ({ params }) => {
 };
 
 export const actions: Actions = {
-	update: async ({ params, request }) => {
+	update: async ({ params, request, locals }) => {
 		const article = getArticle(params.id);
 		const { values, imagePath, error: message } = await parseArticleForm(await request.formData());
 		if (message) return fail(400, { message });
@@ -32,7 +33,7 @@ export const actions: Actions = {
 				.set({
 					...values,
 					...(imagePath !== undefined ? { imagePath } : {}),
-					updatedAt: new Date()
+					...auditEdit(locals.user?.username)
 				})
 				.where(eq(articles.id, article.id))
 				.run();

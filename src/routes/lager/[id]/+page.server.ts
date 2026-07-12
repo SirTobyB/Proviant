@@ -1,5 +1,6 @@
 import { db } from '$lib/server/db';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
+import { auditEdit } from '$lib/server/audit';
 import { and, eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -65,7 +66,7 @@ function getEntry(locationId: number, entryId: unknown) {
 }
 
 export const actions: Actions = {
-	updateEntry: async ({ params, request }) => {
+	updateEntry: async ({ params, request, locals }) => {
 		const location = getLocation(params.id);
 		const formData = await request.formData();
 		const entry = getEntry(location.id, formData.get('entryId'));
@@ -84,7 +85,10 @@ export const actions: Actions = {
 		if (quantity === 0) {
 			db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
 		} else {
-			db.update(stockEntries).set({ quantity, bestBefore }).where(eq(stockEntries.id, entry.id)).run();
+			db.update(stockEntries)
+				.set({ quantity, bestBefore, ...auditEdit(locals.user?.username) })
+				.where(eq(stockEntries.id, entry.id))
+				.run();
 		}
 		return { ok: true };
 	},

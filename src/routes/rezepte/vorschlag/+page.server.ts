@@ -2,6 +2,7 @@ import { db } from '$lib/server/db';
 import { recipes, recipeTags, tags } from '$lib/server/db/schema';
 import { getRecipe, getRecipeIngredients, isRecipeCookable } from '$lib/server/recipeData';
 import { allTagNames, tagsForRecipe } from '$lib/server/tags';
+import { auditEdit } from '$lib/server/audit';
 import { eligible, pickWeighted, type SuggestCandidate } from '$lib/suggest';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
@@ -82,10 +83,13 @@ export const actions: Actions = {
 		};
 	},
 
-	markCooked: async ({ request }) => {
+	markCooked: async ({ request, locals }) => {
 		const id = Number((await request.formData()).get('recipeId'));
 		if (!Number.isInteger(id) || !getRecipe(id)) return fail(400, { message: 'Rezept nicht gefunden' });
-		db.update(recipes).set({ lastCookedAt: new Date() }).where(eq(recipes.id, id)).run();
+		db.update(recipes)
+			.set({ lastCookedAt: new Date(), ...auditEdit(locals.user?.username) })
+			.where(eq(recipes.id, id))
+			.run();
 		return { cooked: true };
 	}
 };

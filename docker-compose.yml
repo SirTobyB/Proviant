@@ -14,3 +14,7 @@ services:
       # Zugangsdaten für den Picnic-Account
       PICNIC_USERNAME: ""
       PICNIC_PASSWORD: ""
+      # Erster Admin (nur beim allerersten Start angelegt)
+      ADMIN_USERNAME: "admin"
+      ADMIN_PASSWORD: "admin"
+      ADMIN_EMAIL: "admin@example.de"

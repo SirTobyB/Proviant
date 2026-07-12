@@ -25,7 +25,7 @@ function parseBooking(formData: FormData) {
 }
 
 export const actions: Actions = {
-	einbuchen: async ({ request }) => {
+	einbuchen: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const parsed = parseBooking(formData);
 		if ('error' in parsed) return fail(400, { message: parsed.error });
@@ -40,15 +40,15 @@ export const actions: Actions = {
 				? bestBeforeRaw
 				: null;
 
-		bookIn(parsed.article.id, locationId, parsed.quantity, bestBefore);
+		bookIn(parsed.article.id, locationId, parsed.quantity, bestBefore, locals.user?.username ?? null);
 		return { booked: 'in' as const, articleName: parsed.article.name, quantity: parsed.quantity };
 	},
 
-	ausbuchen: async ({ request }) => {
+	ausbuchen: async ({ request, locals }) => {
 		const parsed = parseBooking(await request.formData());
 		if ('error' in parsed) return fail(400, { message: parsed.error });
 
-		const booked = bookOut(parsed.article.id, parsed.quantity);
+		const booked = bookOut(parsed.article.id, parsed.quantity, locals.user?.username ?? null);
 		if (booked === 0) return fail(400, { message: 'Kein Bestand zum Ausbuchen vorhanden' });
 		return { booked: 'out' as const, articleName: parsed.article.name, quantity: booked };
 	}
