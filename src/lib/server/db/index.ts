@@ -52,8 +52,8 @@ function createDb() {
 	// Migrationen beim Start anwenden (Ordner ./drizzle liegt neben dem Build im Container)
 	migrate(db, { migrationsFolder: env.MIGRATIONS_DIR ?? './drizzle' });
 
-	// Feste Lagerorte einmalig anlegen
-	const locations = ['Küchenschrank', 'Kühlschrank', 'Gefrierschrank', 'Vorratsregal'];
+	// Feste Lagerorte einmalig anlegen (idempotent: neue kommen beim Start dazu)
+	const locations = ['Küchenschrank', 'Kühlschrank', 'Gefrierschrank', 'Vorratsregal', 'Getränkekeller'];
 	db.insert(schema.storageLocations)
 		.values(locations.map((name, i) => ({ name, sortOrder: i })))
 		.onConflictDoNothing()
