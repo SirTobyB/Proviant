@@ -10,8 +10,14 @@ import { env } from '$env/dynamic/private';
 import fs from 'node:fs';
 import path from 'node:path';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
+import {
+	extractRecipeTiles,
+	parseRecipeDetail,
+	type ParsedPicnicRecipe,
+	type PicnicRecipeTile
+} from './recipeImport';
 
-export type { DeliveryChecklistItem };
+export type { DeliveryChecklistItem, ParsedPicnicRecipe, PicnicRecipeTile };
 
 type Client = InstanceType<typeof PicnicClient>;
 type AddProductsItems = Parameters<Client['cart']['addProductsToCart']>[0];
@@ -154,4 +160,18 @@ export async function getDeliveryChecklist(deliveryId: string): Promise<Delivery
 	await ensureLoggedIn();
 	const detail = await getClient().delivery.getDelivery(deliveryId);
 	return aggregateChecklist(detail.orders);
+}
+
+/** Rezepte der Picnic-Rezeptseite (Kacheln mit ID und Name). */
+export async function listPicnicRecipes(): Promise<PicnicRecipeTile[]> {
+	await ensureLoggedIn();
+	const page = await getClient().recipe.getRecipesPage();
+	return extractRecipeTiles(page);
+}
+
+/** Detaildaten eines Picnic-Rezepts (Zutaten, Portionen, Schritte). */
+export async function getPicnicRecipeDetail(id: string, name?: string): Promise<ParsedPicnicRecipe> {
+	await ensureLoggedIn();
+	const page = await getClient().recipe.getRecipeDetailsPage(id);
+	return parseRecipeDetail(page, name);
 }

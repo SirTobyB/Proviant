@@ -3,6 +3,14 @@
 
 	let { data } = $props();
 
+	// Buchungsmenge je Artikel für die Schnellkorrektur (Default 1)
+	let quantities = $state<Record<number, number>>({});
+
+	function quantityFor(id: number): number {
+		const q = quantities[id];
+		return Number.isInteger(q) && q >= 1 ? q : 1;
+	}
+
 	function packageSize(amount: number | null, unit: string | null): string {
 		if (amount == null) return '';
 		return `${amount.toLocaleString('de-DE')} ${unit ?? ''}`.trim();
@@ -68,19 +76,31 @@
 						</span>
 					</span>
 				</a>
-				<!-- Schnell-Bestandskorrektur -->
+				<!-- Schnell-Bestandskorrektur: Menge (Default 1) wirkt auf − und + -->
 				<form method="POST" action="?/bookOut" use:enhance>
 					<input type="hidden" name="articleId" value={article.id} />
+					<input type="hidden" name="quantity" value={quantityFor(article.id)} />
 					<button type="submit" disabled={article.stock === 0} class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30" aria-label="Ausbuchen">−</button>
 				</form>
-				<div class="w-10 shrink-0 text-center">
-					<span class="block text-sm font-semibold {article.stock === 0 ? 'text-gray-400' : ''}">{article.stock}×</span>
+				<div class="w-14 shrink-0 text-center">
+					<input
+						type="number"
+						min="1"
+						max="999"
+						inputmode="numeric"
+						value={quantityFor(article.id)}
+						oninput={(e) => (quantities[article.id] = Number(e.currentTarget.value))}
+						aria-label="Buchungsmenge"
+						class="w-14 rounded-lg border-gray-300 px-1 py-1 text-center text-sm focus:border-green-600 focus:ring-green-600"
+					/>
+					<span class="mt-0.5 block text-xs font-semibold {article.stock === 0 ? 'text-gray-400' : 'text-gray-600'}">{article.stock}×</span>
 					{#if article.minStock > 0 && article.stock < article.minStock}
 						<span class="block text-[10px] text-amber-600">min. {article.minStock}</span>
 					{/if}
 				</div>
 				<form method="POST" action="?/bookIn" use:enhance>
 					<input type="hidden" name="articleId" value={article.id} />
+					<input type="hidden" name="quantity" value={quantityFor(article.id)} />
 					<button type="submit" class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Einbuchen">+</button>
 				</form>
 			</li>

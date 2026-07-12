@@ -40,24 +40,33 @@ function getArticle(formData: FormData) {
 	return Number.isInteger(id) ? db.select().from(articles).where(eq(articles.id, id)).get() : undefined;
 }
 
+/** Menge aus dem Formular (Default 1, max. 999). */
+function parseQuantity(formData: FormData): number {
+	const quantity = Number(formData.get('quantity'));
+	if (!Number.isInteger(quantity) || quantity < 1) return 1;
+	return Math.min(quantity, 999);
+}
+
 export const actions: Actions = {
-	// Schnell +1: in den Standard-Lagerort (oder ersten Lagerort), ohne MHD
+	// Schnell einbuchen: in den Standard-Lagerort (oder ersten Lagerort), ohne MHD
 	bookIn: async ({ request, locals }) => {
-		const article = getArticle(await request.formData());
+		const formData = await request.formData();
+		const article = getArticle(formData);
 		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
 		const locationId =
 			article.defaultLocationId ??
 			db.select({ id: storageLocations.id }).from(storageLocations).orderBy(storageLocations.sortOrder).get()?.id;
 		if (!locationId) return fail(400, { message: 'Kein Lagerort vorhanden' });
-		bookIn(article.id, locationId, 1, null, locals.user?.username ?? null);
+		bookIn(article.id, locationId, parseQuantity(formData), null, locals.user?.username ?? null);
 		return { adjusted: article.id };
 	},
 
-	// Schnell −1: FEFO (nächstes MHD zuerst)
+	// Schnell ausbuchen: FEFO (nächstes MHD zuerst)
 	bookOut: async ({ request, locals }) => {
-		const article = getArticle(await request.formData());
+		const formData = await request.formData();
+		const article = getArticle(formData);
 		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
-		bookOut(article.id, 1, locals.user?.username ?? null);
+		bookOut(article.id, parseQuantity(formData), locals.user?.username ?? null);
 		return { adjusted: article.id };
 	}
 };

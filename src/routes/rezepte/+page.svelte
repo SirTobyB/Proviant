@@ -24,8 +24,9 @@
 		<h1 class="text-2xl font-bold">Rezepte</h1>
 		<p class="mt-1 text-sm text-gray-500">{data.recipes.length} Rezepte</p>
 	</div>
-	<div class="flex shrink-0 gap-2">
+	<div class="flex shrink-0 flex-wrap justify-end gap-2">
 		<a href="/rezepte/vorschlag" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">🎲 Vorschlag</a>
+		<a href="/rezepte/import" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">⬇ Picnic-Import</a>
 		<a href="/rezepte/neu" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">+ Neu</a>
 	</div>
 </div>
