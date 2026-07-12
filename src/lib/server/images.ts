@@ -7,7 +7,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+// Smartphone-Fotos liegen oft bei 3–8 MB
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 const EXT_BY_MIME: Record<string, string> = {
 	'image/jpeg': 'jpg',

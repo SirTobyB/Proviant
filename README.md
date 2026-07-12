@@ -94,6 +94,7 @@ Check und Rezept-Warenkorb nicht.
 | `ADMIN_EMAIL`     | E-Mail des ersten Admins (optional)                    | —                             |
 | `PICNIC_USERNAME` | Picnic-Zugangsdaten für Warenkorb, Lieferungen, Suche  | —                             |
 | `PICNIC_PASSWORD` |                                                        | —                             |
+| `BODY_SIZE_LIMIT` | Max. Request-Größe (Foto-Uploads!)                     | `15M`                         |
 
 > **Passwörter mit Sonderzeichen** (`#`, `$` …) in `.env` und in der
 > `docker-compose*.yml` immer in Anführungszeichen setzen — ein unquotiertes `#`

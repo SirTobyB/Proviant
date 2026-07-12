@@ -60,7 +60,16 @@
 	let picnicResults = $state<PicnicResult[]>([]);
 	let picnicState = $state<'idle' | 'loading' | 'empty' | 'error'>('idle');
 	let picnicError = $state('');
+	let directPicnicId = $state('');
 	let submitting = $state(false);
+
+	function applyDirectPicnicId() {
+		const id = directPicnicId.trim();
+		if (!id) return;
+		picnicId = id;
+		directPicnicId = '';
+		picnicResults = [];
+	}
 
 	const previewSrc = $derived(
 		uploadPreview ||
@@ -327,6 +336,23 @@
 					{/each}
 				</ul>
 			{/if}
+			<!-- Alternative: Picnic-ID direkt eintragen (z.B. s1027848) -->
+			<div class="mt-3 flex gap-2 border-t border-gray-100 pt-3">
+				<input
+					type="text"
+					bind:value={directPicnicId}
+					placeholder="Oder Picnic-ID direkt (z.B. s1027848)"
+					class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
+				/>
+				<button
+					type="button"
+					onclick={applyDirectPicnicId}
+					disabled={!directPicnicId.trim()}
+					class="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+				>
+					Übernehmen
+				</button>
+			</div>
 		{/if}
 		<input type="hidden" name="picnicId" value={picnicId} />
 	</fieldset>

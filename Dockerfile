@@ -34,6 +34,9 @@ ENV NODE_ENV=production
 ENV DATABASE_URL=/data/lebensmittelkumpel.db
 ENV DATA_DIR=/data
 ENV PORT=3000
+# adapter-node begrenzt Request-Bodies (Default 512K) — Smartphone-Fotos
+# beim Artikel-/Rezeptbild-Upload brauchen mehr
+ENV BODY_SIZE_LIMIT=15M
 
 VOLUME /data
 EXPOSE 3000
