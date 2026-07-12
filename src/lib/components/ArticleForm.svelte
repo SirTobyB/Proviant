@@ -114,7 +114,7 @@
 				picnicState = 'error';
 				return;
 			}
-			picnicResults = data.results;
+			picnicResults = normalizePicnicResults(data.results ?? []);
 			picnicState = picnicResults.length === 0 ? 'empty' : 'idle';
 		} catch {
 			picnicError = 'Picnic-Suche fehlgeschlagen';
@@ -134,6 +134,20 @@
 		}
 		if (!uploadPreview && !imageUrl) picnicImageId = result.imageId;
 		picnicResults = [];
+	}
+
+	function normalizePicnicResults(results: PicnicResult[]) {
+		const seen = new Set<string>();
+		return results.filter((result) => {
+			const key = result.id || `${result.name}-${result.imageId}`;
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		});
+	}
+
+	function picnicResultKey(result: PicnicResult, index: number) {
+		return `${result.id || 'unknown'}-${result.name || 'unknown'}-${result.imageId || 'unknown'}-${index}`;
 	}
 
 	function onFileSelected(event: Event) {
@@ -313,7 +327,7 @@
 			{/if}
 			{#if picnicResults.length > 0}
 				<ul class="mt-3 divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200">
-					{#each picnicResults as result (result.id)}
+					{#each picnicResults as result, index (picnicResultKey(result, index))}
 						<li>
 							<button
 								type="button"

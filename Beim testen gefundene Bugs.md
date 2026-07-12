@@ -7,6 +7,12 @@
   Bildlimit auf 10 MB erhöht. A/B-verifiziert am Produktions-Build: ohne Limit
   413, mit Limit geht ein 2,5-MB-Upload durch. Fix greift nach dem nächsten
   `docker compose pull && up -d`.
+- ~~Bei der Artikelneuanlage bei der Picnic Suche führt z.B. der Suchbegriff "Körner Balance Sandwich" zu folgendem Fehler in der Browserkonsole: "Uncaught Error: https://svelte.dev/e/each_key_duplicate
+    Immutable 46
+    async* https://lebensmittel.tobiasbestier.de/artikel/neu:26
+    promise callback* https://lebensmittel.tobiasbestier.de/artikel/neu:25
+DQNwYvK2.js:1:1389"~~
+  - **✅ Behoben:** Die Picnic-Ergebnisse werden vor dem Rendern entdupliziert. Die Liste verwendet jetzt einen robusten, eindeutigen Key statt nur der Produkt-ID.
 
 # Optimierungen / Features
 
