@@ -76,5 +76,49 @@ export const actions: Actions = {
 
 		bookIn(article.id, locationId, quantity, bestBefore, locals.user?.username ?? null);
 		return { booked: true, articleId, quantity };
+	},
+
+	// Sichtprüfung: mehrere offene Positionen auf einmal einbuchen.
+	// items = [{ productId, quantity }] (die noch offenen, verknüpften Positionen).
+	// Jede Position landet im Standard-Lagerort ihres Artikels, sonst im Fallback.
+	confirmAll: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const fallbackLocationId = Number(formData.get('fallbackLocationId')) || null;
+		let requested: { productId: string; quantity: number }[] = [];
+		try {
+			const raw = JSON.parse(String(formData.get('items') ?? '[]'));
+			if (Array.isArray(raw)) requested = raw;
+		} catch {
+			return fail(400, { message: 'Ungültige Positionsliste' });
+		}
+
+		// Picnic-ID → eigener Artikel (mit Standard-Lagerort)
+		const linked = db
+			.select({
+				id: articles.id,
+				name: articles.name,
+				picnicId: articles.picnicId,
+				defaultLocationId: articles.defaultLocationId
+			})
+			.from(articles)
+			.all();
+		const byPicnicId = new Map(linked.filter((a) => a.picnicId).map((a) => [a.picnicId!, a]));
+
+		const user = locals.user?.username ?? null;
+		let booked = 0;
+		const noLocation: string[] = [];
+		for (const req of requested) {
+			const article = byPicnicId.get(String(req.productId));
+			const qty = Number(req.quantity);
+			if (!article || !Number.isInteger(qty) || qty < 1) continue;
+			const locationId = article.defaultLocationId ?? fallbackLocationId;
+			if (!locationId) {
+				noLocation.push(article.name);
+				continue;
+			}
+			bookIn(article.id, locationId, qty, null, user);
+			booked += qty;
+		}
+		return { confirmedAll: true, booked, noLocation };
 	}
 };

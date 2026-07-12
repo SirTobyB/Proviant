@@ -28,6 +28,12 @@
 	let unknownEan = $state('');
 	let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
+	// Sichtprüfung: alle offenen Positionen auf einmal bestätigen
+	let showBulk = $state(false);
+	// svelte-ignore state_referenced_locally
+	let bulkLocation = $state(data.locations[0] ? String(data.locations[0].id) : '');
+	const openCount = $derived(data.items.filter((i) => (checked[i.productId] ?? 0) < i.quantity).length);
+
 	const totalExpected = $derived(data.items.reduce((sum, i) => sum + i.quantity, 0));
 	const totalChecked = $derived(Object.values(checked).reduce((sum, n) => sum + n, 0));
 	const allDone = $derived(totalExpected > 0 && data.items.every((i) => (checked[i.productId] ?? 0) >= i.quantity));
@@ -96,6 +102,33 @@
 		}
 	}
 
+	// Sichtprüfung bestätigen: alle offenen, verknüpften Positionen auf einmal
+	// in ihren Standard-Lagerort (sonst Fallback) buchen; Rest nur abhaken.
+	async function confirmAll() {
+		const openLinked = data.items
+			.filter((i) => i.articleId && i.quantity - (checked[i.productId] ?? 0) > 0)
+			.map((i) => ({ productId: i.productId, quantity: i.quantity - (checked[i.productId] ?? 0) }));
+
+		const body = new FormData();
+		body.set('items', JSON.stringify(openLinked));
+		body.set('fallbackLocationId', bulkLocation);
+		const response = await fetch('?/confirmAll', { method: 'POST', body });
+		const result = deserialize(await response.text());
+		if (result.type === 'success') {
+			// Alles als gesehen markieren (verknüpft = eingebucht, unverknüpft = nur bestätigt)
+			for (const i of data.items) checked[i.productId] = i.quantity;
+			const data_ = result.data as { booked: number; noLocation: string[] };
+			const suffix = data_.noLocation?.length
+				? ` · ohne Lagerort übersprungen: ${data_.noLocation.join(', ')}`
+				: '';
+			showToast(`Sichtprüfung bestätigt — ${data_.booked} Gebinde eingebucht${suffix}`);
+			showBulk = false;
+			resetScanner();
+		} else {
+			showToast('Sammelbestätigung fehlgeschlagen', 'warn');
+		}
+	}
+
 	// Manuelles Abhaken (ohne Einbuchen) – für Positionen ohne Artikel-Verknüpfung
 	function bump(item: Item, delta: number) {
 		const next = Math.max(0, Math.min(item.quantity, (checked[item.productId] ?? 0) + delta));
@@ -123,6 +156,40 @@
 	<div class="mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
 		<div class="h-full rounded-full bg-green-600 transition-all" style={`width: ${totalExpected ? (totalChecked / totalExpected) * 100 : 0}%`}></div>
 	</div>
+
+	<!-- Sichtprüfung: alles auf einmal bestätigen -->
+	{#if !allDone}
+		{#if !showBulk}
+			<button
+				type="button"
+				onclick={() => (showBulk = true)}
+				class="mt-3 w-full rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
+			>
+				✓ Sichtprüfung: alle {openCount} offenen Positionen bestätigen
+			</button>
+		{:else}
+			<div class="mt-3 rounded-xl border border-gray-200 bg-white p-4">
+				<p class="text-sm text-gray-700">
+					Alle offenen Positionen als vorhanden bestätigen und einbuchen. Jeder Artikel landet in
+					seinem Standard-Lagerort; Artikel ohne Standard kommen in den gewählten Lagerort.
+				</p>
+				<label for="bulkLoc" class="mt-3 block text-xs font-medium text-gray-500">Lagerort für Artikel ohne Standard</label>
+				<select id="bulkLoc" bind:value={bulkLocation} class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600">
+					{#each data.locations as location (location.id)}
+						<option value={String(location.id)}>{location.name}</option>
+					{/each}
+				</select>
+				<div class="mt-3 flex gap-2">
+					<button type="button" onclick={confirmAll} class="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
+						Alles bestätigen &amp; einbuchen
+					</button>
+					<button type="button" onclick={() => (showBulk = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+						Abbrechen
+					</button>
+				</div>
+			</div>
+		{/if}
+	{/if}
 </div>
 
 {#if toast}
