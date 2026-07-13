@@ -1,2 +1,159 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
+
+/*
+ * iOS-Safari zoomt beim Fokussieren von Eingabefeldern mit Schriftgröße < 16px
+ * automatisch hinein. Auf schmalen Geräten (iPhone 13 mini, Galaxy A34)
+ * bekommen Formularfelder deshalb mindestens 16px.
+ */
+@media (max-width: 767px) {
+	input,
+	select,
+	textarea {
+		font-size: 16px;
+	}
+}
+
+/*
+ * Dark Theme über prefers-color-scheme: gezielte Overrides der verwendeten
+ * Tailwind-Utilities (bewusst NICHT die --color-*-Variablen global umbiegen —
+ * das würde z.B. text-white auf Buttons mit abdunkeln).
+ */
+@media (prefers-color-scheme: dark) {
+	:root {
+		color-scheme: dark;
+	}
+
+	/* Flächen */
+	.bg-gray-50 {
+		background-color: #0b111a;
+	}
+	.bg-white {
+		background-color: #151d29;
+	}
+	.bg-gray-100 {
+		background-color: #26303f;
+	}
+	.bg-gray-200 {
+		background-color: #2e3a4b;
+	}
+	.bg-green-50 {
+		background-color: #12291b;
+	}
+	.bg-green-50\/50 {
+		background-color: #12291b80;
+	}
+	.bg-green-100 {
+		background-color: #14532d;
+	}
+	.bg-amber-50 {
+		background-color: #33270c;
+	}
+	.bg-amber-100 {
+		background-color: #453312;
+	}
+	.bg-red-50 {
+		background-color: #3a1214;
+	}
+	.bg-red-100 {
+		background-color: #4c191c;
+	}
+	.hover\:bg-gray-50:hover {
+		background-color: #1c2635;
+	}
+	.hover\:bg-gray-100:hover {
+		background-color: #26303f;
+	}
+	.hover\:bg-green-50:hover {
+		background-color: #143020;
+	}
+	.hover\:bg-red-100:hover {
+		background-color: #4c191c;
+	}
+	.hover\:bg-gray-200:hover {
+		background-color: #2e3a4b;
+	}
+
+	/* Ränder */
+	.border-gray-100 {
+		border-color: #232d3b;
+	}
+	.border-gray-200 {
+		border-color: #2e3a4b;
+	}
+	.border-gray-300 {
+		border-color: #3d4a5d;
+	}
+	.border-green-200 {
+		border-color: #1d4a2e;
+	}
+	.border-red-200 {
+		border-color: #6b2126;
+	}
+	.divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+		border-color: #232d3b;
+	}
+	.divide-gray-50 > :not([hidden]) ~ :not([hidden]) {
+		border-color: #1c2635;
+	}
+
+	/* Text */
+	.text-gray-900,
+	body {
+		color: #e8ecf1;
+	}
+	.text-gray-700 {
+		color: #c4cdd8;
+	}
+	.text-gray-600 {
+		color: #a9b4c2;
+	}
+	.text-gray-500 {
+		color: #8b98a9;
+	}
+	.text-gray-400 {
+		color: #67758a;
+	}
+	.text-green-700 {
+		color: #4ade80;
+	}
+	.text-green-800 {
+		color: #86efac;
+	}
+	.text-green-500 {
+		color: #34d97b;
+	}
+	.text-amber-600 {
+		color: #fbbf24;
+	}
+	.text-amber-700,
+	.text-amber-800 {
+		color: #fcd34d;
+	}
+	.text-red-600 {
+		color: #f87171;
+	}
+	.text-red-700,
+	.text-red-800 {
+		color: #fca5a5;
+	}
+
+	/* Formularfelder (das forms-Plugin setzt hartes Weiß) */
+	input,
+	select,
+	textarea {
+		background-color: #1c2635;
+		color: #e8ecf1;
+		border-color: #3d4a5d;
+	}
+	input::placeholder,
+	textarea::placeholder {
+		color: #67758a;
+	}
+
+	/* Produktbilder: Picnic/OFF-Fotos haben weißen Hintergrund — heller Rahmen
+	   dahinter, damit freigestellte Bilder nicht „schweben" */
+	img.bg-white {
+		background-color: #f4f5f7;
+	}
+}

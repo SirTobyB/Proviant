@@ -120,8 +120,8 @@
 		</aside>
 
 		<div class="flex min-h-dvh flex-1 flex-col">
-			<!-- Header (Mobile) -->
-			<header class="flex items-center justify-between gap-2 border-b border-gray-200 bg-white px-4 py-3 md:hidden">
+			<!-- Header (Mobile); pt berücksichtigt die iPhone-Notch im Standalone-Modus -->
+			<header class="flex items-center justify-between gap-2 border-b border-gray-200 bg-white px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
 				<div class="flex items-center gap-2">
 					<img src="/icon.svg" alt="" class="h-7 w-7" />
 					<span class="text-base font-bold">LebensmittelKumpel</span>
