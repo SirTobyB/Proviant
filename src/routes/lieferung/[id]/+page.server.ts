@@ -1,6 +1,7 @@
 import { db } from '$lib/server/db';
 import { articles, storageLocations } from '$lib/server/db/schema';
 import { getConnectionState, getDeliveryChecklist } from '$lib/server/picnic';
+import { importArticleFromPicnic } from '$lib/server/articleImport';
 import { bookIn } from '$lib/server/stock';
 import { eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
@@ -120,5 +121,22 @@ export const actions: Actions = {
 			booked += qty;
 		}
 		return { confirmedAll: true, booked, noLocation };
+	},
+
+	// Nicht verknüpfte Lieferposition direkt als Artikel importieren
+	importArticle: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const productId = String(formData.get('productId') ?? '').trim();
+		const name = String(formData.get('name') ?? '').trim();
+		const unitQuantity = String(formData.get('unitQuantity') ?? '');
+		const imageId = String(formData.get('imageId') ?? '') || null;
+		if (!productId || !name) return fail(400, { message: 'Ungültiges Produkt' });
+
+		const result = await importArticleFromPicnic(
+			{ productId, name, unitQuantity, imageId },
+			null,
+			locals.user?.username ?? null
+		);
+		return { articleImported: name, created: result.created };
 	}
 };

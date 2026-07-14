@@ -1,8 +1,29 @@
 <script lang="ts">
 	import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
 	import { deserialize } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
 
 	let { data } = $props();
+
+	// Einzelimport einer nicht verknüpften Position als Artikel
+	let importingProduct = $state<string | null>(null);
+	async function importArticle(item: Item) {
+		importingProduct = item.productId;
+		const body = new FormData();
+		body.set('productId', item.productId);
+		body.set('name', item.name);
+		body.set('unitQuantity', item.unitQuantity);
+		body.set('imageId', item.imageId ?? '');
+		const response = await fetch('?/importArticle', { method: 'POST', body });
+		const result = deserialize(await response.text());
+		importingProduct = null;
+		if (result.type === 'success') {
+			showToast(`„${item.name}" als Artikel angelegt`);
+			await invalidateAll(); // Position erscheint jetzt als verknüpft
+		} else {
+			showToast('Import fehlgeschlagen', 'warn');
+		}
+	}
 
 	type Item = (typeof data.items)[number];
 
@@ -271,6 +292,12 @@
 					{item.unitQuantity}
 					{#if !item.articleId}
 						· <span class="text-amber-600">nicht verknüpft</span>
+						· <button
+								type="button"
+								onclick={() => importArticle(item)}
+								disabled={importingProduct !== null}
+								class="text-green-700 underline disabled:opacity-50"
+							>{importingProduct === item.productId ? 'importiere …' : '+ Artikel'}</button>
 					{/if}
 				</div>
 			</div>

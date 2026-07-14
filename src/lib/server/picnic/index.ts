@@ -162,6 +162,55 @@ export async function getDeliveryChecklist(deliveryId: string): Promise<Delivery
 	return aggregateChecklist(detail.orders);
 }
 
+export type OrderedProduct = {
+	productId: string;
+	name: string;
+	unitQuantity: string;
+	imageId: string | null;
+	/** In wie vielen der betrachteten Lieferungen das Produkt vorkam */
+	timesOrdered: number;
+	/** Lieferdatum des letzten Kaufs (ISO) */
+	lastOrderedAt: string | null;
+};
+
+/**
+ * Aggregiert alle Produkte aus den letzten Lieferungen (Quelle für den
+ * Artikel-Import). Ein API-Call pro Lieferung — deshalb begrenzt.
+ */
+export async function listOrderedProducts(deliveryLimit = 10): Promise<OrderedProduct[]> {
+	await ensureLoggedIn();
+	const deliveries = await getRecentDeliveries(deliveryLimit);
+
+	const byProduct = new Map<string, OrderedProduct>();
+	for (const delivery of deliveries) {
+		let items: DeliveryChecklistItem[];
+		try {
+			items = await getDeliveryChecklist(delivery.id);
+		} catch {
+			continue; // einzelne fehlerhafte Lieferungen überspringen
+		}
+		for (const item of items) {
+			const existing = byProduct.get(item.productId);
+			if (existing) {
+				existing.timesOrdered += 1;
+			} else {
+				byProduct.set(item.productId, {
+					productId: item.productId,
+					name: item.name,
+					unitQuantity: item.unitQuantity,
+					imageId: item.imageId,
+					timesOrdered: 1,
+					lastOrderedAt: delivery.deliveryStart
+				});
+			}
+		}
+	}
+	// Häufig Gekauftes zuerst, dann alphabetisch
+	return [...byProduct.values()].sort(
+		(a, b) => b.timesOrdered - a.timesOrdered || a.name.localeCompare(b.name, 'de')
+	);
+}
+
 /** Rezepte der Picnic-Rezeptseite (Kacheln mit ID und Name). */
 export async function listPicnicRecipes(): Promise<PicnicRecipeTile[]> {
 	await ensureLoggedIn();

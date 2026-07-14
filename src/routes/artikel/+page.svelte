@@ -24,12 +24,20 @@
 		<h1 class="text-2xl font-bold">Artikel</h1>
 		<p class="mt-1 text-sm text-gray-500">{data.articles.length} Artikel im Stamm</p>
 	</div>
-	<a
-		href="/artikel/neu"
-		class="shrink-0 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
-	>
-		+ Neuer Artikel
-	</a>
+	<div class="flex shrink-0 flex-wrap justify-end gap-2">
+		<a
+			href="/artikel/import"
+			class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+		>
+			⬇ Picnic-Import
+		</a>
+		<a
+			href="/artikel/neu"
+			class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+		>
+			+ Neuer Artikel
+		</a>
+	</div>
 </div>
 
 <form method="GET" class="mt-4 max-w-md">
