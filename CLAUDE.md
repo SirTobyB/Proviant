@@ -31,12 +31,16 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
   - `db/` – Drizzle-Setup und Schema. `db/index.ts` **wendet beim Start
     Migrationen an** (`migrate`) und seedet Lagerorte + ersten Admin idempotent.
   - `picnic/` – **isolierter Adapter** um die inoffizielle `picnic-api`. Der
-    Rest der App importiert Picnic **nur von hier**. `checklist.ts` ist die reine
-    Normalisierung von Lieferdaten (ohne SvelteKit-Import, eigenständig testbar).
+    Rest der App importiert Picnic **nur von hier**. Reine, eigenständig
+    testbare Untermodule (ohne SvelteKit-Import): `checklist.ts`
+    (Lieferdaten-Normalisierung), `recipeImport.ts` (Parser für die
+    undokumentierten PML-/Fusion-Rezeptseiten), `unitQuantity.ts`
+    (Gebindegrößen wie „6er Pack", „2 x 125g").
   - `auth.ts` / `password.ts` – Sessions (DB-gestützt, httpOnly-Cookie) und
     scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder.
   - `stock.ts` (Buchungen, FEFO), `tags.ts`, `recipeData.ts`, `articleForm.ts`,
-    `recipeForm.ts`, `images.ts`.
+    `recipeForm.ts`, `articleImport.ts` (Artikel aus Picnic-Produkt, mit
+    picnicId-Dedupe), `images.ts`.
 - **Reine Helfer** in `src/lib/` (client- und servertauglich): `units.ts`
   (Mengen/Aufrunden), `mhd.ts` (Restlaufzeit/Ampel), `suggest.ts`
   (gewichteter Rezeptvorschlag).
@@ -64,6 +68,20 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
 - **Picnic:** Nur Warenkorb befüllen, **nie automatisch bestellen** — der
   Checkout bleibt in der Picnic-App. Erststart braucht Login + SMS-2FA; der
   Auth-Key liegt in `DATA_DIR/picnic-auth-key` (übersteht Neustarts).
+  Grenzen der API (live geprüft): Suche findet **keine EANs**, Produktdetails
+  enthalten **keine EAN/GTIN**, Rezept**bilder** sind nicht öffentlich abrufbar
+  (S3 403) — Produktbilder dagegen schon. Die Rezept-/Übersichtsseiten sind
+  dynamische PML-Strukturen; Parser dafür heuristisch und **defensiv** halten
+  (lieber leer zurückgeben als Datenmüll importieren).
+- **Dark Theme:** implementiert als gezielte Utility-Overrides in
+  `src/routes/layout.css` unter `prefers-color-scheme: dark` (bewusst **nicht**
+  die `--color-*`-Variablen global umbiegen — `text-white` auf Buttons muss
+  hell bleiben). Neue Seiten in der bestehenden Farbwelt halten
+  (gray/white/green/amber/red); neue Farbtöne brauchen einen Dark-Override.
+- **Mobile (iPhone 13 mini / Galaxy A34):** `viewport-fit=cover` +
+  Safe-Area-Paddings im Layout; Eingabefelder unter 768px mindestens **16px**
+  Schrift (sonst zoomt iOS-Safari beim Fokussieren). Foto-Uploads brauchen
+  `BODY_SIZE_LIMIT` (Default 512K von adapter-node → im Image auf 15M gesetzt).
 - **Env:** Passwörter mit `#`/`$` in `.env` und `docker-compose*.yml` **quoten**
   (unquotiertes `#` wird als Kommentar abgeschnitten). Die App liest die `.env`
   im Projektstamm. Erster Admin via `ADMIN_USERNAME`/`ADMIN_PASSWORD`.
@@ -72,3 +90,7 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
   aufräumen.
 - **Deployment:** Push auf `main` baut per GitHub Actions das Multi-Arch-Image
   nach GHCR. `docker-compose.prod.yml` (Traefik) fürs Ziehen des Images.
+- **„Beim testen gefundene Bugs.md":** Kommunikationskanal des Nutzers — dort
+  landen beim Testen gefundene Bugs und Feature-Wünsche. Beim Abarbeiten den
+  Eintrag durchstreichen und mit **✅ Behoben/Umgesetzt** samt kurzer Erklärung
+  versehen, nicht löschen.

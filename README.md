@@ -3,7 +3,7 @@
 Selbstgehostete Webapp zur Lebensmittelverwaltung der Familie: Lagerverwaltung
 für Vorrat in Keller und Küche, Bestellvorschläge und Lieferungs-Check über den
 Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
-(PWA), mit Desktop-Ansicht.
+(PWA, hell & dunkel je nach Systemeinstellung), mit Desktop-Ansicht.
 
 ## Funktionen
 
@@ -14,10 +14,15 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
 - **Lagerverwaltung** — Bestände in fünf Lagerorten (Küchenschrank, Kühlschrank,
   Gefrierschrank, Vorratsregal, Getränkekeller), geführt als Chargen mit eigenem
   MHD. Ein-/Ausbuchen per Barcode-Scan (FEFO beim Ausbuchen), MHD-Ampel und
-  „Läuft bald ab"-Ansicht. Schnelle +/−-Korrektur direkt in der Artikelliste.
+  „Läuft bald ab"-Ansicht. Schnelle +/−-Korrektur mit frei wählbarer Menge
+  direkt in der Artikelliste.
 - **Artikelstamm** — Name, Bild, Gebindegröße mit Maßeinheit, EAN, optionale
-  Picnic-Artikel-ID, Mindestbestand und Standard-Lagerort. Neuanlage per
-  Barcode-Scan, Vorbefüllung über Open Food Facts und Picnic-Produktsuche.
+  Picnic-Artikel-ID (Suche oder Direkteingabe), Mindestbestand und
+  Standard-Lagerort. Neuanlage per Barcode-Scan, Vorbefüllung über
+  Open Food Facts und Picnic-Produktsuche. **Import aus Bestellungen:**
+  übernimmt Produkte aus den letzten Picnic-Lieferungen samt Bild,
+  Gebindegröße und Verknüpfung (einzeln beim Auspacken oder gesammelt
+  unter *Artikel → Picnic-Import*; EAN liefert Picnic nicht).
 - **Bestellvorschläge** — Artikel unter Mindestbestand landen auf der
   Vorschlagsliste und wandern nach Bestätigung in den Picnic-Warenkorb
   ([picnic-api](https://github.com/MRVDH/picnic-api), inoffiziell). Bestellt
@@ -25,17 +30,25 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
 - **Lieferungs-Check** — Beim Auspacken einer Picnic-Lieferung: Positionen per
   Barcode scannen (matcht über die Picnic-ID) und direkt in den Ziel-Lagerort
   einbuchen, oder nach Sichtprüfung alle offenen Positionen auf einmal
-  bestätigen. Zeigt Produktbilder aus Picnic.
+  bestätigen. Zeigt Produktbilder aus Picnic; unbekannte Positionen lassen
+  sich mit einem Tap als Artikel anlegen.
 - **Rezepte** — warme Mahlzeiten und Kuchen, Zutaten verknüpft mit dem
   Artikelstamm oder als Freitext, freie Tags. Kochbarkeits-Check gegen den
   Bestand („Was kann ich heute kochen?"), Portionsskalierung und „Fehlende
   Zutaten in den Picnic-Warenkorb" (aufgerundet auf Gebindegrößen). Zufälliger
-  Rezeptvorschlag mit 2-Wochen-Sperre für kürzlich Gekochtes, optional nach Tags.
+  Rezeptvorschlag mit 2-Wochen-Sperre für kürzlich Gekochtes, optional nach
+  Tags. **Import aus Picnic:** übernimmt Rezepte der Picnic-Rezeptseite mit
+  Portionen, Zutaten, Schritten und Tipp (*Rezepte → Picnic-Import*).
 
 ## Stack
 
 SvelteKit (adapter-node) · TypeScript · SQLite (better-sqlite3 + Drizzle ORM) ·
 Tailwind CSS · PWA · Docker (amd64 + arm64)
+
+Optimiert für schmale Smartphones (iPhone 13 mini, Galaxy A34): Safe-Areas
+für Notch/Home-Indicator, 16px-Eingabefelder gegen den iOS-Auto-Zoom,
+Homescreen-Icon für iOS und Android. Das Dark Theme folgt automatisch der
+Systemeinstellung des Geräts.
 
 ## Entwicklung
 
