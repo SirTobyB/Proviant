@@ -13,8 +13,7 @@
 		imagePath: data.recipe.imagePath,
 		tags: data.tags,
 		ingredients: data.ingredients.map((i) => ({
-			articleId: i.articleId,
-			articleName: i.articleName,
+			articles: i.articles.map((a) => ({ id: a.id, name: a.name })),
 			freeText: i.freeText,
 			amount: i.amount,
 			unit: i.unit

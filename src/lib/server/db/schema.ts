@@ -97,7 +97,7 @@ export const recipes = sqliteTable('recipes', {
 });
 
 /**
- * Zutaten: bevorzugt Verknüpfung auf den Artikelstamm (articleId),
+ * Zutaten: bevorzugt Verknüpfung auf den Artikelstamm (siehe recipeIngredientArticles),
  * Freitext (freeText) als Fallback für Frisches ohne Stammdaten.
  */
 export const recipeIngredients = sqliteTable('recipe_ingredients', {
@@ -105,7 +105,6 @@ export const recipeIngredients = sqliteTable('recipe_ingredients', {
 	recipeId: integer('recipe_id')
 		.notNull()
 		.references(() => recipes.id, { onDelete: 'cascade' }),
-	articleId: integer('article_id').references(() => articles.id, { onDelete: 'set null' }),
 	freeText: text('free_text'),
 	/** Benötigte Menge in der Einheit `unit` (nicht Gebinde!) */
 	amount: real('amount'),
@@ -113,6 +112,27 @@ export const recipeIngredients = sqliteTable('recipe_ingredients', {
 	sortOrder: integer('sort_order').notNull().default(0),
 	...auditFull()
 });
+
+/**
+ * Akzeptierte Alternativartikel je Zutat (z.B. mehrere Eier-Sorten für eine
+ * "Eier"-Zutat) — bei der Kochbarkeits-Prüfung wird der Bestand aller
+ * verknüpften Artikel zusammengezählt. Link-Tabelle, nur Anlage-Audit.
+ */
+export const recipeIngredientArticles = sqliteTable(
+	'recipe_ingredient_articles',
+	{
+		recipeIngredientId: integer('recipe_ingredient_id')
+			.notNull()
+			.references(() => recipeIngredients.id, { onDelete: 'cascade' }),
+		articleId: integer('article_id')
+			.notNull()
+			.references(() => articles.id, { onDelete: 'cascade' }),
+		sortOrder: integer('sort_order').notNull().default(0),
+		createdAt: createdAtCol(),
+		createdBy: text('created_by')
+	},
+	(table) => [primaryKey({ columns: [table.recipeIngredientId, table.articleId] })]
+);
 
 /** Frei vergebbare Rezept-Tags (z.B. „vegetarisch", „schnell", „deftig"). */
 export const tags = sqliteTable('tags', {

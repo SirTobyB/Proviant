@@ -5,7 +5,8 @@
 import { saveImageFromUpload } from '$lib/server/images';
 
 export type ParsedIngredient = {
-	articleId: number | null;
+	/** Akzeptierte Artikel (Hauptartikel + Alternativen), in erfasster Reihenfolge. */
+	articleIds: number[];
 	freeText: string | null;
 	amount: number | null;
 	unit: string | null;
@@ -57,8 +58,9 @@ export async function parseRecipeForm(formData: FormData): Promise<RecipeFormRes
 		if (Array.isArray(raw)) {
 			ingredients = raw
 				.map((row: Record<string, unknown>, index: number) => {
-					const articleId =
-						row.articleId != null && row.articleId !== '' ? Number(row.articleId) : null;
+					const articleIds = Array.isArray(row.articleIds)
+						? [...new Set(row.articleIds.map(Number).filter((n) => Number.isInteger(n)))]
+						: [];
 					const freeText =
 						typeof row.freeText === 'string' && row.freeText.trim() !== ''
 							? row.freeText.trim()
@@ -68,10 +70,10 @@ export async function parseRecipeForm(formData: FormData): Promise<RecipeFormRes
 							? Number(row.amount)
 							: null;
 					const unit = typeof row.unit === 'string' && row.unit.trim() !== '' ? row.unit.trim() : null;
-					return { articleId, freeText, amount, unit, sortOrder: index };
+					return { articleIds, freeText, amount, unit, sortOrder: index };
 				})
 				// Zeilen ohne jegliche Angabe verwerfen
-				.filter((row) => row.articleId != null || row.freeText != null);
+				.filter((row) => row.articleIds.length > 0 || row.freeText != null);
 		}
 	} catch {
 		return {

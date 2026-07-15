@@ -33,48 +33,74 @@ export type CoverageResult = {
 	comparable: boolean;
 	/** Noch benötigte Gebinde (auf ganze Packungen aufgerundet), 0 wenn gedeckt. */
 	neededPackages: number;
+	/** Picnic-Artikel für die fehlende Menge (erster kompatibler Alternativartikel mit Picnic-Verknüpfung). */
+	orderPicnicId: string | null;
+};
+
+export type IngredientArticleStock = {
+	packageAmount: number | null;
+	packageUnit: string | null;
+	stockPackages: number;
+	picnicId: string | null;
 };
 
 /**
- * Prüft, ob der Vorrat eines Artikels den Bedarf einer Zutat deckt, und berechnet
- * die noch zu bestellenden Gebinde (aufgerundet, Vorrat abgezogen).
+ * Prüft, ob der (zusammengezählte) Vorrat aller akzeptierten Alternativartikel
+ * einer Zutat den Bedarf deckt, und berechnet die noch zu bestellenden Gebinde
+ * des ersten kompatiblen Artikels mit Picnic-Verknüpfung.
  *
  * @param requiredAmount Bedarf laut Rezept (bereits auf Portionen skaliert)
  * @param requiredUnit   Einheit des Bedarfs
- * @param packageAmount  Gebindegröße des verknüpften Artikels
- * @param packageUnit    Einheit der Gebindegröße
- * @param stockPackages  Anzahl Gebinde im Bestand
+ * @param articles       Akzeptierte Alternativartikel mit Gebindegröße und Bestand
  */
-export function coverage(
+export function coverageMulti(
 	requiredAmount: number,
 	requiredUnit: string | null,
-	packageAmount: number | null,
-	packageUnit: string | null,
-	stockPackages: number
+	articles: IngredientArticleStock[]
 ): CoverageResult {
 	const requiredBase = toBase(requiredAmount, requiredUnit);
-	const packageBase = packageAmount != null ? toBase(packageAmount, packageUnit) : null;
-
-	// Vergleich nur möglich, wenn beide Seiten dieselbe Einheitenfamilie haben
-	const comparable =
-		requiredBase != null &&
-		packageBase != null &&
-		packageBase > 0 &&
-		unitFamily(requiredUnit) === unitFamily(packageUnit);
-
-	if (!comparable) {
-		return { covered: false, comparable: false, neededPackages: 0 };
+	const requiredFamily = unitFamily(requiredUnit);
+	if (requiredBase == null || requiredFamily == null) {
+		return { covered: false, comparable: false, neededPackages: 0, orderPicnicId: null };
 	}
 
-	const availableBase = packageBase! * stockPackages;
-	const missingBase = requiredBase! - availableBase;
+	let availableBase = 0;
+	let comparable = false;
+	// Referenz für die Gebinde-Rundung (erster kompatibler Artikel); für die
+	// tatsächliche Bestellung zählt nur ein Artikel mit Picnic-Verknüpfung.
+	let referenceArticle: IngredientArticleStock | null = null;
+	let orderArticle: IngredientArticleStock | null = null;
+
+	// Bestand aller Alternativartikel mit passender Einheitenfamilie zusammenzählen.
+	for (const article of articles) {
+		const packageBase =
+			article.packageAmount != null ? toBase(article.packageAmount, article.packageUnit) : null;
+		if (packageBase == null || packageBase <= 0 || unitFamily(article.packageUnit) !== requiredFamily) {
+			continue;
+		}
+		comparable = true;
+		availableBase += packageBase * article.stockPackages;
+		if (referenceArticle == null) referenceArticle = article;
+		if (orderArticle == null && article.picnicId) orderArticle = article;
+	}
+
+	if (!comparable || !referenceArticle) {
+		return { covered: false, comparable: false, neededPackages: 0, orderPicnicId: null };
+	}
+
+	const missingBase = requiredBase - availableBase;
 	if (missingBase <= 0) {
-		return { covered: true, comparable: true, neededPackages: 0 };
+		return { covered: true, comparable: true, neededPackages: 0, orderPicnicId: orderArticle?.picnicId ?? null };
 	}
+	// Gebindegröße für die Rundung: bevorzugt der bestellbare Artikel (damit die
+	// Warenkorb-Menge stimmt), sonst der erste kompatible Artikel (nur Anzeige).
+	const sizingArticle = orderArticle ?? referenceArticle;
+	const sizingPackageBase = toBase(sizingArticle.packageAmount!, sizingArticle.packageUnit)!;
 	return {
 		covered: false,
 		comparable: true,
-		neededPackages: Math.ceil(missingBase / packageBase!)
+		neededPackages: Math.ceil(missingBase / sizingPackageBase),
+		orderPicnicId: orderArticle?.picnicId ?? null
 	};
 }
 

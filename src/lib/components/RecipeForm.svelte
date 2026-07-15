@@ -8,9 +8,10 @@
 		unit: string | null;
 		picnicId: string | null;
 	};
+	type ArticleRef = { id: number; name: string };
 	type IngredientRow = {
-		articleId: number | null;
-		articleName: string | null;
+		/** Akzeptierte Artikel (Hauptartikel + Alternativen). */
+		articles: ArticleRef[];
 		freeText: string | null;
 		amount: string;
 		unit: string | null;
@@ -23,8 +24,7 @@
 		imagePath?: string | null;
 		tags?: string[];
 		ingredients?: {
-			articleId: number | null;
-			articleName: string | null;
+			articles: ArticleRef[];
 			freeText: string | null;
 			amount: number | null;
 			unit: string | null;
@@ -88,14 +88,13 @@
 
 	let rows = $state<IngredientRow[]>(
 		(initial.ingredients ?? []).map((i) => ({
-			articleId: i.articleId,
-			articleName: i.articleName,
+			articles: [...i.articles],
 			freeText: i.freeText,
 			amount: i.amount != null ? String(i.amount) : '',
 			unit: i.unit
 		}))
 	);
-	if (rows.length === 0) rows.push({ articleId: null, articleName: null, freeText: null, amount: '', unit: null });
+	if (rows.length === 0) rows.push({ articles: [], freeText: null, amount: '', unit: null });
 
 	// Artikel-Suche je Zeile
 	let searchIndex = $state<number | null>(null);
@@ -107,8 +106,8 @@
 	const ingredientsJson = $derived(
 		JSON.stringify(
 			rows.map((r) => ({
-				articleId: r.articleId,
-				freeText: r.articleId ? null : r.freeText,
+				articleIds: r.articles.map((a) => a.id),
+				freeText: r.articles.length > 0 ? null : r.freeText,
 				amount: r.amount,
 				unit: r.unit
 			}))
@@ -116,7 +115,7 @@
 	);
 
 	function addRow() {
-		rows.push({ articleId: null, articleName: null, freeText: null, amount: '', unit: null });
+		rows.push({ articles: [], freeText: null, amount: '', unit: null });
 	}
 	function removeRow(index: number) {
 		rows.splice(index, 1);
@@ -125,7 +124,7 @@
 
 	async function openSearch(index: number) {
 		searchIndex = index;
-		searchQuery = rows[index].articleName ?? rows[index].freeText ?? '';
+		searchQuery = rows[index].freeText ?? '';
 		searchResults = [];
 		if (searchQuery) await runSearch();
 	}
@@ -141,25 +140,24 @@
 	}
 
 	function pickArticle(index: number, article: ArticleHit) {
-		rows[index].articleId = article.id;
-		rows[index].articleName = article.name;
+		if (!rows[index].articles.some((a) => a.id === article.id)) {
+			rows[index].articles.push({ id: article.id, name: article.name });
+		}
 		rows[index].freeText = null;
 		if (!rows[index].unit && article.unit) rows[index].unit = article.unit;
 		searchIndex = null;
+		searchQuery = '';
 		searchResults = [];
 	}
 
 	function useFreeText(index: number) {
-		rows[index].articleId = null;
-		rows[index].articleName = null;
 		rows[index].freeText = searchQuery.trim() || rows[index].freeText;
 		searchIndex = null;
 		searchResults = [];
 	}
 
-	function clearLink(index: number) {
-		rows[index].articleId = null;
-		rows[index].articleName = null;
+	function removeArticle(index: number, articleId: number) {
+		rows[index].articles = rows[index].articles.filter((a) => a.id !== articleId);
 	}
 
 	function onFileSelected(event: Event) {
@@ -204,13 +202,37 @@
 		<div class="mt-2 space-y-2">
 			{#each rows as row, index (index)}
 				<div class="rounded-lg border border-gray-200 bg-white p-2">
-					<div class="flex items-center gap-2">
+					<div class="flex items-start gap-2">
 						<div class="min-w-0 flex-1">
-							{#if row.articleId}
-								<span class="inline-flex items-center gap-1 rounded bg-green-50 px-2 py-1 text-sm text-green-700">
-									{row.articleName}
-									<button type="button" onclick={() => clearLink(index)} class="text-green-500 hover:text-green-700" aria-label="Verknüpfung lösen">×</button>
-								</span>
+							{#if row.articles.length > 0}
+								<div class="flex flex-wrap gap-1">
+									{#each row.articles as art (art.id)}
+										<span class="inline-flex items-center gap-1 rounded bg-green-50 px-2 py-1 text-sm text-green-700">
+											{art.name}
+											<button type="button" onclick={() => removeArticle(index, art.id)} class="text-green-500 hover:text-green-700" aria-label="Artikel entfernen">×</button>
+										</span>
+									{/each}
+								</div>
+								{#if searchIndex === index}
+									<div class="mt-1 flex gap-1">
+										<input type="text" bind:value={searchQuery} oninput={runSearch} placeholder="Alternativartikel suchen" class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600" />
+										<button type="button" onclick={() => (searchIndex = null)} class="shrink-0 rounded-lg border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">Abbrechen</button>
+									</div>
+									{#if searchResults.length > 0}
+										<ul class="mt-1 divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200">
+											{#each searchResults as hit (hit.id)}
+												<li>
+													<button type="button" onclick={() => pickArticle(index, hit)} class="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-sm hover:bg-green-50">
+														<span class="truncate">{hit.name}</span>
+														{#if hit.amount}<span class="shrink-0 text-xs text-gray-400">{hit.amount} {hit.unit ?? ''}</span>{/if}
+													</button>
+												</li>
+											{/each}
+										</ul>
+									{/if}
+								{:else}
+									<button type="button" onclick={() => openSearch(index)} class="mt-1 text-xs font-medium text-green-700 hover:text-green-800">+ Alternativartikel</button>
+								{/if}
 							{:else if searchIndex === index}
 								<div class="flex gap-1">
 									<input type="text" bind:value={searchQuery} oninput={runSearch} placeholder="Artikel suchen oder Freitext" class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600" />

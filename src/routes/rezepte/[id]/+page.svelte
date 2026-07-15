@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { coverage, scaleAmount } from '$lib/units';
+	import { coverageMulti, scaleAmount } from '$lib/units';
 
 	let { data, form } = $props();
 
@@ -17,13 +17,13 @@
 
 	// Kochbarkeit je Zutat für die gewählten Portionen
 	function ingredientState(ing: (typeof data.ingredients)[number]) {
-		if (!ing.articleId || ing.amount == null) return { kind: 'unchecked' as const };
+		if (ing.articles.length === 0 || ing.amount == null) return { kind: 'unchecked' as const };
 		const scaled = scaleAmount(ing.amount, data.recipe.servings, portions) ?? 0;
-		const cov = coverage(scaled, ing.unit, ing.packageAmount, ing.packageUnit, ing.stockPackages);
+		const cov = coverageMulti(scaled, ing.unit, ing.articles);
 		if (!cov.comparable) return { kind: 'unchecked' as const };
 		return cov.covered
 			? { kind: 'ok' as const }
-			: { kind: 'missing' as const, needed: cov.neededPackages, hasPicnic: Boolean(ing.picnicId) };
+			: { kind: 'missing' as const, needed: cov.neededPackages, hasPicnic: Boolean(cov.orderPicnicId) };
 	}
 
 	const missingCount = $derived(
@@ -116,12 +116,14 @@
 				{state.kind === 'ok' ? '✓' : state.kind === 'missing' ? '!' : '–'}
 			</span>
 			<div class="min-w-0 flex-1">
-				<div class="truncate text-sm font-medium">{ing.articleName ?? ing.freeText}</div>
+				<div class="truncate text-sm font-medium">
+					{ing.articles.length > 0 ? ing.articles.map((a) => a.name).join(' oder ') : ing.freeText}
+				</div>
 				{#if state.kind === 'missing'}
 					<div class="text-xs text-amber-600">
 						{state.needed} Gebinde fehlen{state.hasPicnic ? '' : ' · nicht mit Picnic verknüpft'}
 					</div>
-				{:else if state.kind === 'unchecked' && ing.articleId}
+				{:else if state.kind === 'unchecked' && ing.articles.length > 0}
 					<div class="text-xs text-gray-400">Vorrat nicht prüfbar (Einheit)</div>
 				{/if}
 			</div>

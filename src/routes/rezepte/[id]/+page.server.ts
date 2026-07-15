@@ -5,7 +5,7 @@ import { tagsForRecipe } from '$lib/server/tags';
 import { auditEdit } from '$lib/server/audit';
 import { deleteImage } from '$lib/server/images';
 import { addToCart, getConnectionState } from '$lib/server/picnic';
-import { coverage, scaleAmount } from '$lib/units';
+import { coverageMulti, scaleAmount } from '$lib/units';
 import { eq } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -40,21 +40,22 @@ export const actions: Actions = {
 		const incomparable: string[] = [];
 
 		for (const ing of ingredients) {
-			if (!ing.articleId || ing.amount == null) continue;
-			if (!ing.picnicId) {
-				unlinked.push(ing.articleName ?? ing.freeText ?? 'Zutat');
+			if (ing.articles.length === 0 || ing.amount == null) continue;
+			const label = ing.articles.map((a) => a.name).join(' / ') || ing.freeText || 'Zutat';
+			if (!ing.articles.some((a) => a.picnicId)) {
+				unlinked.push(label);
 				continue;
 			}
 			const scaled = scaleAmount(ing.amount, recipe.servings, portions) ?? 0;
-			const result = coverage(scaled, ing.unit, ing.packageAmount, ing.packageUnit, ing.stockPackages);
+			const result = coverageMulti(scaled, ing.unit, ing.articles);
 			if (!result.comparable) {
-				incomparable.push(ing.articleName ?? 'Zutat');
+				incomparable.push(label);
 				continue;
 			}
-			if (result.neededPackages > 0) {
-				const existing = items.find((i) => i.productId === ing.picnicId);
+			if (result.neededPackages > 0 && result.orderPicnicId) {
+				const existing = items.find((i) => i.productId === result.orderPicnicId);
 				if (existing) existing.quantity += result.neededPackages;
-				else items.push({ productId: ing.picnicId, quantity: result.neededPackages });
+				else items.push({ productId: result.orderPicnicId, quantity: result.neededPackages });
 			}
 		}
 

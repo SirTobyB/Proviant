@@ -81,7 +81,6 @@ export const actions: Actions = {
 				.values(
 					parsed.ingredients.map((ing, index) => ({
 						recipeId,
-						articleId: null,
 						freeText: ing.name,
 						amount: ing.amount,
 						unit: ing.unit,

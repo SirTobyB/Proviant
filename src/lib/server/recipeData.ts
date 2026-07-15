@@ -1,19 +1,15 @@
 /**
- * Lädt ein Rezept samt Zutaten und – für verknüpfte Artikel – Gebindegröße,
- * Picnic-ID und aktuellem Gesamtbestand.
+ * Lädt ein Rezept samt Zutaten und – für verknüpfte Artikel (inkl. akzeptierter
+ * Alternativartikel) – Gebindegröße, Picnic-ID und aktuellem Gesamtbestand.
  */
 import { db } from '$lib/server/db';
-import { articles, recipeIngredients, recipes, stockEntries } from '$lib/server/db/schema';
-import { coverage, scaleAmount } from '$lib/units';
-import { eq, sql } from 'drizzle-orm';
+import { articles, recipeIngredientArticles, recipeIngredients, recipes, stockEntries } from '$lib/server/db/schema';
+import { coverageMulti, scaleAmount } from '$lib/units';
+import { eq, inArray, sql } from 'drizzle-orm';
 
-export type RecipeIngredientDetail = {
+export type IngredientArticleOption = {
 	id: number;
-	articleId: number | null;
-	articleName: string | null;
-	freeText: string | null;
-	amount: number | null;
-	unit: string | null;
+	name: string;
 	packageAmount: number | null;
 	packageUnit: string | null;
 	picnicId: string | null;
@@ -21,42 +17,77 @@ export type RecipeIngredientDetail = {
 	stockPackages: number;
 };
 
+export type RecipeIngredientDetail = {
+	id: number;
+	freeText: string | null;
+	amount: number | null;
+	unit: string | null;
+	/** Akzeptierte Artikel (Hauptartikel + Alternativen), in erfasster Reihenfolge. */
+	articles: IngredientArticleOption[];
+};
+
 export function getRecipe(id: number) {
 	return db.select().from(recipes).where(eq(recipes.id, id)).get();
 }
 
 /**
- * Kochbar = alle verknüpften Zutaten mit vergleichbarer Einheit sind durch den
- * Vorrat gedeckt. Freitext- und nicht vergleichbare Zutaten blockieren nicht.
+ * Kochbar = für jede Zutat mit verknüpften Artikeln und vergleichbarer Einheit
+ * deckt der zusammengezählte Vorrat aller akzeptierten Artikel den Bedarf.
+ * Freitext- und nicht vergleichbare Zutaten blockieren nicht.
  */
 export function isRecipeCookable(ingredients: RecipeIngredientDetail[], baseServings: number, servings: number): boolean {
 	for (const ing of ingredients) {
-		if (!ing.articleId || ing.amount == null) continue;
+		if (ing.articles.length === 0 || ing.amount == null) continue;
 		const scaled = scaleAmount(ing.amount, baseServings, servings) ?? 0;
-		const cov = coverage(scaled, ing.unit, ing.packageAmount, ing.packageUnit, ing.stockPackages);
+		const cov = coverageMulti(scaled, ing.unit, ing.articles);
 		if (cov.comparable && !cov.covered) return false;
 	}
 	return true;
 }
 
 export function getRecipeIngredients(recipeId: number): RecipeIngredientDetail[] {
-	return db
+	const rows = db
 		.select({
 			id: recipeIngredients.id,
-			articleId: recipeIngredients.articleId,
-			articleName: articles.name,
 			freeText: recipeIngredients.freeText,
 			amount: recipeIngredients.amount,
-			unit: recipeIngredients.unit,
+			unit: recipeIngredients.unit
+		})
+		.from(recipeIngredients)
+		.where(eq(recipeIngredients.recipeId, recipeId))
+		.orderBy(recipeIngredients.sortOrder)
+		.all();
+
+	if (rows.length === 0) return [];
+
+	const articleRows = db
+		.select({
+			recipeIngredientId: recipeIngredientArticles.recipeIngredientId,
+			id: articles.id,
+			name: articles.name,
 			packageAmount: articles.amount,
 			packageUnit: articles.unit,
 			picnicId: articles.picnicId,
 			imagePath: articles.imagePath,
-			stockPackages: sql<number>`coalesce((select sum(${stockEntries.quantity}) from ${stockEntries} where ${stockEntries.articleId} = ${recipeIngredients.articleId}), 0)`
+			stockPackages: sql<number>`coalesce((select sum(${stockEntries.quantity}) from ${stockEntries} where ${stockEntries.articleId} = ${articles.id}), 0)`
 		})
-		.from(recipeIngredients)
-		.leftJoin(articles, eq(articles.id, recipeIngredients.articleId))
-		.where(eq(recipeIngredients.recipeId, recipeId))
-		.orderBy(recipeIngredients.sortOrder)
+		.from(recipeIngredientArticles)
+		.innerJoin(articles, eq(articles.id, recipeIngredientArticles.articleId))
+		.where(
+			inArray(
+				recipeIngredientArticles.recipeIngredientId,
+				rows.map((r) => r.id)
+			)
+		)
+		.orderBy(recipeIngredientArticles.sortOrder)
 		.all();
+
+	const byIngredient = new Map<number, IngredientArticleOption[]>();
+	for (const { recipeIngredientId, ...option } of articleRows) {
+		const list = byIngredient.get(recipeIngredientId) ?? [];
+		list.push(option);
+		byIngredient.set(recipeIngredientId, list);
+	}
+
+	return rows.map((r) => ({ ...r, articles: byIngredient.get(r.id) ?? [] }));
 }
