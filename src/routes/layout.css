@@ -90,10 +90,16 @@
 	.border-red-200 {
 		border-color: #6b2126;
 	}
-	.divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+	/*
+	 * Tailwind v4 kompiliert divide-y/divide-* auf :not(:last-child) (nicht auf
+	 * den allgemeinen Geschwister-Selektor) — das trifft auch das erste Kind.
+	 * Der Selektor hier muss das exakt spiegeln, sonst bleibt die erste Zeile
+	 * beim hellen Trennfarbton hängen.
+	 */
+	.divide-gray-100 > :not(:last-child) {
 		border-color: #232d3b;
 	}
-	.divide-gray-50 > :not([hidden]) ~ :not([hidden]) {
+	.divide-gray-50 > :not(:last-child) {
 		border-color: #1c2635;
 	}
 
