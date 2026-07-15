@@ -82,6 +82,15 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
   Safe-Area-Paddings im Layout; Eingabefelder unter 768px mindestens **16px**
   Schrift (sonst zoomt iOS-Safari beim Fokussieren). Foto-Uploads brauchen
   `BODY_SIZE_LIMIT` (Default 512K von adapter-node → im Image auf 15M gesetzt).
+- **Android-Installierbarkeit:** `static/service-worker.js` (Passthrough, kein
+  Caching) ist **Pflicht**, nicht optional — ohne registrierten Service Worker
+  erkennt Chrome die Seite nicht als vollwertige PWA (WebAPK) und installiert
+  stattdessen einen alten Fallback-Wrapper. Symptome davon: „für ein älteres
+  Android erstellt"-Warnung beim Hinzufügen zum Startbildschirm **und**
+  Kamera-Zugriff (Scanner) scheitert ohne Berechtigungsabfrage, auch nicht
+  manuell in den Android-Einstellungen nachrüstbar. Icons fürs Manifest als
+  PNG (192/512, `purpose: "any maskable"`) bereithalten — SVG-only wird von
+  manchen Android-WebAPK-Mintern nicht zuverlässig akzeptiert.
 - **Env:** Passwörter mit `#`/`$` in `.env` und `docker-compose*.yml` **quoten**
   (unquotiertes `#` wird als Kommentar abgeschnitten). Die App liest die `.env`
   im Projektstamm. Erster Admin via `ADMIN_USERNAME`/`ADMIN_PASSWORD`.

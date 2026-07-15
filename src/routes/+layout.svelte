@@ -1,8 +1,17 @@
 <script lang="ts">
 	import './layout.css';
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 
 	let { children, data } = $props();
+
+	// Nötig, damit Android die Seite als installierbare PWA (WebAPK) erkennt —
+	// siehe Kommentar in static/service-worker.js für den Hintergrund.
+	onMount(() => {
+		if ('serviceWorker' in navigator) {
+			navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+		}
+	});
 
 	const navItems = [
 		{
