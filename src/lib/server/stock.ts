@@ -76,3 +76,43 @@ export function bookOut(articleId: number, quantity: number, user: string | null
 	}
 	return quantity - remaining;
 }
+
+/**
+ * Lagert eine einzelne Charge komplett in einen anderen Lagerort um (z.B.
+ * versehentlich falsch gebucht). MHD bleibt erhalten; existiert im Ziel
+ * bereits eine Charge mit gleichem Artikel und MHD, werden die Mengen
+ * zusammengeführt statt einer zweiten Charge.
+ */
+export function moveStockEntry(entryId: number, targetLocationId: number, user: string | null): boolean {
+	const entry = db.select().from(stockEntries).where(eq(stockEntries.id, entryId)).get();
+	if (!entry) return false;
+	if (entry.locationId === targetLocationId) return true;
+
+	const existing = db
+		.select()
+		.from(stockEntries)
+		.where(
+			and(
+				eq(stockEntries.articleId, entry.articleId),
+				eq(stockEntries.locationId, targetLocationId),
+				entry.bestBefore === null
+					? sql`${stockEntries.bestBefore} is null`
+					: eq(stockEntries.bestBefore, entry.bestBefore)
+			)
+		)
+		.get();
+
+	if (existing) {
+		db.update(stockEntries)
+			.set({ quantity: existing.quantity + entry.quantity, ...auditEdit(user) })
+			.where(eq(stockEntries.id, existing.id))
+			.run();
+		db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
+	} else {
+		db.update(stockEntries)
+			.set({ locationId: targetLocationId, ...auditEdit(user) })
+			.where(eq(stockEntries.id, entry.id))
+			.run();
+	}
+	return true;
+}

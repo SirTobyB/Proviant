@@ -1,7 +1,8 @@
 import { db } from '$lib/server/db';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
 import { auditEdit } from '$lib/server/audit';
-import { and, eq } from 'drizzle-orm';
+import { moveStockEntry } from '$lib/server/stock';
+import { and, eq, sql } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -51,7 +52,16 @@ export const load: PageServerLoad = ({ params }) => {
 		group.entries.push(entry);
 	}
 
-	return { location, articles: [...byArticle.values()] };
+	return {
+		location,
+		articles: [...byArticle.values()],
+		otherLocations: db
+			.select()
+			.from(storageLocations)
+			.where(sql`${storageLocations.id} != ${location.id}`)
+			.orderBy(storageLocations.sortOrder)
+			.all()
+	};
 };
 
 /** Lädt eine Charge und stellt sicher, dass sie zu diesem Lagerort gehört. */
@@ -99,5 +109,23 @@ export const actions: Actions = {
 		if (!entry) return fail(404, { message: 'Charge nicht gefunden' });
 		db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
 		return { ok: true };
+	},
+
+	// Charge komplett in einen anderen Lagerort umlagern (z.B. falsch gebucht)
+	moveEntry: async ({ params, request, locals }) => {
+		const location = getLocation(params.id);
+		const formData = await request.formData();
+		const entry = getEntry(location.id, formData.get('entryId'));
+		if (!entry) return fail(404, { message: 'Charge nicht gefunden' });
+
+		const targetLocationId = Number(formData.get('targetLocationId'));
+		if (!Number.isInteger(targetLocationId) || targetLocationId === location.id) {
+			return fail(400, { message: 'Bitte einen anderen Ziel-Lagerort wählen' });
+		}
+		const target = db.select().from(storageLocations).where(eq(storageLocations.id, targetLocationId)).get();
+		if (!target) return fail(400, { message: 'Ziel-Lagerort nicht gefunden' });
+
+		moveStockEntry(entry.id, targetLocationId, locals.user?.username ?? null);
+		return { moved: true, targetName: target.name };
 	}
 };
