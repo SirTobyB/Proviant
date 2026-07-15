@@ -281,16 +281,28 @@
 	{#each data.items as item (item.productId)}
 		{@const done = itemStatus(item) === 'done'}
 		<li class="flex items-center gap-3 px-4 py-2.5 {done ? 'bg-green-50/50' : ''}">
-			{#if itemImage(item)}
-				<img src={itemImage(item)} alt="" loading="lazy" class="h-9 w-9 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
+			{#if item.articleId}
+				<a href={`/artikel/${item.articleId}`} class="flex min-w-0 flex-1 items-center gap-3">
+					{#if itemImage(item)}
+						<img src={itemImage(item)} alt="" loading="lazy" class="h-9 w-9 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
+					{:else}
+						<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm">📦</div>
+					{/if}
+					<div class="min-w-0 flex-1">
+						<div class="truncate text-sm font-medium hover:underline {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
+						<div class="text-xs text-gray-500">{item.unitQuantity}</div>
+					</div>
+				</a>
 			{:else}
-				<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm">📦</div>
-			{/if}
-			<div class="min-w-0 flex-1">
-				<div class="truncate text-sm font-medium {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
-				<div class="text-xs text-gray-500">
-					{item.unitQuantity}
-					{#if !item.articleId}
+				{#if itemImage(item)}
+					<img src={itemImage(item)} alt="" loading="lazy" class="h-9 w-9 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
+				{:else}
+					<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm">📦</div>
+				{/if}
+				<div class="min-w-0 flex-1">
+					<div class="truncate text-sm font-medium {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
+					<div class="text-xs text-gray-500">
+						{item.unitQuantity}
 						· <span class="text-amber-600">nicht verknüpft</span>
 						· <button
 								type="button"
@@ -298,9 +310,9 @@
 								disabled={importingProduct !== null}
 								class="text-green-700 underline disabled:opacity-50"
 							>{importingProduct === item.productId ? 'importiere …' : '+ Artikel'}</button>
-					{/if}
+					</div>
 				</div>
-			</div>
+			{/if}
 			<div class="flex shrink-0 items-center gap-1.5">
 				<button type="button" onclick={() => bump(item, -1)} disabled={(checked[item.productId] ?? 0) === 0} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">−</button>
 				<span class="w-10 text-center text-sm font-semibold {done ? 'text-green-700' : 'text-gray-700'}">{checked[item.productId] ?? 0}/{item.quantity}</span>
