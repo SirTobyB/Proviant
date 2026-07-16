@@ -156,3 +156,21 @@ export const recipeTags = sqliteTable(
 	},
 	(table) => [primaryKey({ columns: [table.recipeId, table.tagId] })]
 );
+
+/**
+ * Wochenplan: ein Eintrag = ein geplantes Gericht an einem Tag. Künstlicher
+ * id-Primärschlüssel statt date als Naturkey, damit später (ohne PK-Umbau)
+ * auch mehr als ein Gericht pro Tag möglich wäre. `date` ist bewusst NICHT
+ * eindeutig — die Anwendungslogik behandelt aktuell maximal einen Eintrag
+ * pro Datum als gültig (siehe mealPlan.ts).
+ */
+export const mealPlanEntries = sqliteTable('meal_plan_entries', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	/** ISO-Datum (YYYY-MM-DD), wie stockEntries.bestBefore */
+	date: text('date').notNull(),
+	recipeId: integer('recipe_id')
+		.notNull()
+		.references(() => recipes.id, { onDelete: 'cascade' }),
+	servings: integer('servings').notNull(),
+	...auditFull()
+});

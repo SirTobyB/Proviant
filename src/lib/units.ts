@@ -38,11 +38,55 @@ export type CoverageResult = {
 };
 
 export type IngredientArticleStock = {
+	id: number;
 	packageAmount: number | null;
 	packageUnit: string | null;
 	stockPackages: number;
 	picnicId: string | null;
 };
+
+export type OrderArticleSelection = {
+	/** Erster einheitenkompatible Artikel (Referenz für die Gebinde-Rundung, falls nichts bestellbar ist). */
+	referenceArticle: IngredientArticleStock | null;
+	/** Erster einheitenkompatible Artikel mit Picnic-Verknüpfung (Ziel für eine echte Bestellung). */
+	orderArticle: IngredientArticleStock | null;
+	/** Summierter Bestand aller kompatiblen Artikel, in Basiseinheiten. */
+	availableBase: number;
+	/** Gab es mindestens einen einheitenkompatiblen Artikel? */
+	comparable: boolean;
+};
+
+/**
+ * Wählt aus den akzeptierten Alternativartikeln einer Zutat den Referenz-
+ * (erster kompatibler, für Gebinde-Rundung) und Bestell-Artikel (erster
+ * kompatibler mit Picnic-Verknüpfung) und summiert deren Bestand. Von
+ * `coverageMulti` (Einzeltag) und `planWeekShoppingList` (Wochenplan,
+ * gemeinsamer Vorrats-Pool) gemeinsam genutzt, damit beide dieselbe
+ * Auswahlregel anwenden.
+ */
+export function pickOrderArticle(
+	articles: IngredientArticleStock[],
+	requiredFamily: UnitFamily
+): OrderArticleSelection {
+	let availableBase = 0;
+	let comparable = false;
+	let referenceArticle: IngredientArticleStock | null = null;
+	let orderArticle: IngredientArticleStock | null = null;
+
+	for (const article of articles) {
+		const packageBase =
+			article.packageAmount != null ? toBase(article.packageAmount, article.packageUnit) : null;
+		if (packageBase == null || packageBase <= 0 || unitFamily(article.packageUnit) !== requiredFamily) {
+			continue;
+		}
+		comparable = true;
+		availableBase += packageBase * article.stockPackages;
+		if (referenceArticle == null) referenceArticle = article;
+		if (orderArticle == null && article.picnicId) orderArticle = article;
+	}
+
+	return { referenceArticle, orderArticle, availableBase, comparable };
+}
 
 /**
  * Prüft, ob der (zusammengezählte) Vorrat aller akzeptierten Alternativartikel
@@ -64,25 +108,10 @@ export function coverageMulti(
 		return { covered: false, comparable: false, neededPackages: 0, orderPicnicId: null };
 	}
 
-	let availableBase = 0;
-	let comparable = false;
-	// Referenz für die Gebinde-Rundung (erster kompatibler Artikel); für die
-	// tatsächliche Bestellung zählt nur ein Artikel mit Picnic-Verknüpfung.
-	let referenceArticle: IngredientArticleStock | null = null;
-	let orderArticle: IngredientArticleStock | null = null;
-
-	// Bestand aller Alternativartikel mit passender Einheitenfamilie zusammenzählen.
-	for (const article of articles) {
-		const packageBase =
-			article.packageAmount != null ? toBase(article.packageAmount, article.packageUnit) : null;
-		if (packageBase == null || packageBase <= 0 || unitFamily(article.packageUnit) !== requiredFamily) {
-			continue;
-		}
-		comparable = true;
-		availableBase += packageBase * article.stockPackages;
-		if (referenceArticle == null) referenceArticle = article;
-		if (orderArticle == null && article.picnicId) orderArticle = article;
-	}
+	const { referenceArticle, orderArticle, availableBase, comparable } = pickOrderArticle(
+		articles,
+		requiredFamily
+	);
 
 	if (!comparable || !referenceArticle) {
 		return { covered: false, comparable: false, neededPackages: 0, orderPicnicId: null };
