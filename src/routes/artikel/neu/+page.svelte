@@ -11,6 +11,7 @@
 <ArticleForm
 	article={{ ean: data.ean }}
 	locations={data.locations}
+	allTags={data.allTags}
 	submitLabel="Artikel anlegen"
 	errorMessage={form?.message ?? null}
 	autoLookup={Boolean(data.ean)}

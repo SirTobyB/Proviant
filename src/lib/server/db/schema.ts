@@ -158,6 +158,33 @@ export const recipeTags = sqliteTable(
 );
 
 /**
+ * Artikel-Tags (z.B. „Getränke", „Tiefkühl") — bewusst eigener Tag-Pool,
+ * getrennt von den Rezept-`tags`, damit sich die Autocomplete-Vorschläge
+ * beider Bereiche nicht vermischen.
+ */
+export const articleTags = sqliteTable('article_tags', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	name: text('name').notNull().unique(),
+	...auditFull()
+});
+
+/** Zuordnung Artikel ↔ Artikel-Tag (Link-Tabelle, nur Anlage-Audit). */
+export const articleTagLinks = sqliteTable(
+	'article_tag_links',
+	{
+		articleId: integer('article_id')
+			.notNull()
+			.references(() => articles.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => articleTags.id, { onDelete: 'cascade' }),
+		createdAt: createdAtCol(),
+		createdBy: text('created_by')
+	},
+	(table) => [primaryKey({ columns: [table.articleId, table.tagId] })]
+);
+
+/**
  * Wochenplan: ein Eintrag = ein geplantes Gericht an einem Tag. Künstlicher
  * id-Primärschlüssel statt date als Naturkey, damit später (ohne PK-Umbau)
  * auch mehr als ein Gericht pro Tag möglich wäre. `date` ist bewusst NICHT

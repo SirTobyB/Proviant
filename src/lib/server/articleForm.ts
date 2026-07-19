@@ -18,8 +18,20 @@ export type ArticleFormResult = {
 	};
 	/** Neuer Bild-Dateiname; undefined = Bild unverändert lassen */
 	imagePath: string | undefined;
+	tags: string[];
 	error: string | null;
 };
+
+/** Tags aus dem JSON-Hiddenfield lesen (Muster wie in recipeForm.ts). */
+function parseTags(formData: FormData): string[] {
+	try {
+		const raw = JSON.parse((formData.get('tags') as string) || '[]');
+		if (!Array.isArray(raw)) return [];
+		return [...new Set(raw.map((t) => String(t).trim()).filter(Boolean))];
+	} catch {
+		return [];
+	}
+}
 
 export async function parseArticleForm(formData: FormData): Promise<ArticleFormResult> {
 	const text = (key: string) => {
@@ -27,13 +39,14 @@ export async function parseArticleForm(formData: FormData): Promise<ArticleFormR
 		return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 	};
 
+	const tags = parseTags(formData);
 	const name = text('name');
-	if (!name) return { values: emptyValues(), imagePath: undefined, error: 'Name ist erforderlich' };
+	if (!name) return { values: emptyValues(), imagePath: undefined, tags, error: 'Name ist erforderlich' };
 
 	const amountRaw = text('amount');
 	const amount = amountRaw ? parseFloat(amountRaw.replace(',', '.')) : null;
 	if (amountRaw && Number.isNaN(amount)) {
-		return { values: emptyValues(), imagePath: undefined, error: 'Menge ist keine Zahl' };
+		return { values: emptyValues(), imagePath: undefined, tags, error: 'Menge ist keine Zahl' };
 	}
 
 	const values: ArticleFormResult['values'] = {
@@ -62,10 +75,10 @@ export async function parseArticleForm(formData: FormData): Promise<ArticleFormR
 		}
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Bild konnte nicht gespeichert werden';
-		return { values, imagePath: undefined, error: `Bild: ${message}` };
+		return { values, imagePath: undefined, tags, error: `Bild: ${message}` };
 	}
 
-	return { values, imagePath, error: null };
+	return { values, imagePath, tags, error: null };
 }
 
 function emptyValues(): ArticleFormResult['values'] {

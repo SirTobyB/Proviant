@@ -14,8 +14,9 @@
 
 {#key data.article.id}
 	<ArticleForm
-		article={data.article}
+		article={{ ...data.article, tags: data.tags }}
 		locations={data.locations}
+		allTags={data.allTags}
 		submitLabel="Speichern"
 		errorMessage={form?.message ?? null}
 		action="?/update"

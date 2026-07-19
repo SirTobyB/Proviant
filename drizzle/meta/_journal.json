@@ -36,6 +36,13 @@
       "when": 1784226380847,
       "tag": "0004_lethal_sentry",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1784482257042,
+      "tag": "0005_wakeful_scarlet_spider",
+      "breakpoints": true
     }
   ]
 }

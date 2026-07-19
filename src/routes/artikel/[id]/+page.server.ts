@@ -1,6 +1,7 @@
 import { db } from '$lib/server/db';
 import { articles, storageLocations } from '$lib/server/db/schema';
 import { parseArticleForm } from '$lib/server/articleForm';
+import { allArticleTagNames, setArticleTags, tagsForArticle } from '$lib/server/articleTags';
 import { auditEdit } from '$lib/server/audit';
 import { deleteImage } from '$lib/server/images';
 import { eq } from 'drizzle-orm';
@@ -16,16 +17,20 @@ function getArticle(id: string) {
 }
 
 export const load: PageServerLoad = ({ params }) => {
+	const article = getArticle(params.id);
 	return {
-		article: getArticle(params.id),
-		locations: db.select().from(storageLocations).orderBy(storageLocations.sortOrder).all()
+		article,
+		tags: tagsForArticle(article.id),
+		locations: db.select().from(storageLocations).orderBy(storageLocations.sortOrder).all(),
+		allTags: allArticleTagNames()
 	};
 };
 
 export const actions: Actions = {
 	update: async ({ params, request, locals }) => {
+		const user = locals.user?.username ?? null;
 		const article = getArticle(params.id);
-		const { values, imagePath, error: message } = await parseArticleForm(await request.formData());
+		const { values, imagePath, tags, error: message } = await parseArticleForm(await request.formData());
 		if (message) return fail(400, { message });
 
 		try {
@@ -33,7 +38,7 @@ export const actions: Actions = {
 				.set({
 					...values,
 					...(imagePath !== undefined ? { imagePath } : {}),
-					...auditEdit(locals.user?.username)
+					...auditEdit(user)
 				})
 				.where(eq(articles.id, article.id))
 				.run();
@@ -43,6 +48,7 @@ export const actions: Actions = {
 			}
 			throw err;
 		}
+		setArticleTags(article.id, tags, user);
 
 		// Altes Bild erst nach erfolgreichem Update entfernen
 		if (imagePath !== undefined && article.imagePath) deleteImage(article.imagePath);

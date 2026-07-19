@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import TagInput from '$lib/components/TagInput.svelte';
 
 	type Location = { id: number; name: string };
 	type ArticleValues = {
@@ -11,6 +12,7 @@
 		minStock?: number | null;
 		defaultLocationId?: number | null;
 		imagePath?: string | null;
+		tags?: string[];
 	};
 	type PicnicResult = {
 		id: string;
@@ -23,6 +25,7 @@
 	let {
 		article = {},
 		locations,
+		allTags = [],
 		submitLabel,
 		errorMessage = null,
 		autoLookup = false,
@@ -30,6 +33,7 @@
 	}: {
 		article?: ArticleValues;
 		locations: Location[];
+		allTags?: string[];
 		submitLabel: string;
 		errorMessage?: string | null;
 		autoLookup?: boolean;
@@ -49,6 +53,7 @@
 	let picnicId = $state(initial.picnicId ?? '');
 	let minStock = $state(initial.minStock ?? 0);
 	let defaultLocationId = $state(initial.defaultLocationId != null ? String(initial.defaultLocationId) : '');
+	let articleTagList = $state<string[]>([...(initial.tags ?? [])]);
 
 	// Bildquelle aus Lookups (Server lädt beim Speichern herunter)
 	let imageUrl = $state('');
@@ -287,6 +292,12 @@
 				{/each}
 			</select>
 		</div>
+	</div>
+
+	<!-- Tags -->
+	<div>
+		<span class="block text-sm font-medium text-gray-700">Tags</span>
+		<TagInput bind:tags={articleTagList} {allTags} placeholder="Tag eingeben (z.B. Getränke, Tiefkühl) und Enter" />
 	</div>
 
 	<!-- Picnic-Verknüpfung -->

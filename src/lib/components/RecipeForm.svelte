@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import TagInput from '$lib/components/TagInput.svelte';
 
 	type ArticleHit = {
 		id: number;
@@ -56,35 +57,8 @@
 	let instructions = $state(initial.instructions ?? '');
 	let uploadPreview = $state('');
 
-	// Tags
+	// Tags (Eingabe-UI in TagInput.svelte)
 	let recipeTagList = $state<string[]>([...(initial.tags ?? [])]);
-	let tagInput = $state('');
-	const tagSuggestions = $derived(
-		allTags.filter(
-			(t) =>
-				!recipeTagList.includes(t) &&
-				tagInput.trim() !== '' &&
-				t.toLowerCase().includes(tagInput.trim().toLowerCase())
-		)
-	);
-	const tagsJson = $derived(JSON.stringify(recipeTagList));
-
-	function addTag(tag: string) {
-		const clean = tag.trim();
-		if (clean && !recipeTagList.includes(clean)) recipeTagList.push(clean);
-		tagInput = '';
-	}
-	function removeTag(tag: string) {
-		recipeTagList = recipeTagList.filter((t) => t !== tag);
-	}
-	function onTagKeydown(event: KeyboardEvent) {
-		if (event.key === 'Enter' || event.key === ',') {
-			event.preventDefault();
-			if (tagInput.trim()) addTag(tagInput);
-		} else if (event.key === 'Backspace' && tagInput === '' && recipeTagList.length > 0) {
-			recipeTagList.pop();
-		}
-	}
 
 	let rows = $state<IngredientRow[]>(
 		(initial.ingredients ?? []).map((i) => ({
@@ -272,41 +246,7 @@
 	<!-- Tags -->
 	<div>
 		<span class="block text-sm font-medium text-gray-700">Tags</span>
-		{#if recipeTagList.length > 0}
-			<div class="mt-1 flex flex-wrap gap-1.5">
-				{#each recipeTagList as tag (tag)}
-					<span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-sm text-green-700">
-						{tag}
-						<button type="button" onclick={() => removeTag(tag)} class="text-green-500 hover:text-green-700" aria-label="Tag entfernen">×</button>
-					</span>
-				{/each}
-			</div>
-		{/if}
-		<div class="relative mt-1">
-			<input
-				type="text"
-				bind:value={tagInput}
-				onkeydown={onTagKeydown}
-				placeholder="Tag eingeben (z.B. vegetarisch, schnell) und Enter"
-				class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
-			/>
-			{#if tagSuggestions.length > 0}
-				<ul class="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-					{#each tagSuggestions as suggestion (suggestion)}
-						<li>
-							<button type="button" onclick={() => addTag(suggestion)} class="block w-full px-3 py-1.5 text-left text-sm hover:bg-green-50">{suggestion}</button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</div>
-		{#if allTags.length > 0}
-			<div class="mt-1.5 flex flex-wrap gap-1">
-				{#each allTags.filter((t) => !recipeTagList.includes(t)).slice(0, 8) as tag (tag)}
-					<button type="button" onclick={() => addTag(tag)} class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-200">+ {tag}</button>
-				{/each}
-			</div>
-		{/if}
+		<TagInput bind:tags={recipeTagList} {allTags} placeholder="Tag eingeben (z.B. vegetarisch, schnell) und Enter" />
 	</div>
 
 	<div>
@@ -330,7 +270,6 @@
 	</div>
 
 	<input type="hidden" name="ingredients" value={ingredientsJson} />
-	<input type="hidden" name="tags" value={tagsJson} />
 
 	<div class="flex gap-3">
 		<button type="submit" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">{submitLabel}</button>

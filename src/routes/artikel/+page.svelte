@@ -15,6 +15,15 @@
 		if (amount == null) return '';
 		return `${amount.toLocaleString('de-DE')} ${unit ?? ''}`.trim();
 	}
+
+	// Link für den Tag-Filter, Suchbegriff bleibt erhalten
+	function tagHref(tag: string): string {
+		const params = new URLSearchParams();
+		if (data.query) params.set('q', data.query);
+		if (tag && tag !== data.tagFilter) params.set('tag', tag);
+		const qs = params.toString();
+		return `/artikel${qs ? `?${qs}` : ''}`;
+	}
 </script>
 
 <svelte:head><title>Artikel – LebensmittelKumpel</title></svelte:head>
@@ -48,7 +57,21 @@
 		placeholder="Suchen (Name oder EAN) …"
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	/>
+	{#if data.tagFilter}<input type="hidden" name="tag" value={data.tagFilter} />{/if}
 </form>
+
+{#if data.allTags.length > 0}
+	<div class="mt-3 flex max-w-2xl flex-wrap gap-1.5">
+		{#each data.allTags as tag (tag)}
+			<a
+				href={tagHref(tag)}
+				class="rounded-full px-3 py-1 text-sm font-medium {tag === data.tagFilter ? 'bg-green-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'}"
+			>
+				{tag}
+			</a>
+		{/each}
+	</div>
+{/if}
 
 {#if data.articles.length === 0}
 	<div class="mt-8 rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
@@ -71,7 +94,7 @@
 					{/if}
 					<span class="min-w-0 flex-1">
 						<span class="block truncate font-medium">{article.name}</span>
-						<span class="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
+						<span class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
 							{#if packageSize(article.amount, article.unit)}
 								<span>{packageSize(article.amount, article.unit)}</span>
 							{/if}
@@ -81,6 +104,9 @@
 							{#if article.picnicId}
 								<span class="rounded bg-red-50 px-1.5 py-0.5 text-red-600">Picnic</span>
 							{/if}
+							{#each article.tags.slice(0, 3) as tag (tag)}
+								<span class="rounded-full bg-green-50 px-1.5 py-0.5 text-green-700">{tag}</span>
+							{/each}
 						</span>
 					</span>
 				</a>

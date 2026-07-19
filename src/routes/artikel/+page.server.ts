@@ -1,5 +1,6 @@
 import { db } from '$lib/server/db';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
+import { allArticleTagNames, tagsForArticles } from '$lib/server/articleTags';
 import { bookIn, bookOut } from '$lib/server/stock';
 import { eq, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
@@ -7,6 +8,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ url }) => {
 	const query = url.searchParams.get('q')?.trim() ?? '';
+	const tagFilter = url.searchParams.get('tag')?.trim() ?? '';
 
 	const rows = db
 		.select({
@@ -32,7 +34,13 @@ export const load: PageServerLoad = ({ url }) => {
 		.orderBy(sql`${articles.name} collate nocase`)
 		.all();
 
-	return { articles: rows, query };
+	// Tags separat als Bulk-Map holen — ein Join in die Aggregations-Query würde
+	// sum(quantity) mit der Tag-Anzahl multiplizieren
+	const tagMap = tagsForArticles(rows.map((r) => r.id));
+	const tagged = rows.map((r) => ({ ...r, tags: tagMap.get(r.id) ?? [] }));
+	const filtered = tagFilter ? tagged.filter((r) => r.tags.includes(tagFilter)) : tagged;
+
+	return { articles: filtered, query, tagFilter, allTags: allArticleTagNames() };
 };
 
 function getArticle(formData: FormData) {
