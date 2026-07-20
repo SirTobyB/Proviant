@@ -28,12 +28,12 @@
 
 <svelte:head><title>Artikel – LebensmittelKumpel</title></svelte:head>
 
-<div class="flex items-center justify-between gap-3">
+<div class="flex flex-wrap items-center justify-between gap-3">
 	<div>
 		<h1 class="text-2xl font-bold">Artikel</h1>
 		<p class="mt-1 text-sm text-gray-500">{data.articles.length} Artikel im Stamm</p>
 	</div>
-	<div class="flex shrink-0 flex-wrap justify-end gap-2">
+	<div class="flex flex-wrap gap-2">
 		<a
 			href="/artikel/import"
 			class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
