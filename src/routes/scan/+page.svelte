@@ -122,17 +122,19 @@
 		{@const article = result.article}
 		<div class="rounded-xl border border-gray-200 bg-white p-5">
 			<div class="flex items-center gap-3">
-				{#if article.imagePath}
-					<img
-						src={`/api/images/${article.imagePath}`}
-						alt=""
-						class="h-14 w-14 shrink-0 rounded-lg border border-gray-100 object-contain"
-					/>
-				{:else}
-					<div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xl">📦</div>
-				{/if}
+				<a href={`/artikel/${article.id}`} class="shrink-0">
+					{#if article.imagePath}
+						<img
+							src={`/api/images/${article.imagePath}`}
+							alt=""
+							class="h-14 w-14 rounded-lg border border-gray-100 object-contain"
+						/>
+					{:else}
+						<div class="flex h-14 w-14 items-center justify-center rounded-lg bg-gray-100 text-xl">📦</div>
+					{/if}
+				</a>
 				<div class="min-w-0">
-					<div class="truncate font-semibold">{article.name}</div>
+					<a href={`/artikel/${article.id}`} class="block truncate font-semibold hover:underline">{article.name}</a>
 					<div class="text-sm text-gray-500">
 						{packageSize(article.amount, article.unit)}
 						· Bestand: {result.totalStock ?? 0}×

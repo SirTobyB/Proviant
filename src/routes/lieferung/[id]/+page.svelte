@@ -228,13 +228,25 @@
 		{@const item = pending.item}
 		<div class="rounded-xl border border-gray-200 bg-white p-4">
 			<div class="flex items-center gap-3">
-				{#if itemImage(item)}
+				{#if item.articleId}
+					<a href={`/artikel/${item.articleId}`} class="shrink-0">
+						{#if itemImage(item)}
+							<img src={itemImage(item)} alt="" class="h-12 w-12 rounded-lg border border-gray-100 bg-white object-contain" />
+						{:else}
+							<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-lg">📦</div>
+						{/if}
+					</a>
+				{:else if itemImage(item)}
 					<img src={itemImage(item)} alt="" class="h-12 w-12 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
 				{:else}
 					<div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-lg">📦</div>
 				{/if}
 				<div class="min-w-0">
-					<div class="truncate font-semibold">{item.name}</div>
+					{#if item.articleId}
+						<a href={`/artikel/${item.articleId}`} class="block truncate font-semibold hover:underline">{item.name}</a>
+					{:else}
+						<div class="truncate font-semibold">{item.name}</div>
+					{/if}
 					<div class="text-xs text-gray-500">{item.unitQuantity} · geprüft {checked[item.productId] ?? 0}/{item.quantity}</div>
 				</div>
 			</div>

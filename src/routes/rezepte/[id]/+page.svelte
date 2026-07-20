@@ -117,7 +117,12 @@
 			</span>
 			<div class="min-w-0 flex-1">
 				<div class="truncate text-sm font-medium">
-					{ing.articles.length > 0 ? ing.articles.map((a) => a.name).join(' oder ') : ing.freeText}
+					{#if ing.articles.length > 0}
+						<!-- Separator und Links in einer Zeile, damit die Leerzeichen im truncate-Container erhalten bleiben -->
+						{#each ing.articles as art, i (art.id)}{i > 0 ? ' oder ' : ''}<a href={`/artikel/${art.id}`} class="hover:underline">{art.name}</a>{/each}
+					{:else}
+						{ing.freeText}
+					{/if}
 				</div>
 				{#if state.kind === 'missing'}
 					<div class="text-xs text-amber-600">

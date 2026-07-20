@@ -124,13 +124,15 @@
 						onchange={(e) => (selected[item.id] = e.currentTarget.checked)}
 						class="h-5 w-5 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-600 disabled:opacity-40"
 					/>
-					{#if item.imagePath}
-						<img src={`/api/images/${item.imagePath}`} alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-lg border border-gray-100 object-contain" />
-					{:else}
-						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">📦</div>
-					{/if}
+					<a href={`/artikel/${item.id}`} class="shrink-0">
+						{#if item.imagePath}
+							<img src={`/api/images/${item.imagePath}`} alt="" loading="lazy" class="h-10 w-10 rounded-lg border border-gray-100 object-contain" />
+						{:else}
+							<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">📦</div>
+						{/if}
+					</a>
 					<div class="min-w-0 flex-1">
-						<div class="truncate font-medium">{item.name}</div>
+						<a href={`/artikel/${item.id}`} class="block truncate font-medium hover:underline">{item.name}</a>
 						<div class="text-xs text-gray-500">
 							{packageSize(item.amount, item.unit)} · Bestand {item.stock}/{item.minStock}
 							{#if !item.picnicId}

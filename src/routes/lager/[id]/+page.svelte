@@ -43,11 +43,13 @@
 		{#each data.articles as article (article.articleId)}
 			<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
 				<div class="flex items-center gap-3 border-b border-gray-100 px-4 py-3">
-					{#if article.imagePath}
-						<img src={`/api/images/${article.imagePath}`} alt="" class="h-10 w-10 shrink-0 rounded-lg border border-gray-100 object-contain" />
-					{:else}
-						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">📦</div>
-					{/if}
+					<a href={`/artikel/${article.articleId}`} class="shrink-0">
+						{#if article.imagePath}
+							<img src={`/api/images/${article.imagePath}`} alt="" class="h-10 w-10 rounded-lg border border-gray-100 object-contain" />
+						{:else}
+							<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">📦</div>
+						{/if}
+					</a>
 					<a href={`/artikel/${article.articleId}`} class="min-w-0 flex-1">
 						<span class="block truncate font-semibold hover:underline">{article.articleName}</span>
 						{#if packageSize(article.amount, article.unit)}

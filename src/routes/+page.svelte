@@ -28,11 +28,13 @@
 			{#each data.expiring as entry (entry.id)}
 				{@const status = mhdStatus(entry.bestBefore)}
 				<li class="flex items-center gap-3 px-4 py-3">
-					{#if entry.imagePath}
-						<img src={`/api/images/${entry.imagePath}`} alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-lg border border-gray-100 object-contain" />
-					{:else}
-						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">📦</div>
-					{/if}
+					<a href={`/artikel/${entry.articleId}`} class="shrink-0">
+						{#if entry.imagePath}
+							<img src={`/api/images/${entry.imagePath}`} alt="" loading="lazy" class="h-10 w-10 rounded-lg border border-gray-100 object-contain" />
+						{:else}
+							<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">📦</div>
+						{/if}
+					</a>
 					<div class="min-w-0 flex-1">
 						<a href={`/artikel/${entry.articleId}`} class="block truncate font-medium hover:underline">{entry.articleName}</a>
 						<div class="text-xs text-gray-500">{entry.quantity}× · {entry.locationName} · MHD {formatDate(entry.bestBefore)}</div>
