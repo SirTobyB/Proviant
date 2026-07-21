@@ -5,9 +5,11 @@ Leitfaden für die Arbeit an diesem Repository (Claude Code & Mitentwickelnde).
 ## Projekt
 
 Selbstgehostete Familien-Webapp zur Lebensmittelverwaltung: Lager (Chargen mit
-MHD), Artikelstamm, Rezepte und Picnic-Anbindung (Bestellvorschläge,
-Lieferungs-Check). SvelteKit + TypeScript + SQLite (Drizzle), als Docker-Image
-für amd64/arm64. UI, Kommentare und Commit-Messages sind **deutsch**.
+MHD), Inventur, Artikelstamm (mit Tags), Rezepte (mit Alternativartikeln je
+Zutat), Wochenplan und Picnic-Anbindung (Bestellvorschläge, Lieferungs-Check
+mit Auto-Anlage fehlender Artikel). SvelteKit + TypeScript + SQLite (Drizzle),
+als Docker-Image für amd64/arm64. UI, Kommentare und Commit-Messages sind
+**deutsch**.
 
 ## Befehle
 
@@ -38,12 +40,22 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
     (Gebindegrößen wie „6er Pack", „2 x 125g").
   - `auth.ts` / `password.ts` – Sessions (DB-gestützt, httpOnly-Cookie) und
     scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder.
-  - `stock.ts` (Buchungen, FEFO), `tags.ts`, `recipeData.ts`, `articleForm.ts`,
-    `recipeForm.ts`, `articleImport.ts` (Artikel aus Picnic-Produkt, mit
-    picnicId-Dedupe), `images.ts`.
+  - `stock.ts` (Buchungen, FEFO), `tags.ts` (Rezept-Tags), `articleTags.ts`
+    (Artikel-Tags — **eigener Tag-Pool**, bewusst getrennt von den
+    Rezept-`tags`, inkl. Bulk-Map `tagsForArticles` gegen N+1 auf
+    Listenseiten), `recipeData.ts`, `mealPlan.ts` (Wochenplan-Einkaufsliste:
+    verrechnet den gemeinsamen Vorrat über alle geplanten Tage per
+    Artikel-Pool, Rundungs-Überschüsse werden zurückgebucht),
+    `articleForm.ts`, `recipeForm.ts`, `articleImport.ts` (Artikel aus
+    Picnic-Produkt, **idempotent** per picnicId-Dedupe — wird auch vom
+    Lieferungs-Check zum Auto-Anlegen fehlender Artikel genutzt), `images.ts`.
 - **Reine Helfer** in `src/lib/` (client- und servertauglich): `units.ts`
-  (Mengen/Aufrunden), `mhd.ts` (Restlaufzeit/Ampel), `suggest.ts`
+  (Mengen/Einheiten; `coverageMulti` summiert Bestand über die
+  Alternativartikel einer Zutat), `mhd.ts` (Restlaufzeit/Ampel), `suggest.ts`
   (gewichteter Rezeptvorschlag).
+- **Wiederverwendbare Komponenten** in `src/lib/components/`: `ArticleForm`,
+  `RecipeForm`, `TagInput` (Chips + Autocomplete, rendert das
+  `name="tags"`-Hiddenfield selbst), `BarcodeScanner`.
 - **Auth-Enforcement** in `src/hooks.server.ts`: ohne Login → `/login`;
   `/benutzer` nur für Admins. `locals.user` (Typ in `src/app.d.ts`) trägt den
   angemeldeten Benutzer. Das Root-Layout zeigt die Navigation nur, wenn
@@ -82,6 +94,10 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
   Safe-Area-Paddings im Layout; Eingabefelder unter 768px mindestens **16px**
   Schrift (sonst zoomt iOS-Safari beim Fokussieren). Foto-Uploads brauchen
   `BODY_SIZE_LIMIT` (Default 512K von adapter-node → im Image auf 15M gesetzt).
+  Kopfbereiche mit Button-Gruppen: äußeren Container `flex-wrap` lassen und
+  **kein `shrink-0`** auf die Gruppe — sonst ragt sie bei 375px über den Rand
+  bzw. erzwingt horizontales Scrollen (ist zweimal passiert: Rezept- und
+  Artikelliste).
 - **Android-Installierbarkeit:** `static/service-worker.js` (Passthrough, kein
   Caching) ist **Pflicht**, nicht optional — ohne registrierten Service Worker
   erkennt Chrome die Seite nicht als vollwertige PWA (WebAPK) und installiert

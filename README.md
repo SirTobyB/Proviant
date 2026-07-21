@@ -15,11 +15,18 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
   Gefrierschrank, Vorratsregal, Getränkekeller), geführt als Chargen mit eigenem
   MHD. Ein-/Ausbuchen per Barcode-Scan (FEFO beim Ausbuchen), MHD-Ampel und
   „Läuft bald ab"-Ansicht. Schnelle +/−-Korrektur mit frei wählbarer Menge
-  direkt in der Artikelliste.
+  direkt in der Artikelliste; Chargen lassen sich bearbeiten und zwischen
+  Lagerorten umlagern.
+- **Inventur** — kompakte Übersicht aller vorhandenen Bestände mit
+  Lagerort-Aufschlüsselung. Gezählten Gesamtbestand eintragen, die Differenz
+  wird automatisch gebucht (Mehrbestand in den Standard-Lagerort, Minderbestand
+  FEFO ausgebucht). Filterbar nach Suche und Artikel-Tags.
 - **Artikelstamm** — Name, Bild, Gebindegröße mit Maßeinheit, EAN, optionale
-  Picnic-Artikel-ID (Suche oder Direkteingabe), Mindestbestand und
-  Standard-Lagerort. Neuanlage per Barcode-Scan, Vorbefüllung über
-  Open Food Facts und Picnic-Produktsuche. **Import aus Bestellungen:**
+  Picnic-Artikel-ID (Suche oder Direkteingabe), Mindestbestand,
+  Standard-Lagerort und frei vergebbare Tags (mit Filter in Artikelliste und
+  Inventur). Neuanlage per Barcode-Scan, Vorbefüllung über Open Food Facts und
+  Picnic-Produktsuche. Die Artikelseite zeigt alle Chargen des Artikels über
+  alle Lagerorte, direkt bearbeit- und umlagerbar. **Import aus Bestellungen:**
   übernimmt Produkte aus den letzten Picnic-Lieferungen samt Bild,
   Gebindegröße und Verknüpfung (einzeln beim Auspacken oder gesammelt
   unter *Artikel → Picnic-Import*; EAN liefert Picnic nicht).
@@ -29,16 +36,25 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
   wird bewusst nie automatisch — der Checkout bleibt in der Picnic-App.
 - **Lieferungs-Check** — Beim Auspacken einer Picnic-Lieferung: Positionen per
   Barcode scannen (matcht über die Picnic-ID) und direkt in den Ziel-Lagerort
-  einbuchen, oder nach Sichtprüfung alle offenen Positionen auf einmal
-  bestätigen. Zeigt Produktbilder aus Picnic; unbekannte Positionen lassen
-  sich mit einem Tap als Artikel anlegen.
+  einbuchen, per +-Taste einzeln bestätigen oder nach Sichtprüfung alle
+  offenen Positionen auf einmal. Noch unbekannte Produkte werden dabei
+  automatisch als Artikel angelegt (samt Bild und Gebindegröße). Zeigt
+  Produktbilder aus Picnic.
 - **Rezepte** — warme Mahlzeiten und Kuchen, Zutaten verknüpft mit dem
-  Artikelstamm oder als Freitext, freie Tags. Kochbarkeits-Check gegen den
+  Artikelstamm oder als Freitext, freie Tags. Eine Zutat kann mehrere
+  Alternativartikel akzeptieren (z.B. verschiedene Eier-Sorten) — der Bestand
+  aller Alternativen wird zusammengezählt. Kochbarkeits-Check gegen den
   Bestand („Was kann ich heute kochen?"), Portionsskalierung und „Fehlende
   Zutaten in den Picnic-Warenkorb" (aufgerundet auf Gebindegrößen). Zufälliger
   Rezeptvorschlag mit 2-Wochen-Sperre für kürzlich Gekochtes, optional nach
   Tags. **Import aus Picnic:** übernimmt Rezepte der Picnic-Rezeptseite mit
   Portionen, Zutaten, Schritten und Tipp (*Rezepte → Picnic-Import*).
+- **Wochenplan** — Gerichte für die nächsten 7 Tage planen: Tage auswählen und
+  Vorschläge würfeln (ohne Rezept-Wiederholung in der Woche), Tage manuell
+  belegen, Portionen anpassen — und die fehlenden Zutaten **aller** geplanten
+  Tage in einem Rutsch in den Picnic-Warenkorb legen. Der gemeinsame Vorrat
+  wird dabei über die ganze Woche verrechnet (kein Doppelzählen, keine
+  unnötigen Mehrfachbestellungen desselben Artikels).
 
 ## Stack
 
