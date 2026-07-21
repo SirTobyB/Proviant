@@ -123,37 +123,72 @@
 		}
 	}
 
-	// Sichtprüfung bestätigen: alle offenen, verknüpften Positionen auf einmal
-	// in ihren Standard-Lagerort (sonst Fallback) buchen; Rest nur abhaken.
+	// Sichtprüfung bestätigen: ALLE offenen Positionen auf einmal in ihren
+	// Standard-Lagerort (sonst Fallback) buchen; noch nicht im Artikelstamm
+	// vorhandene Produkte werden dabei serverseitig automatisch angelegt.
 	async function confirmAll() {
-		const openLinked = data.items
-			.filter((i) => i.articleId && i.quantity - (checked[i.productId] ?? 0) > 0)
-			.map((i) => ({ productId: i.productId, quantity: i.quantity - (checked[i.productId] ?? 0) }));
+		const open = data.items
+			.filter((i) => i.quantity - (checked[i.productId] ?? 0) > 0)
+			.map((i) => ({
+				productId: i.productId,
+				quantity: i.quantity - (checked[i.productId] ?? 0),
+				name: i.name,
+				unitQuantity: i.unitQuantity,
+				imageId: i.imageId ?? ''
+			}));
 
 		const body = new FormData();
-		body.set('items', JSON.stringify(openLinked));
+		body.set('items', JSON.stringify(open));
 		body.set('fallbackLocationId', bulkLocation);
 		const response = await fetch('?/confirmAll', { method: 'POST', body });
 		const result = deserialize(await response.text());
 		if (result.type === 'success') {
-			// Alles als gesehen markieren (verknüpft = eingebucht, unverknüpft = nur bestätigt)
+			// Alles als gesehen markieren
 			for (const i of data.items) checked[i.productId] = i.quantity;
-			const data_ = result.data as { booked: number; noLocation: string[] };
-			const suffix = data_.noLocation?.length
-				? ` · ohne Lagerort übersprungen: ${data_.noLocation.join(', ')}`
-				: '';
-			showToast(`Sichtprüfung bestätigt — ${data_.booked} Gebinde eingebucht${suffix}`);
+			const data_ = result.data as { booked: number; imported: number; noLocation: string[]; failed: string[] };
+			let suffix = data_.imported ? ` · ${data_.imported} Artikel neu angelegt` : '';
+			if (data_.noLocation?.length) suffix += ` · ohne Lagerort übersprungen: ${data_.noLocation.join(', ')}`;
+			if (data_.failed?.length) suffix += ` · fehlgeschlagen: ${data_.failed.join(', ')}`;
+			showToast(`Sichtprüfung bestätigt — ${data_.booked} Gebinde eingebucht${suffix}`, data_.failed?.length ? 'warn' : 'ok');
 			showBulk = false;
+			await invalidateAll(); // neu angelegte Artikel als verknüpft anzeigen
 			resetScanner();
 		} else {
 			showToast('Sammelbestätigung fehlgeschlagen', 'warn');
 		}
 	}
 
-	// Manuelles Abhaken (ohne Einbuchen) – für Positionen ohne Artikel-Verknüpfung
+	// "−": nur den Zähler korrigieren (bucht NICHT aus)
 	function bump(item: Item, delta: number) {
 		const next = Math.max(0, Math.min(item.quantity, (checked[item.productId] ?? 0) + delta));
 		checked[item.productId] = next;
+	}
+
+	// "+": bucht 1 Gebinde wirklich ein (Standard-Lagerort des Artikels, sonst
+	// Fallback) und legt den Artikel vorher automatisch aus Picnic an, falls er fehlt
+	let bookingProduct = $state<string | null>(null);
+	async function bookAndCheck(item: Item) {
+		if (bookingProduct) return;
+		bookingProduct = item.productId;
+		const body = new FormData();
+		body.set('productId', item.productId);
+		body.set('name', item.name);
+		body.set('unitQuantity', item.unitQuantity);
+		body.set('imageId', item.imageId ?? '');
+		body.set('fallbackLocationId', bulkLocation);
+		const response = await fetch('?/bookOne', { method: 'POST', body });
+		const result = deserialize(await response.text());
+		bookingProduct = null;
+		if (result.type === 'success') {
+			checked[item.productId] = (checked[item.productId] ?? 0) + 1;
+			const data_ = result.data as { created: boolean; locationName: string };
+			const created = data_.created ? ' · Artikel neu angelegt' : '';
+			showToast(`„${item.name}" 1× eingebucht (${data_.locationName})${created}`);
+			await invalidateAll();
+		} else {
+			const message = result.type === 'failure' ? (result.data?.message as string) : 'Einbuchen fehlgeschlagen';
+			showToast(message ?? 'Einbuchen fehlgeschlagen', 'warn');
+		}
 	}
 
 	function itemStatus(item: Item): 'open' | 'done' {
@@ -328,11 +363,12 @@
 			<div class="flex shrink-0 items-center gap-1.5">
 				<button type="button" onclick={() => bump(item, -1)} disabled={(checked[item.productId] ?? 0) === 0} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">−</button>
 				<span class="w-10 text-center text-sm font-semibold {done ? 'text-green-700' : 'text-gray-700'}">{checked[item.productId] ?? 0}/{item.quantity}</span>
-				<button type="button" onclick={() => bump(item, 1)} disabled={done} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">+</button>
+				<button type="button" onclick={() => bookAndCheck(item)} disabled={done || bookingProduct !== null} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">+</button>
 			</div>
 		</li>
 	{/each}
 </ul>
 <p class="mt-2 max-w-md text-xs text-gray-500">
-	Scannen bucht automatisch ins Lager ein. Die +/−-Tasten haken nur manuell ab (ohne Einbuchen), etwa für Positionen ohne Artikel-Verknüpfung.
+	Scannen und die +-Taste buchen ins Lager ein (fehlende Artikel werden dabei automatisch aus Picnic angelegt).
+	Die −-Taste korrigiert nur den Zähler, bucht aber nichts aus — Bestandskorrekturen im Lager oder über die Inventur vornehmen.
 </p>

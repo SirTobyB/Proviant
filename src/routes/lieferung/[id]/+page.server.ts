@@ -80,12 +80,20 @@ export const actions: Actions = {
 	},
 
 	// Sichtprüfung: mehrere offene Positionen auf einmal einbuchen.
-	// items = [{ productId, quantity }] (die noch offenen, verknüpften Positionen).
+	// items = [{ productId, quantity, name, unitQuantity, imageId }] (alle noch
+	// offenen Positionen). Noch nicht im Artikelstamm vorhandene Produkte werden
+	// vorher automatisch aus Picnic angelegt (idempotent per picnicId-Dedupe).
 	// Jede Position landet im Standard-Lagerort ihres Artikels, sonst im Fallback.
 	confirmAll: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const fallbackLocationId = Number(formData.get('fallbackLocationId')) || null;
-		let requested: { productId: string; quantity: number }[] = [];
+		let requested: {
+			productId: string;
+			quantity: number;
+			name?: string;
+			unitQuantity?: string;
+			imageId?: string | null;
+		}[] = [];
 		try {
 			const raw = JSON.parse(String(formData.get('items') ?? '[]'));
 			if (Array.isArray(raw)) requested = raw;
@@ -107,20 +115,88 @@ export const actions: Actions = {
 
 		const user = locals.user?.username ?? null;
 		let booked = 0;
+		let imported = 0;
 		const noLocation: string[] = [];
+		const failed: string[] = [];
 		for (const req of requested) {
-			const article = byPicnicId.get(String(req.productId));
 			const qty = Number(req.quantity);
-			if (!article || !Number.isInteger(qty) || qty < 1) continue;
-			const locationId = article.defaultLocationId ?? fallbackLocationId;
-			if (!locationId) {
-				noLocation.push(article.name);
-				continue;
+			if (!Number.isInteger(qty) || qty < 1) continue;
+			const reqName = String(req.name ?? '').trim();
+			// Fehler pro Position abfangen: Ein Abbruch mitten im Loop würde als
+			// 500 enden, obwohl frühere Positionen schon gebucht sind — ein
+			// Retry würde die dann doppelt buchen.
+			try {
+				let article = byPicnicId.get(String(req.productId));
+				let articleId: number;
+				let defaultLocationId: number | null;
+				let articleName: string;
+				if (article) {
+					articleId = article.id;
+					defaultLocationId = article.defaultLocationId;
+					articleName = article.name;
+				} else {
+					// Artikel fehlt im Stamm: automatisch aus Picnic anlegen
+					if (!reqName) continue;
+					const result = await importArticleFromPicnic(
+						{
+							productId: String(req.productId),
+							name: reqName,
+							unitQuantity: String(req.unitQuantity ?? ''),
+							imageId: String(req.imageId ?? '') || null
+						},
+						null,
+						user
+					);
+					articleId = result.articleId;
+					defaultLocationId = null;
+					articleName = reqName;
+					if (result.created) imported += 1;
+				}
+				const locationId = defaultLocationId ?? fallbackLocationId;
+				if (!locationId) {
+					noLocation.push(articleName);
+					continue;
+				}
+				bookIn(articleId, locationId, qty, null, user);
+				booked += qty;
+			} catch {
+				failed.push(reqName || String(req.productId));
 			}
-			bookIn(article.id, locationId, qty, null, user);
-			booked += qty;
 		}
-		return { confirmedAll: true, booked, noLocation };
+		return { confirmedAll: true, booked, imported, noLocation, failed };
+	},
+
+	// Manuelle Bestätigung einer einzelnen Position ("+"-Taste): bucht 1 Gebinde
+	// ein und legt den Artikel vorher automatisch aus Picnic an, falls er fehlt.
+	bookOne: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const productId = String(formData.get('productId') ?? '').trim();
+		const name = String(formData.get('name') ?? '').trim();
+		const unitQuantity = String(formData.get('unitQuantity') ?? '');
+		const imageId = String(formData.get('imageId') ?? '') || null;
+		const fallbackLocationId = Number(formData.get('fallbackLocationId')) || null;
+		if (!productId || !name) return fail(400, { message: 'Ungültiges Produkt' });
+
+		const user = locals.user?.username ?? null;
+		const existing = db.select().from(articles).where(eq(articles.picnicId, productId)).get();
+		let articleId: number;
+		let created = false;
+		if (existing) {
+			articleId = existing.id;
+		} else {
+			const result = await importArticleFromPicnic({ productId, name, unitQuantity, imageId }, null, user);
+			articleId = result.articleId;
+			created = result.created;
+		}
+
+		// Import liefert keine defaultLocationId — frisch angelegte Artikel haben keine
+		const locationId = existing?.defaultLocationId ?? fallbackLocationId;
+		if (!locationId) return fail(400, { message: 'Kein Lagerort verfügbar' });
+		const location = db.select().from(storageLocations).where(eq(storageLocations.id, locationId)).get();
+		if (!location) return fail(400, { message: 'Lagerort nicht gefunden' });
+
+		bookIn(articleId, locationId, 1, null, user);
+		return { bookedOne: productId, created, locationName: location.name };
 	},
 
 	// Nicht verknüpfte Lieferposition direkt als Artikel importieren
