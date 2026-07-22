@@ -34,6 +34,15 @@
 		data.suggestions.filter((s) => selected[s.id] && s.picnicId).length
 	);
 
+	// Alle an-/abwählen (nur Picnic-verknüpfte — die übrigen sind disabled)
+	const selectableCount = $derived(data.suggestions.filter((s) => s.picnicId).length);
+	const allSelected = $derived(selectableCount > 0 && selectedCount === selectableCount);
+	function toggleAll() {
+		for (const s of data.suggestions) {
+			if (s.picnicId) selected[s.id] = !allSelected;
+		}
+	}
+
 	function packageSize(amount: number | null, unit: string | null): string {
 		if (amount == null) return '';
 		return `${amount.toLocaleString('de-DE')} ${unit ?? ''}`.trim();
@@ -109,9 +118,19 @@
 {#if data.suggestions.length === 0}
 	<div class="mt-6 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
 		Alles ausreichend bevorratet — keine Vorschläge. Mindestbestände legst du je Artikel fest.
+		{#if data.inCart.length > 0}
+			<div class="mt-2 text-xs text-gray-400">Bereits im Picnic-Warenkorb: {data.inCart.join(', ')}</div>
+		{/if}
 	</div>
 {:else}
 	<form method="POST" action="?/addToCart" use:enhance class="mt-6 max-w-2xl">
+		{#if selectableCount > 0}
+			<div class="mb-2 flex justify-end">
+				<button type="button" onclick={toggleAll} class="text-sm font-medium text-green-700 underline hover:text-green-800">
+					{allSelected ? 'Alle abwählen' : 'Alle auswählen'}
+				</button>
+			</div>
+		{/if}
 		<ul class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
 			{#each data.suggestions as item (item.id)}
 				<li class="flex items-center gap-3 px-4 py-3">
@@ -135,6 +154,9 @@
 						<a href={`/artikel/${item.id}`} class="block truncate font-medium hover:underline">{item.name}</a>
 						<div class="text-xs text-gray-500">
 							{packageSize(item.amount, item.unit)} · Bestand {item.stock}/{item.minStock}
+							{#if item.inCartQty > 0}
+								· {item.inCartQty} bereits im Warenkorb
+							{/if}
 							{#if !item.picnicId}
 								· <a href={`/artikel/${item.id}`} class="text-amber-600 underline">Picnic verknüpfen</a>
 							{/if}
@@ -161,6 +183,9 @@
 		</button>
 		{#if connection !== 'connected'}
 			<p class="mt-2 text-xs text-gray-500">Zum Übertragen zuerst oben mit Picnic verbinden.</p>
+		{/if}
+		{#if data.inCart.length > 0}
+			<p class="mt-2 text-xs text-gray-400">Bereits im Picnic-Warenkorb (nicht mehr vorgeschlagen): {data.inCart.join(', ')}</p>
 		{/if}
 	</form>
 {/if}

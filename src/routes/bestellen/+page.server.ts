@@ -3,6 +3,7 @@ import { articles, stockEntries } from '$lib/server/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import {
 	getConnectionState,
+	getCartQuantities,
 	login,
 	request2FACode,
 	verify2FA,
@@ -36,11 +37,33 @@ function loadSuggestions() {
 		.map((row) => ({ ...row, needed: row.minStock - row.stock }));
 }
 
-export const load: PageServerLoad = () => {
-	return {
-		suggestions: loadSuggestions(),
-		connection: getConnectionState()
-	};
+export const load: PageServerLoad = async () => {
+	const connection = getConnectionState();
+	let suggestions = loadSuggestions().map((s) => ({ ...s, inCartQty: 0 }));
+	const inCart: string[] = [];
+
+	// Abgleich mit dem Picnic-Warenkorb: Was schon (teilweise) drinliegt, wird
+	// nicht erneut in voller Menge vorgeschlagen. Fehler dürfen die Seite nicht
+	// blockieren — dann bleibt der Abgleich einfach aus.
+	if (connection === 'connected') {
+		try {
+			const cartQuantities = await getCartQuantities();
+			suggestions = suggestions
+				.map((s) => {
+					const inCartQty = s.picnicId ? (cartQuantities.get(s.picnicId) ?? 0) : 0;
+					return { ...s, inCartQty, needed: s.needed - inCartQty };
+				})
+				.filter((s) => {
+					if (s.needed > 0) return true;
+					inCart.push(s.name);
+					return false;
+				});
+		} catch {
+			// Warenkorb nicht abrufbar — Vorschläge ungefiltert anzeigen
+		}
+	}
+
+	return { suggestions, inCart, connection };
 };
 
 export const actions: Actions = {

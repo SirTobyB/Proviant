@@ -127,6 +127,42 @@ export async function getCart() {
 	return getClient().cart.getCart();
 }
 
+/**
+ * Aktuelle Warenkorb-Mengen je Produkt-ID (für den Abgleich der
+ * Bestellvorschläge). Defensiv gehalten: die API ist unoffiziell — bei
+ * unerwarteter Antwortstruktur lieber leere Map als Fehler.
+ */
+export async function getCartQuantities(): Promise<Map<string, number>> {
+	await ensureLoggedIn();
+	const cart = await getCart();
+	const quantities = new Map<string, number>();
+
+	// Primäre Quelle: analytics_context_data.items_list trägt explizite Mengen
+	const analyticsItems = cart?.analytics_context_data?.items_list;
+	if (Array.isArray(analyticsItems)) {
+		for (const item of analyticsItems) {
+			const id = typeof item?.product_id === 'string' ? item.product_id : null;
+			const qty = Number(item?.quantity);
+			if (id && Number.isFinite(qty) && qty > 0) {
+				quantities.set(id, (quantities.get(id) ?? 0) + qty);
+			}
+		}
+	}
+	if (quantities.size > 0) return quantities;
+
+	// Fallback: Vorkommen der OrderArticles je ID zählen
+	if (Array.isArray(cart?.items)) {
+		for (const line of cart.items) {
+			if (!Array.isArray(line?.items)) continue;
+			for (const article of line.items) {
+				const id = typeof article?.id === 'string' ? article.id : null;
+				if (id) quantities.set(id, (quantities.get(id) ?? 0) + 1);
+			}
+		}
+	}
+	return quantities;
+}
+
 export type DeliverySummary = {
 	id: string;
 	creationTime: string;
