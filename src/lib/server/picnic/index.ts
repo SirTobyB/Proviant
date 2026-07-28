@@ -150,13 +150,20 @@ export async function getCartQuantities(): Promise<Map<string, number>> {
 	}
 	if (quantities.size > 0) return quantities;
 
-	// Fallback: Vorkommen der OrderArticles je ID zählen
+	// Fallback: Menge steht im QUANTITY-Decorator der Warenkorb-Zeile — ein
+	// Produkt taucht dort nur EINMAL auf, egal wie oft es bestellt wurde
+	// (live geprüft), Zählen der Vorkommen ergäbe also immer 1.
 	if (Array.isArray(cart?.items)) {
 		for (const line of cart.items) {
 			if (!Array.isArray(line?.items)) continue;
 			for (const article of line.items) {
 				const id = typeof article?.id === 'string' ? article.id : null;
-				if (id) quantities.set(id, (quantities.get(id) ?? 0) + 1);
+				if (!id) continue;
+				const decorator = Array.isArray(article?.decorators)
+					? article.decorators.find((d: { type?: string }) => d?.type === 'QUANTITY')
+					: undefined;
+				const qty = Number((decorator as { quantity?: number } | undefined)?.quantity);
+				quantities.set(id, (quantities.get(id) ?? 0) + (Number.isFinite(qty) && qty > 0 ? qty : 1));
 			}
 		}
 	}

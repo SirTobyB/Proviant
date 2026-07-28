@@ -3,15 +3,24 @@
 
 	let { data, form } = $props();
 
-	// Auswahl und Mengen pro Vorschlag (Fehlmenge vorbelegt); Initialwerte genügen
+	// Auswahl und Mengen pro Vorschlag (Fehlmenge vorbelegt)
+	const defaultSelected = () =>
+		Object.fromEntries(data.suggestions.map((s) => [s.id, Boolean(s.picnicId)]));
+	const defaultQuantities = () => Object.fromEntries(data.suggestions.map((s) => [s.id, s.needed]));
+
 	// svelte-ignore state_referenced_locally
-	let selected = $state<Record<number, boolean>>(
-		Object.fromEntries(data.suggestions.map((s) => [s.id, Boolean(s.picnicId)]))
-	);
+	let selected = $state<Record<number, boolean>>(defaultSelected());
 	// svelte-ignore state_referenced_locally
-	let quantities = $state<Record<number, number>>(
-		Object.fromEntries(data.suggestions.map((s) => [s.id, s.needed]))
-	);
+	let quantities = $state<Record<number, number>>(defaultQuantities());
+
+	// Nach jedem Neuladen der Daten (v.a. nach dem Bestellen) neu vorbelegen:
+	// sonst behalten die Felder Werte von vorher — für neu hinzugekommene
+	// Vorschläge gäbe es gar keinen Eintrag und das Mengenfeld bliebe leer.
+	$effect(() => {
+		data.suggestions;
+		selected = defaultSelected();
+		quantities = defaultQuantities();
+	});
 
 	const connectionLabel: Record<string, string> = {
 		unconfigured: 'Keine Zugangsdaten hinterlegt',
@@ -111,6 +120,18 @@
 		{#if form.skipped.length > 0}
 			<div class="mt-1 text-green-700">Ohne Picnic-Verknüpfung übersprungen: {form.skipped.join(', ')}</div>
 		{/if}
+	</div>
+{/if}
+{#if form && 'notInCart' in form && form.notInCart?.length}
+	<div class="mt-4 max-w-2xl rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+		Nicht im Warenkorb angekommen: {form.notInCart.join(', ')} — Picnic kennt die hinterlegte
+		Produkt-ID vermutlich nicht mehr. Bitte die Picnic-Verknüpfung im Artikel neu setzen.
+	</div>
+{/if}
+{#if data.cartUnavailable}
+	<div class="mt-4 max-w-2xl rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+		Der Picnic-Warenkorb konnte nicht gelesen werden — die Vorschläge sind daher nicht mit ihm
+		abgeglichen und könnten bereits Bestelltes enthalten.
 	</div>
 {/if}
 

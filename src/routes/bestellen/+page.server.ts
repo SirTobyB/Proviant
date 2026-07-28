@@ -41,6 +41,9 @@ export const load: PageServerLoad = async () => {
 	const connection = getConnectionState();
 	let suggestions = loadSuggestions().map((s) => ({ ...s, inCartQty: 0 }));
 	const inCart: string[] = [];
+	// Warenkorb nicht lesbar: Der Abgleich fällt aus — das muss sichtbar sein,
+	// sonst wirkt es wie „Picnic ignoriert meine Bestellung"
+	let cartUnavailable = false;
 
 	// Abgleich mit dem Picnic-Warenkorb: Was schon (teilweise) drinliegt, wird
 	// nicht erneut in voller Menge vorgeschlagen. Fehler dürfen die Seite nicht
@@ -60,10 +63,11 @@ export const load: PageServerLoad = async () => {
 				});
 		} catch {
 			// Warenkorb nicht abrufbar — Vorschläge ungefiltert anzeigen
+			cartUnavailable = true;
 		}
 	}
 
-	return { suggestions, inCart, connection };
+	return { suggestions, inCart, connection, cartUnavailable };
 };
 
 export const actions: Actions = {
@@ -132,10 +136,27 @@ export const actions: Actions = {
 			return fail(502, { message: err instanceof Error ? err.message : 'Warenkorb-Übergabe fehlgeschlagen' });
 		}
 
+		// Gegenprobe: Picnic quittiert auch Produkt-IDs, die es nicht (mehr) kennt,
+		// ohne Fehler — dann landet nichts im Warenkorb und der Artikel taucht
+		// weiter als Vorschlag auf. Das lieber melden als still schlucken.
+		const notInCart: string[] = [];
+		try {
+			const cartQuantities = await getCartQuantities();
+			for (const item of items) {
+				if (!cartQuantities.has(item.productId)) {
+					const name = suggestions.find((s) => s.picnicId === item.productId)?.name;
+					if (name) notInCart.push(name);
+				}
+			}
+		} catch {
+			// Gegenprobe nicht möglich — Bestellung gilt trotzdem als übergeben
+		}
+
 		return {
 			added: items.length,
 			totalUnits: items.reduce((sum, item) => sum + item.quantity, 0),
-			skipped
+			skipped,
+			notInCart
 		};
 	}
 };
