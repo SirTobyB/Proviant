@@ -103,20 +103,37 @@
 									<button type="button" onclick={() => (movingId = null)} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
 								</form>
 							{:else}
-								<div class="flex items-center gap-3">
-									<span class="w-10 shrink-0 text-sm font-medium text-gray-700">{entry.quantity}×</span>
-									<span class="flex-1 text-sm text-gray-600">
+								<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+									<!-- Schnellkorrektur: ein Klick = ein Gebinde mehr/weniger (0 löscht die Charge) -->
+									<div class="flex shrink-0 items-center gap-1.5">
+										<form method="POST" action="?/updateEntry" use:enhance>
+											<input type="hidden" name="entryId" value={entry.id} />
+											<input type="hidden" name="quantity" value={entry.quantity - 1} />
+											<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />
+											<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Ein Gebinde weniger">−</button>
+										</form>
+										<span class="w-10 text-center text-sm font-medium text-gray-700">{entry.quantity}×</span>
+										<form method="POST" action="?/updateEntry" use:enhance>
+											<input type="hidden" name="entryId" value={entry.id} />
+											<input type="hidden" name="quantity" value={entry.quantity + 1} />
+											<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />
+											<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Ein Gebinde mehr">+</button>
+										</form>
+									</div>
+									<span class="min-w-0 flex-1 text-sm text-gray-600">
 										{#if entry.bestBefore}
 											MHD {formatDate(entry.bestBefore)}
 										{:else}
 											<span class="text-gray-400">kein MHD</span>
 										{/if}
 									</span>
-									<span class="rounded-full px-2.5 py-1 text-xs font-medium {MHD_BADGE_CLASSES[status]}">
+									<span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium {MHD_BADGE_CLASSES[status]}">
 										{mhdLabel(entry.bestBefore)}
 									</span>
-									<button type="button" onclick={() => (movingId = entry.id)} class="shrink-0 text-sm text-gray-500 underline hover:text-gray-700">Umlagern</button>
-									<button type="button" onclick={() => (editingId = entry.id)} class="shrink-0 text-sm text-gray-500 underline hover:text-gray-700">Ändern</button>
+									<div class="flex shrink-0 items-center gap-3">
+										<button type="button" onclick={() => (movingId = entry.id)} class="text-sm text-gray-500 underline hover:text-gray-700">Umlagern</button>
+										<button type="button" onclick={() => (editingId = entry.id)} class="text-sm text-gray-500 underline hover:text-gray-700">Ändern</button>
+									</div>
 								</div>
 							{/if}
 						</li>
