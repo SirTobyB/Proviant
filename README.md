@@ -124,6 +124,7 @@ Check und Rezept-Warenkorb nicht.
 | `PICNIC_USERNAME` | Picnic-Zugangsdaten für Warenkorb, Lieferungen, Suche  | —                             |
 | `PICNIC_PASSWORD` |                                                        | —                             |
 | `BODY_SIZE_LIMIT` | Max. Request-Größe (Foto-Uploads!)                     | `15M`                         |
+| `GIT_SHA` · `BUILD_TIME` | Werden beim CI-Build als Build-Args ins Image gesetzt und auf der Konto-Seite unter **Version** angezeigt — so lässt sich prüfen, ob der Server den erwarteten Stand fährt. Lokal ungesetzt → „lokaler Build". | — |
 
 > **Passwörter mit Sonderzeichen** (`#`, `$` …) in `.env` und in der
 > `docker-compose*.yml` immer in Anführungszeichen setzen — ein unquotiertes `#`

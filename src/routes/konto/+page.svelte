@@ -4,6 +4,23 @@
 	let { data, form } = $props();
 
 	const roleLabel = $derived(data.account?.role === 'admin' ? 'Admin' : 'Benutzer');
+
+	// Zeitzone bewusst fest: sonst formatieren Server (UTC) und Browser
+	// unterschiedlich und die Hydration meldet eine Abweichung
+	const buildLabel = $derived.by(() => {
+		if (!data.version.buildTime) return 'lokaler Build';
+		const date = new Date(data.version.buildTime);
+		if (Number.isNaN(date.getTime())) return data.version.buildTime;
+		return date.toLocaleString('de-DE', {
+			timeZone: 'Europe/Berlin',
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric',
+			hour: '2-digit',
+			minute: '2-digit'
+		});
+	});
+	const commitLabel = $derived(data.version.commit ? data.version.commit.slice(0, 7) : 'unbekannt');
 </script>
 
 <svelte:head><title>Konto – LebensmittelKumpel</title></svelte:head>
@@ -57,4 +74,19 @@
 			Abmelden
 		</button>
 	</form>
+
+	<!-- Laufende Version: zur Kontrolle, ob der Server den erwarteten Stand fährt -->
+	<div class="rounded-xl border border-gray-200 bg-white p-4">
+		<h2 class="text-sm font-semibold text-gray-700">Version</h2>
+		<dl class="mt-2 space-y-1 text-sm">
+			<div class="flex justify-between gap-3">
+				<dt class="text-gray-500">Build</dt>
+				<dd>{buildLabel}</dd>
+			</div>
+			<div class="flex justify-between gap-3">
+				<dt class="text-gray-500">Commit</dt>
+				<dd class="font-mono text-xs">{commitLabel}</dd>
+			</div>
+		</dl>
+	</div>
 </div>

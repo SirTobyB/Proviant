@@ -30,6 +30,14 @@ COPY --from=build /app/build ./build
 COPY --from=build /app/drizzle ./drizzle
 COPY package.json ./
 
+# Herkunft des Images für die Versionsanzeige in der App (Konto-Seite).
+# Bewusst erst hier, nach den COPY-Schichten: die Werte ändern sich bei jedem
+# Build und würden sonst den Layer-Cache der teuren Build-Stage entwerten.
+ARG GIT_SHA=""
+ARG BUILD_TIME=""
+ENV GIT_SHA=$GIT_SHA
+ENV BUILD_TIME=$BUILD_TIME
+
 ENV NODE_ENV=production
 ENV DATABASE_URL=/data/lebensmittelkumpel.db
 ENV DATA_DIR=/data

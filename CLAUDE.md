@@ -114,7 +114,19 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
   (alle gitignored). Testdaten in der lokalen DB nach Verifikation wieder
   aufräumen.
 - **Deployment:** Push auf `main` baut per GitHub Actions das Multi-Arch-Image
-  nach GHCR. `docker-compose.prod.yml` (Traefik) fürs Ziehen des Images.
+  nach GHCR. `docker-compose.prod.yml` (Traefik) fürs Ziehen des Images. Der
+  Workflow reicht `GIT_SHA`/`BUILD_TIME` als Build-Args ins Image; die
+  Konto-Seite zeigt beides unter **Version** an. Bei „läuft mein Fix schon?"
+  **immer zuerst dort nachsehen** — das war schon mehrfach die Ursache
+  vermeintlicher Bugs.
+- **Formulare:** `use:enhance` macht standardmäßig ein `form.reset()` nach
+  erfolgreichem Absenden. Svelte setzt `value`/`checked` nur als DOM-Property
+  (ohne HTML-Attribut), Felder fallen dadurch auf **leer** zurück. Überall,
+  wo ein Formular Daten trägt, die das Absenden überleben müssen (Mengen,
+  versteckte Felder), deshalb `use:enhance={() => async ({ update }) =>
+  update({ reset: false })}` verwenden. Fällt beim Testen leicht durchs
+  Raster: nach direktem Seitenaufruf liefert SSR echte `value`-Attribute,
+  der Fehler zeigt sich nur nach App-interner Navigation.
 - **„Beim testen gefundene Bugs.md":** Kommunikationskanal des Nutzers — dort
   landen beim Testen gefundene Bugs und Feature-Wünsche. Beim Abarbeiten den
   Eintrag durchstreichen und mit **✅ Behoben/Umgesetzt** samt kurzer Erklärung

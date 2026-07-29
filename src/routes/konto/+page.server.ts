@@ -3,13 +3,19 @@ import { users } from '$lib/server/db/schema';
 import { hashPassword, verifyPassword } from '$lib/server/password';
 import { deleteUserSessions, SESSION_COOKIE, createSession } from '$lib/server/auth';
 import { dev } from '$app/environment';
+import { env } from '$env/dynamic/private';
 import { eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals }) => {
 	// locals.user ist durch den Hook garantiert vorhanden
-	return { account: locals.user };
+	return {
+		account: locals.user,
+		// Herkunft des laufenden Images (im Dockerfile aus Build-Args gesetzt) —
+		// zum Abgleich, ob der Server wirklich den erwarteten Stand fährt
+		version: { commit: env.GIT_SHA || null, buildTime: env.BUILD_TIME || null }
+	};
 };
 
 export const actions: Actions = {
