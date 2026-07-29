@@ -106,14 +106,14 @@
 								<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
 									<!-- Schnellkorrektur: ein Klick = ein Gebinde mehr/weniger (0 löscht die Charge) -->
 									<div class="flex shrink-0 items-center gap-1.5">
-										<form method="POST" action="?/updateEntry" use:enhance>
+										<form method="POST" action="?/updateEntry" use:enhance={() => async ({ update }) => update({ reset: false })}>
 											<input type="hidden" name="entryId" value={entry.id} />
 											<input type="hidden" name="quantity" value={entry.quantity - 1} />
 											<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />
 											<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Ein Gebinde weniger">−</button>
 										</form>
 										<span class="w-10 text-center text-sm font-medium text-gray-700">{entry.quantity}×</span>
-										<form method="POST" action="?/updateEntry" use:enhance>
+										<form method="POST" action="?/updateEntry" use:enhance={() => async ({ update }) => update({ reset: false })}>
 											<input type="hidden" name="entryId" value={entry.id} />
 											<input type="hidden" name="quantity" value={entry.quantity + 1} />
 											<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />

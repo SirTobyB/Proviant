@@ -103,7 +103,13 @@
 					</div>
 				</div>
 				<!-- Inventurkorrektur: gezählten Gesamtbestand eintragen -->
-				<form method="POST" action="?/setStock" use:enhance class="flex shrink-0 items-center gap-1.5">
+				<!-- reset: false — der Standard-Reset von enhance würde das Zählfeld leeren -->
+				<form
+					method="POST"
+					action="?/setStock"
+					use:enhance={() => async ({ update }) => update({ reset: false })}
+					class="flex shrink-0 items-center gap-1.5"
+				>
 					<input type="hidden" name="articleId" value={article.id} />
 					<input
 						type="number"

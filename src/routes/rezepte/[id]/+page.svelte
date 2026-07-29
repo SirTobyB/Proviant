@@ -138,7 +138,8 @@
 </ul>
 
 <!-- Warenkorb -->
-<form method="POST" action="?/addToCart" use:enhance class="mt-4 max-w-xl">
+<!-- reset: false — sonst verliert das versteckte Portionsfeld nach dem Absenden seinen Wert -->
+<form method="POST" action="?/addToCart" use:enhance={() => async ({ update }) => update({ reset: false })} class="mt-4 max-w-xl">
 	<input type="hidden" name="portions" value={portions} />
 	<button
 		type="submit"

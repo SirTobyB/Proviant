@@ -111,7 +111,8 @@
 					</span>
 				</a>
 				<!-- Schnell-Bestandskorrektur: Menge (Default 1) wirkt auf − und + -->
-				<form method="POST" action="?/bookOut" use:enhance>
+				<!-- reset: false — sonst verliert das versteckte Mengenfeld nach dem ersten Klick seinen Wert -->
+				<form method="POST" action="?/bookOut" use:enhance={() => async ({ update }) => update({ reset: false })}>
 					<input type="hidden" name="articleId" value={article.id} />
 					<input type="hidden" name="quantity" value={quantityFor(article.id)} />
 					<button type="submit" disabled={article.stock === 0} class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30" aria-label="Ausbuchen">−</button>
@@ -132,7 +133,7 @@
 						<span class="block text-[10px] text-amber-600">min. {article.minStock}</span>
 					{/if}
 				</div>
-				<form method="POST" action="?/bookIn" use:enhance>
+				<form method="POST" action="?/bookIn" use:enhance={() => async ({ update }) => update({ reset: false })}>
 					<input type="hidden" name="articleId" value={article.id} />
 					<input type="hidden" name="quantity" value={quantityFor(article.id)} />
 					<button type="submit" class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Einbuchen">+</button>

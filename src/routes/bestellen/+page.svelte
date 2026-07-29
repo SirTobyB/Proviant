@@ -147,7 +147,15 @@
 		{/if}
 	</div>
 {:else}
-	<form method="POST" action="?/addToCart" use:enhance class="mt-6 max-w-2xl">
+	<!-- reset: false — sonst leert SvelteKits Standard-Reset nach dem Absenden alle
+	     Mengen und Haken: Svelte setzt value/checked nur als DOM-Property, das
+	     Formular fällt beim Reset also auf leere Attribut-Defaults zurück -->
+	<form
+		method="POST"
+		action="?/addToCart"
+		use:enhance={() => async ({ update }) => update({ reset: false })}
+		class="mt-6 max-w-2xl"
+	>
 		{#if selectableCount > 0}
 			<div class="mb-2 flex justify-end">
 				<button type="button" onclick={toggleAll} class="text-sm font-medium text-green-700 underline hover:text-green-800">

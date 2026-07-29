@@ -197,7 +197,7 @@
 			</form>
 
 			<!-- Ausbuchen -->
-			<form method="POST" action="?/ausbuchen" use:enhance class="mt-3">
+			<form method="POST" action="?/ausbuchen" use:enhance={() => async ({ update }) => update({ reset: false })} class="mt-3">
 				<input type="hidden" name="articleId" value={article.id} />
 				<input type="hidden" name="quantity" value={quantity} />
 				<button
