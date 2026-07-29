@@ -47,8 +47,11 @@
 	const selectableCount = $derived(data.suggestions.filter((s) => s.picnicId).length);
 	const allSelected = $derived(selectableCount > 0 && selectedCount === selectableCount);
 	function toggleAll() {
+		// Zielwert einmal vorab festhalten: allSelected wird sonst schon nach der
+		// ersten Zuweisung neu berechnet und kippt mitten in der Schleife
+		const next = !allSelected;
 		for (const s of data.suggestions) {
-			if (s.picnicId) selected[s.id] = !allSelected;
+			if (s.picnicId) selected[s.id] = next;
 		}
 	}
 
