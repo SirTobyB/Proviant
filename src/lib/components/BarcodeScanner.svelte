@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { playScanBeep, unlockAudio } from '$lib/sound';
 
 	let { onDetect }: { onDetect: (ean: string) => void } = $props();
 
@@ -14,7 +15,15 @@
 
 	onMount(() => {
 		start();
-		return stop;
+		// Ton möglichst früh freischalten: klappt, wenn im Dokument schon getippt
+		// wurde (etwa beim Navigieren hierher). Beim Kaltstart direkt auf dieser
+		// Seite holt es der erste Tap nach.
+		unlockAudio();
+		window.addEventListener('pointerdown', unlockAudio, { once: true });
+		return () => {
+			window.removeEventListener('pointerdown', unlockAudio);
+			stop();
+		};
 	});
 
 	async function start() {
@@ -38,7 +47,8 @@
 					const codes = await detector.detect(video);
 					if (codes.length > 0 && codes[0].rawValue) {
 						detected = true;
-						navigator.vibrate?.(100);
+						playScanBeep();
+						navigator.vibrate?.(100); // iOS ignoriert das, daher zusätzlich der Ton
 						stop();
 						onDetect(codes[0].rawValue);
 					}
