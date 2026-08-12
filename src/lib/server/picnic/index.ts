@@ -123,7 +123,8 @@ export async function addToCart(items: AddProductsItems): Promise<void> {
 	await getClient().cart.addProductsToCart(items);
 }
 
-export async function getCart() {
+/** Rohdaten des Warenkorbs — nur intern; nach außen gehen die Mengen-Maps. */
+async function getCart() {
 	return getClient().cart.getCart();
 }
 

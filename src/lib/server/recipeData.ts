@@ -6,6 +6,7 @@ import { db } from '$lib/server/db';
 import { articles, recipeIngredientArticles, recipeIngredients, recipes, stockEntries } from '$lib/server/db/schema';
 import { coverageMulti, scaleAmount } from '$lib/units';
 import { eq, inArray, sql } from 'drizzle-orm';
+import { error } from '@sveltejs/kit';
 
 export type IngredientArticleOption = {
 	id: number;
@@ -28,6 +29,15 @@ export type RecipeIngredientDetail = {
 
 export function getRecipe(id: number) {
 	return db.select().from(recipes).where(eq(recipes.id, id)).get();
+}
+
+/** Rezept aus einem Routen-Parameter laden oder mit 404 abbrechen. */
+export function loadRecipeOr404(idParam: string) {
+	const id = Number(idParam);
+	if (!Number.isInteger(id)) throw error(404, 'Rezept nicht gefunden');
+	const recipe = getRecipe(id);
+	if (!recipe) throw error(404, 'Rezept nicht gefunden');
+	return recipe;
 }
 
 /**

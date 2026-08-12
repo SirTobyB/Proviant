@@ -103,14 +103,6 @@ export const actions: Actions = {
 		return { ok: true };
 	},
 
-	deleteEntry: async ({ params, request }) => {
-		const location = getLocation(params.id);
-		const entry = getEntry(location.id, (await request.formData()).get('entryId'));
-		if (!entry) return fail(404, { message: 'Charge nicht gefunden' });
-		db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
-		return { ok: true };
-	},
-
 	// Charge komplett in einen anderen Lagerort umlagern (z.B. falsch gebucht)
 	moveEntry: async ({ params, request, locals }) => {
 		const location = getLocation(params.id);

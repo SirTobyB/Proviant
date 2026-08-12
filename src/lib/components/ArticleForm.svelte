@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPrice } from '$lib/format';
 	import { enhance } from '$app/forms';
 	import TagInput from '$lib/components/TagInput.svelte';
 
@@ -170,9 +171,6 @@
 		if (autoLookup && ean && !name) lookupEan();
 	});
 
-	function formatPrice(cents: number): string {
-		return (cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
-	}
 </script>
 
 <form

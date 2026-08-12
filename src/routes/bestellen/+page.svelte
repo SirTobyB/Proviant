@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { keepValues } from '$lib/forms';
+	import { packageSize } from '$lib/format';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -55,10 +57,6 @@
 		}
 	}
 
-	function packageSize(amount: number | null, unit: string | null): string {
-		if (amount == null) return '';
-		return `${amount.toLocaleString('de-DE')} ${unit ?? ''}`.trim();
-	}
 </script>
 
 <svelte:head><title>Bestellen – LebensmittelKumpel</title></svelte:head>
@@ -159,7 +157,7 @@
 	<form
 		method="POST"
 		action="?/addToCart"
-		use:enhance={() => async ({ update }) => update({ reset: false })}
+		use:enhance={keepValues}
 		class="mt-6 max-w-2xl"
 	>
 		{#if selectableCount > 0}

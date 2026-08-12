@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatPrice } from '$lib/format';
 	let { data } = $props();
 
 	function formatDate(iso: string | null): string {
@@ -11,9 +12,6 @@
 		});
 	}
 
-	function formatPrice(cents: number): string {
-		return (cents / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
-	}
 
 	const statusLabel: Record<string, string> = {
 		CURRENT: 'Unterwegs',

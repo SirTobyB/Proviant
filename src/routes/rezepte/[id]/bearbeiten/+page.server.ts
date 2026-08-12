@@ -1,21 +1,13 @@
 import { db } from '$lib/server/db';
 import { recipes, recipeIngredientArticles, recipeIngredients } from '$lib/server/db/schema';
-import { getRecipe, getRecipeIngredients } from '$lib/server/recipeData';
+import { getRecipeIngredients, loadRecipeOr404 } from '$lib/server/recipeData';
 import { parseRecipeForm } from '$lib/server/recipeForm';
 import { allTagNames, setRecipeTags, tagsForRecipe } from '$lib/server/tags';
 import { auditEdit, auditLink, auditNew } from '$lib/server/audit';
 import { deleteImage } from '$lib/server/images';
 import { eq } from 'drizzle-orm';
-import { error, fail, redirect } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-
-function loadRecipeOr404(idParam: string) {
-	const id = Number(idParam);
-	if (!Number.isInteger(id)) throw error(404, 'Rezept nicht gefunden');
-	const recipe = getRecipe(id);
-	if (!recipe) throw error(404, 'Rezept nicht gefunden');
-	return recipe;
-}
 
 export const load: PageServerLoad = ({ params }) => {
 	const recipe = loadRecipeOr404(params.id);

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { packageSize, tagFilterHref } from '$lib/format';
+	import { keepValues } from '$lib/forms';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -20,19 +22,9 @@
 		return countFor(article) !== String(article.stock);
 	}
 
-	function packageSize(amount: number | null, unit: string | null): string {
-		if (amount == null) return '';
-		return `${amount.toLocaleString('de-DE')} ${unit ?? ''}`.trim();
-	}
 
-	// Link für den Tag-Filter, Suchbegriff bleibt erhalten
-	function tagHref(tag: string): string {
-		const params = new URLSearchParams();
-		if (data.query) params.set('q', data.query);
-		if (tag && tag !== data.tagFilter) params.set('tag', tag);
-		const qs = params.toString();
-		return `/inventur${qs ? `?${qs}` : ''}`;
-	}
+	const tagHref = (tag: string) =>
+		tagFilterHref('/inventur', tag, { query: data.query, activeTag: data.tagFilter });
 </script>
 
 <svelte:head><title>Inventur – LebensmittelKumpel</title></svelte:head>
@@ -107,7 +99,7 @@
 				<form
 					method="POST"
 					action="?/setStock"
-					use:enhance={() => async ({ update }) => update({ reset: false })}
+					use:enhance={keepValues}
 					class="flex shrink-0 items-center gap-1.5"
 				>
 					<input type="hidden" name="articleId" value={article.id} />

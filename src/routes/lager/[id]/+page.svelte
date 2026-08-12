@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { keepValues } from '$lib/forms';
+	import { packageSize } from '$lib/format';
 	import { enhance } from '$app/forms';
 	import { mhdStatus, mhdLabel, formatDate, MHD_BADGE_CLASSES } from '$lib/mhd';
 
@@ -10,10 +12,6 @@
 	// svelte-ignore state_referenced_locally
 	let moveTarget = $state(data.otherLocations[0] ? String(data.otherLocations[0].id) : '');
 
-	function packageSize(amount: number | null, unit: string | null): string {
-		if (amount == null) return '';
-		return `${amount.toLocaleString('de-DE')} ${unit ?? ''}`.trim();
-	}
 
 	function articleTotal(entries: { quantity: number }[]): number {
 		return entries.reduce((sum, entry) => sum + entry.quantity, 0);
@@ -106,14 +104,14 @@
 								<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
 									<!-- Schnellkorrektur: ein Klick = ein Gebinde mehr/weniger (0 löscht die Charge) -->
 									<div class="flex shrink-0 items-center gap-1.5">
-										<form method="POST" action="?/updateEntry" use:enhance={() => async ({ update }) => update({ reset: false })}>
+										<form method="POST" action="?/updateEntry" use:enhance={keepValues}>
 											<input type="hidden" name="entryId" value={entry.id} />
 											<input type="hidden" name="quantity" value={entry.quantity - 1} />
 											<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />
 											<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Ein Gebinde weniger">−</button>
 										</form>
 										<span class="w-10 text-center text-sm font-medium text-gray-700">{entry.quantity}×</span>
-										<form method="POST" action="?/updateEntry" use:enhance={() => async ({ update }) => update({ reset: false })}>
+										<form method="POST" action="?/updateEntry" use:enhance={keepValues}>
 											<input type="hidden" name="entryId" value={entry.id} />
 											<input type="hidden" name="quantity" value={entry.quantity + 1} />
 											<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />

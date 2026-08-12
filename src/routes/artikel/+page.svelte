@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { packageSize, tagFilterHref } from '$lib/format';
+	import { keepValues } from '$lib/forms';
 	import { enhance } from '$app/forms';
 
 	let { data } = $props();
@@ -11,19 +13,9 @@
 		return Number.isInteger(q) && q >= 1 ? q : 1;
 	}
 
-	function packageSize(amount: number | null, unit: string | null): string {
-		if (amount == null) return '';
-		return `${amount.toLocaleString('de-DE')} ${unit ?? ''}`.trim();
-	}
 
-	// Link für den Tag-Filter, Suchbegriff bleibt erhalten
-	function tagHref(tag: string): string {
-		const params = new URLSearchParams();
-		if (data.query) params.set('q', data.query);
-		if (tag && tag !== data.tagFilter) params.set('tag', tag);
-		const qs = params.toString();
-		return `/artikel${qs ? `?${qs}` : ''}`;
-	}
+	const tagHref = (tag: string) =>
+		tagFilterHref('/artikel', tag, { query: data.query, activeTag: data.tagFilter });
 </script>
 
 <svelte:head><title>Artikel – LebensmittelKumpel</title></svelte:head>
@@ -112,7 +104,7 @@
 				</a>
 				<!-- Schnell-Bestandskorrektur: Menge (Default 1) wirkt auf − und + -->
 				<!-- reset: false — sonst verliert das versteckte Mengenfeld nach dem ersten Klick seinen Wert -->
-				<form method="POST" action="?/bookOut" use:enhance={() => async ({ update }) => update({ reset: false })}>
+				<form method="POST" action="?/bookOut" use:enhance={keepValues}>
 					<input type="hidden" name="articleId" value={article.id} />
 					<input type="hidden" name="quantity" value={quantityFor(article.id)} />
 					<button type="submit" disabled={article.stock === 0} class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30" aria-label="Ausbuchen">−</button>
@@ -133,7 +125,7 @@
 						<span class="block text-[10px] text-amber-600">min. {article.minStock}</span>
 					{/if}
 				</div>
-				<form method="POST" action="?/bookIn" use:enhance={() => async ({ update }) => update({ reset: false })}>
+				<form method="POST" action="?/bookIn" use:enhance={keepValues}>
 					<input type="hidden" name="articleId" value={article.id} />
 					<input type="hidden" name="quantity" value={quantityFor(article.id)} />
 					<button type="submit" class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Einbuchen">+</button>

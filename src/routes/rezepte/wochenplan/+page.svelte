@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { keepValues } from '$lib/forms';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -120,7 +121,7 @@
 								<span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">✓ kochbar</span>
 							{/if}
 							<!-- reset: false — sonst bliebe das Portionsfeld nach dem Speichern leer -->
-							<form method="POST" action="?/updateServings" use:enhance={() => async ({ update }) => update({ reset: false })} class="flex items-center gap-1">
+							<form method="POST" action="?/updateServings" use:enhance={keepValues} class="flex items-center gap-1">
 								<input type="hidden" name="id" value={day.entry.id} />
 								<input
 									type="number"

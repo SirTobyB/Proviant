@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { keepValues } from '$lib/forms';
+	import { packageSize } from '$lib/format';
 	import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
@@ -74,10 +76,6 @@
 		}
 	});
 
-	function packageSize(amount: number | null, unit: string | null): string {
-		if (amount == null) return '';
-		return `${amount.toLocaleString('de-DE')} ${unit ?? ''}`.trim();
-	}
 </script>
 
 <svelte:head><title>Scannen – LebensmittelKumpel</title></svelte:head>
@@ -197,7 +195,7 @@
 			</form>
 
 			<!-- Ausbuchen -->
-			<form method="POST" action="?/ausbuchen" use:enhance={() => async ({ update }) => update({ reset: false })} class="mt-3">
+			<form method="POST" action="?/ausbuchen" use:enhance={keepValues} class="mt-3">
 				<input type="hidden" name="articleId" value={article.id} />
 				<input type="hidden" name="quantity" value={quantity} />
 				<button
