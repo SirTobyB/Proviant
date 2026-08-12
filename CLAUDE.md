@@ -18,13 +18,19 @@ Docker-Image für amd64/arm64. UI, Kommentare und Commit-Messages sind
 npm run dev           # Dev-Server auf Port 5173
 npm run build         # Produktions-Build (adapter-node)
 npm run check         # Typecheck – nach Änderungen immer laufen lassen
+npm test              # Vitest (reine Logik-Module), npm run test:watch zum Mitlaufen
 npm run db:generate   # Migration aus dem Schema erzeugen (nach Schema-Änderung)
 ```
 
 Voraussetzung: **Node.js ≥ 22.12** (Vite 8). Verifikation vor dem Commit:
-`npm run check` + `npm run build`; für UI-Änderungen den Dev-Server starten und
-im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
-`node --experimental-strip-types -e '...import("./src/lib/units.ts")...'`.
+`npm run check` + `npm test` + `npm run build`; für UI-Änderungen den
+Dev-Server starten und im Browser prüfen.
+
+**Tests** (`vitest.config.ts`, bewusst ohne SvelteKit-Plugin) decken die
+reinen Logik-Module ab: `units.ts`, `suggest.ts`, `mhd.ts`, `format.ts`,
+`picnic/unitQuantity.ts`, `picnic/checklist.ts`. Genau dort steckten die
+schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
+**mit Test**, nicht in eine Route.
 
 ## Architektur
 
@@ -53,10 +59,17 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
 - **Reine Helfer** in `src/lib/` (client- und servertauglich): `units.ts`
   (Mengen/Einheiten; `coverageMulti` summiert Bestand über die
   Alternativartikel einer Zutat), `mhd.ts` (Restlaufzeit/Ampel), `suggest.ts`
-  (gewichteter Rezeptvorschlag), `sound.ts` (Scan-Signalton per Web Audio).
+  (gewichteter Rezeptvorschlag), `sound.ts` (Scan-Signalton per Web Audio),
+  `format.ts` (`packageSize`, `formatPrice`, `tagFilterHref` — vor eigenen
+  Formatierern erst hier nachsehen), `stock.ts` (`sumQuantity`), `forms.ts`
+  (`keepValues`, siehe Formular-Fallstrick unten).
 - **Wiederverwendbare Komponenten** in `src/lib/components/`: `ArticleForm`,
   `RecipeForm`, `TagInput` (Chips + Autocomplete, rendert das
-  `name="tags"`-Hiddenfield selbst), `BarcodeScanner`.
+  `name="tags"`-Hiddenfield selbst), `BarcodeScanner`, `StockEntryRow`
+  (Chargen-Zeile mit Schnellkorrektur/Bearbeiten/Umlagern — genutzt von der
+  Lagerort- **und** der Artikelseite; die Server-Logik dazu liegt in
+  `server/stock.ts` als `updateStockEntryFromForm`/`moveStockEntryFromForm`,
+  parametrisiert über `{ articleId }` oder `{ locationId }`).
 - **Auth-Enforcement** in `src/hooks.server.ts`: ohne Login → `/login`;
   `/benutzer` nur für Admins. `locals.user` (Typ in `src/app.d.ts`) trägt den
   angemeldeten Benutzer. Das Root-Layout zeigt die Navigation nur, wenn
@@ -147,10 +160,10 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
   erfolgreichem Absenden. Svelte setzt `value`/`checked` nur als DOM-Property
   (ohne HTML-Attribut), Felder fallen dadurch auf **leer** zurück. Überall,
   wo ein Formular Daten trägt, die das Absenden überleben müssen (Mengen,
-  versteckte Felder), deshalb `use:enhance={() => async ({ update }) =>
-  update({ reset: false })}` verwenden. Fällt beim Testen leicht durchs
-  Raster: nach direktem Seitenaufruf liefert SSR echte `value`-Attribute,
-  der Fehler zeigt sich nur nach App-interner Navigation.
+  versteckte Felder), deshalb `use:enhance={keepValues}` aus `$lib/forms`
+  verwenden. Fällt beim Testen leicht durchs Raster: nach direktem
+  Seitenaufruf liefert SSR echte `value`-Attribute, der Fehler zeigt sich nur
+  nach App-interner Navigation.
 - **„Beim testen gefundene Bugs.md":** Kommunikationskanal des Nutzers — dort
   landen beim Testen gefundene Bugs und Feature-Wünsche. Beim Abarbeiten den
   Eintrag durchstreichen und mit **✅ Behoben/Umgesetzt** samt kurzer Erklärung

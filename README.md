@@ -97,6 +97,7 @@ Nützliche Skripte:
 | `npm run dev`        | Dev-Server (Port 5173)                              |
 | `npm run build`      | Produktions-Build (adapter-node)                    |
 | `npm run check`      | Typecheck (`svelte-check`)                          |
+| `npm test`           | Tests der Logik-Module (Vitest)                     |
 | `npm run db:generate`| Migration aus dem Schema erzeugen (nach Schema-Änderung) |
 
 ## Betrieb mit Docker
