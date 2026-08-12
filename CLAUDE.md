@@ -6,9 +6,10 @@ Leitfaden für die Arbeit an diesem Repository (Claude Code & Mitentwickelnde).
 
 Selbstgehostete Familien-Webapp zur Lebensmittelverwaltung: Lager (Chargen mit
 MHD), Inventur, Artikelstamm (mit Tags), Rezepte (mit Alternativartikeln je
-Zutat), Wochenplan und Picnic-Anbindung (Bestellvorschläge, Lieferungs-Check
-mit Auto-Anlage fehlender Artikel). SvelteKit + TypeScript + SQLite (Drizzle),
-als Docker-Image für amd64/arm64. UI, Kommentare und Commit-Messages sind
+Zutat), Wochenplan und Picnic-Anbindung (Bestellvorschläge — abgeglichen mit
+Warenkorb und offenen Bestellungen —, Lieferungs-Check mit Auto-Anlage
+fehlender Artikel). SvelteKit + TypeScript + SQLite (Drizzle), als
+Docker-Image für amd64/arm64. UI, Kommentare und Commit-Messages sind
 **deutsch**.
 
 ## Befehle
@@ -52,7 +53,7 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
 - **Reine Helfer** in `src/lib/` (client- und servertauglich): `units.ts`
   (Mengen/Einheiten; `coverageMulti` summiert Bestand über die
   Alternativartikel einer Zutat), `mhd.ts` (Restlaufzeit/Ampel), `suggest.ts`
-  (gewichteter Rezeptvorschlag).
+  (gewichteter Rezeptvorschlag), `sound.ts` (Scan-Signalton per Web Audio).
 - **Wiederverwendbare Komponenten** in `src/lib/components/`: `ArticleForm`,
   `RecipeForm`, `TagInput` (Chips + Autocomplete, rendert das
   `name="tags"`-Hiddenfield selbst), `BarcodeScanner`.
@@ -85,6 +86,22 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
   (S3 403) — Produktbilder dagegen schon. Die Rezept-/Übersichtsseiten sind
   dynamische PML-Strukturen; Parser dafür heuristisch und **defensiv** halten
   (lieber leer zurückgeben als Datenmüll importieren).
+- **Picnic-Datenstrukturen** (alle live geprüft, sparen viel Rätselraten):
+  - **Mengen stehen im `QUANTITY`-Decorator**, nie in der Länge von `items`:
+    ein Produkt taucht je Zeile genau **einmal** auf. Vorkommen zählen ergibt
+    also immer 1 — genau dieser Fehler steckte im ersten Warenkorb-Abgleich.
+    `lineQuantity()` in `picnic/checklist.ts` macht es richtig.
+  - **Warenkorb:** `analytics_context_data.items_list` (`product_id` +
+    `quantity`) ist die bequemste Quelle, fehlt aber bei leerem Warenkorb —
+    deshalb zusätzlich der Decorator-Weg als Fallback (`getCartQuantities`).
+  - **Lieferungsliste enthält keine Positionen** (`orders[].items` fehlt), die
+    kommen erst per `getDelivery(id)`. Offene Lieferungen deshalb per
+    Ausschluss bestimmen (nicht `COMPLETED`/`CANCELLED`) und je Lieferung
+    einzeln nachladen; auch Teilbestellungen können `CANCELLED` sein.
+  - **Unbekannte Produkt-IDs quittiert Picnic ohne Fehler** — es landet
+    nichts im Warenkorb, die App meldete trotzdem Erfolg. Nach dem Befüllen
+    deshalb gegenprüfen (siehe `notInCart` auf der Bestellseite). Dasselbe
+    Produkt existiert im Katalog teils unter mehreren IDs.
 - **Dark Theme:** implementiert als gezielte Utility-Overrides in
   `src/routes/layout.css` unter `prefers-color-scheme: dark` (bewusst **nicht**
   die `--color-*`-Variablen global umbiegen — `text-white` auf Buttons muss
@@ -98,6 +115,13 @@ im Browser prüfen. Reine Logik-Module lassen sich direkt testen, z.B.
   **kein `shrink-0`** auf die Gruppe — sonst ragt sie bei 375px über den Rand
   bzw. erzwingt horizontales Scrollen (ist zweimal passiert: Rezept- und
   Artikelliste).
+- **Ton (`sound.ts`):** Browser erlauben Audio erst nach einer
+  Nutzerinteraktion — der AudioContext wird deshalb beim Öffnen des Scanners
+  und beim ersten Tap freigeschaltet. Auf dem iPhone kann der Stummschalter
+  den Ton trotzdem unterdrücken; dagegen setzt das Modul
+  `navigator.audioSession.type = 'playback'` (nur Safari ≥ 16.4,
+  feature-detected). `navigator.vibrate` ignoriert iOS komplett — Ton und
+  Vibration ergänzen sich also, ersetzen einander nicht.
 - **Android-Installierbarkeit:** `static/service-worker.js` (Passthrough, kein
   Caching) ist **Pflicht**, nicht optional — ohne registrierten Service Worker
   erkennt Chrome die Seite nicht als vollwertige PWA (WebAPK) und installiert

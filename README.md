@@ -10,12 +10,15 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
 - **Anmeldung & Benutzer** — Login mit Benutzername + Passwort (scrypt-Hashing),
   Rollen Benutzer/Admin. Nur Admins verwalten Benutzer; jeder kann sein eigenes
   Passwort ändern. Alle Datensätze tragen anlegenden/ändernden Benutzer und
-  Zeitstempel (Audit).
+  Zeitstempel (Audit). Die Konto-Seite zeigt unter **Version** Build-Zeitpunkt
+  und Commit der laufenden Instanz — praktisch, um zu prüfen, ob der Server
+  wirklich den erwarteten Stand fährt.
 - **Lagerverwaltung** — Bestände in fünf Lagerorten (Küchenschrank, Kühlschrank,
   Gefrierschrank, Vorratsregal, Getränkekeller), geführt als Chargen mit eigenem
   MHD. Ein-/Ausbuchen per Barcode-Scan (FEFO beim Ausbuchen), MHD-Ampel und
   „Läuft bald ab"-Ansicht. Schnelle +/−-Korrektur mit frei wählbarer Menge
-  direkt in der Artikelliste; Chargen lassen sich bearbeiten und zwischen
+  direkt in der Artikelliste, in der Lagerort-Ansicht je Charge mit einem
+  Klick (0 löscht die Charge); Chargen lassen sich bearbeiten und zwischen
   Lagerorten umlagern.
 - **Inventur** — kompakte Übersicht aller vorhandenen Bestände mit
   Lagerort-Aufschlüsselung. Gezählten Gesamtbestand eintragen, die Differenz
@@ -34,6 +37,10 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
   Vorschlagsliste und wandern nach Bestätigung in den Picnic-Warenkorb
   ([picnic-api](https://github.com/MRVDH/picnic-api), inoffiziell). Bestellt
   wird bewusst nie automatisch — der Checkout bleibt in der Picnic-App.
+  Abgeglichen wird mit dem **Warenkorb und noch nicht gelieferten
+  Bestellungen**, jeweils mengengenau: Was schon vorgemerkt oder unterwegs
+  ist, wird nur noch als Fehlmenge vorgeschlagen (oder gar nicht mehr).
+  Alle Vorschläge lassen sich mit einem Klick an- und abwählen.
 - **Lieferungs-Check** — Beim Auspacken einer Picnic-Lieferung: Positionen per
   Barcode scannen (matcht über die Picnic-ID) und direkt in den Ziel-Lagerort
   einbuchen, per +-Taste einzeln bestätigen oder nach Sichtprüfung alle
@@ -64,7 +71,10 @@ Tailwind CSS · PWA · Docker (amd64 + arm64)
 Optimiert für schmale Smartphones (iPhone 13 mini, Galaxy A34): Safe-Areas
 für Notch/Home-Indicator, 16px-Eingabefelder gegen den iOS-Auto-Zoom,
 Homescreen-Icon für iOS und Android. Das Dark Theme folgt automatisch der
-Systemeinstellung des Geräts.
+Systemeinstellung des Geräts. Ein erkannter Barcode quittiert mit kurzem
+Signalton (per Web Audio erzeugt) und Vibration — Letztere ignoriert iOS,
+deshalb der Ton. Steht das iPhone auf lautlos, kann iOS auch den Ton
+unterdrücken.
 
 ## Entwicklung
 
