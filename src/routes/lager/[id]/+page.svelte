@@ -1,21 +1,13 @@
 <script lang="ts">
-	import { keepValues } from '$lib/forms';
 	import { packageSize } from '$lib/format';
-	import { enhance } from '$app/forms';
-	import { mhdStatus, mhdLabel, formatDate, MHD_BADGE_CLASSES } from '$lib/mhd';
+	import StockEntryRow from '$lib/components/StockEntryRow.svelte';
+	import { sumQuantity } from '$lib/stock';
 
 	let { data, form } = $props();
 
-	// Welche Charge wird gerade bearbeitet bzw. umgelagert?
-	let editingId = $state<number | null>(null);
-	let movingId = $state<number | null>(null);
-	// svelte-ignore state_referenced_locally
-	let moveTarget = $state(data.otherLocations[0] ? String(data.otherLocations[0].id) : '');
-
-
-	function articleTotal(entries: { quantity: number }[]): number {
-		return entries.reduce((sum, entry) => sum + entry.quantity, 0);
-	}
+	// Aufgeklappte Charge — immer höchstens eine in der ganzen Liste
+	let openEntryId = $state<number | null>(null);
+	let openMode = $state<'view' | 'edit' | 'move'>('view');
 </script>
 
 <svelte:head><title>{data.location.name} – LebensmittelKumpel</title></svelte:head>
@@ -54,87 +46,17 @@
 							<span class="text-xs text-gray-500">{packageSize(article.amount, article.unit)}</span>
 						{/if}
 					</a>
-					<span class="shrink-0 text-sm font-semibold text-gray-700">{articleTotal(article.entries)}×</span>
+					<span class="shrink-0 text-sm font-semibold text-gray-700">{sumQuantity(article.entries)}×</span>
 				</div>
 
 				<ul class="divide-y divide-gray-50">
 					{#each article.entries as entry (entry.id)}
-						{@const status = mhdStatus(entry.bestBefore)}
-						<li class="px-4 py-2.5">
-							{#if editingId === entry.id}
-								<form
-									method="POST"
-									action="?/updateEntry"
-									use:enhance={() => async ({ update }) => { editingId = null; await update(); }}
-									class="flex flex-wrap items-end gap-2"
-								>
-									<input type="hidden" name="entryId" value={entry.id} />
-									<div>
-										<label for={`q-${entry.id}`} class="block text-xs text-gray-500">Anzahl</label>
-										<input id={`q-${entry.id}`} name="quantity" type="number" min="0" value={entry.quantity} class="mt-0.5 w-20 rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600" />
-									</div>
-									<div>
-										<label for={`b-${entry.id}`} class="block text-xs text-gray-500">MHD</label>
-										<input id={`b-${entry.id}`} name="bestBefore" type="date" value={entry.bestBefore ?? ''} class="mt-0.5 rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600" />
-									</div>
-									<button type="submit" class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700">Speichern</button>
-									<button type="button" onclick={() => (editingId = null)} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
-									<span class="ml-auto text-xs text-gray-400">Anzahl 0 = löschen</span>
-								</form>
-							{:else if movingId === entry.id}
-								<form
-									method="POST"
-									action="?/moveEntry"
-									use:enhance={() => async ({ update }) => { movingId = null; await update(); }}
-									class="flex flex-wrap items-end gap-2"
-								>
-									<input type="hidden" name="entryId" value={entry.id} />
-									<div>
-										<label for={`t-${entry.id}`} class="block text-xs text-gray-500">Neuer Lagerort</label>
-										<select id={`t-${entry.id}`} name="targetLocationId" bind:value={moveTarget} class="mt-0.5 rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600">
-											{#each data.otherLocations as loc (loc.id)}
-												<option value={String(loc.id)}>{loc.name}</option>
-											{/each}
-										</select>
-									</div>
-									<button type="submit" class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700">Umlagern</button>
-									<button type="button" onclick={() => (movingId = null)} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
-								</form>
-							{:else}
-								<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-									<!-- Schnellkorrektur: ein Klick = ein Gebinde mehr/weniger (0 löscht die Charge) -->
-									<div class="flex shrink-0 items-center gap-1.5">
-										<form method="POST" action="?/updateEntry" use:enhance={keepValues}>
-											<input type="hidden" name="entryId" value={entry.id} />
-											<input type="hidden" name="quantity" value={entry.quantity - 1} />
-											<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />
-											<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Ein Gebinde weniger">−</button>
-										</form>
-										<span class="w-10 text-center text-sm font-medium text-gray-700">{entry.quantity}×</span>
-										<form method="POST" action="?/updateEntry" use:enhance={keepValues}>
-											<input type="hidden" name="entryId" value={entry.id} />
-											<input type="hidden" name="quantity" value={entry.quantity + 1} />
-											<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />
-											<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Ein Gebinde mehr">+</button>
-										</form>
-									</div>
-									<span class="min-w-0 flex-1 text-sm text-gray-600">
-										{#if entry.bestBefore}
-											MHD {formatDate(entry.bestBefore)}
-										{:else}
-											<span class="text-gray-400">kein MHD</span>
-										{/if}
-									</span>
-									<span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium {MHD_BADGE_CLASSES[status]}">
-										{mhdLabel(entry.bestBefore)}
-									</span>
-									<div class="flex shrink-0 items-center gap-3">
-										<button type="button" onclick={() => (movingId = entry.id)} class="text-sm text-gray-500 underline hover:text-gray-700">Umlagern</button>
-										<button type="button" onclick={() => (editingId = entry.id)} class="text-sm text-gray-500 underline hover:text-gray-700">Ändern</button>
-									</div>
-								</div>
-							{/if}
-						</li>
+						<StockEntryRow
+							{entry}
+							moveTargets={data.otherLocations}
+							mode={openEntryId === entry.id ? openMode : 'view'}
+							onMode={(mode) => { openEntryId = mode === 'view' ? null : entry.id; openMode = mode; }}
+						/>
 					{/each}
 				</ul>
 			</div>

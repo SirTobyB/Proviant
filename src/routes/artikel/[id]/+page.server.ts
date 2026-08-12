@@ -4,8 +4,8 @@ import { parseArticleForm } from '$lib/server/articleForm';
 import { allArticleTagNames, setArticleTags, tagsForArticle } from '$lib/server/articleTags';
 import { auditEdit } from '$lib/server/audit';
 import { deleteImage } from '$lib/server/images';
-import { moveStockEntry } from '$lib/server/stock';
-import { and, eq } from 'drizzle-orm';
+import { moveStockEntryFromForm, updateStockEntryFromForm } from '$lib/server/stock';
+import { eq } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -54,17 +54,6 @@ export const load: PageServerLoad = ({ params }) => {
 	};
 };
 
-/** Lädt eine Charge und stellt sicher, dass sie zu diesem Artikel gehört. */
-function getEntry(articleId: number, entryId: unknown) {
-	const id = Number(entryId);
-	if (!Number.isInteger(id)) return null;
-	return db
-		.select()
-		.from(stockEntries)
-		.where(and(eq(stockEntries.id, id), eq(stockEntries.articleId, articleId)))
-		.get();
-}
-
 export const actions: Actions = {
 	update: async ({ params, request, locals }) => {
 		const user = locals.user?.username ?? null;
@@ -102,50 +91,27 @@ export const actions: Actions = {
 		redirect(303, '/artikel');
 	},
 
-	// Charge bearbeiten (Anzahl/MHD); Anzahl 0 löscht die Charge.
-	// Fehler bewusst als entryMessage — form.message gehört dem Artikelformular.
+	// Chargen-Aktionen teilen sich die Logik mit der Lagerort-Seite; Fehler
+	// bewusst als entryMessage — form.message gehört dem Artikelformular.
 	updateEntry: async ({ params, request, locals }) => {
 		const article = getArticle(params.id);
-		const formData = await request.formData();
-		const entry = getEntry(article.id, formData.get('entryId'));
-		if (!entry) return fail(404, { entryMessage: 'Charge nicht gefunden' });
-
-		const quantity = Number(formData.get('quantity'));
-		if (!Number.isInteger(quantity) || quantity < 0) {
-			return fail(400, { entryMessage: 'Anzahl ist ungültig' });
-		}
-		const bestBeforeRaw = formData.get('bestBefore');
-		const bestBefore =
-			typeof bestBeforeRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(bestBeforeRaw)
-				? bestBeforeRaw
-				: null;
-
-		if (quantity === 0) {
-			db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
-		} else {
-			db.update(stockEntries)
-				.set({ quantity, bestBefore, ...auditEdit(locals.user?.username) })
-				.where(eq(stockEntries.id, entry.id))
-				.run();
-		}
+		const result = updateStockEntryFromForm(
+			await request.formData(),
+			{ articleId: article.id },
+			locals.user?.username ?? null
+		);
+		if (!result.ok) return fail(result.status, { entryMessage: result.message });
 		return { ok: true };
 	},
 
-	// Charge in einen anderen Lagerort umlagern (merged in gleiche-MHD-Charge am Ziel)
 	moveEntry: async ({ params, request, locals }) => {
 		const article = getArticle(params.id);
-		const formData = await request.formData();
-		const entry = getEntry(article.id, formData.get('entryId'));
-		if (!entry) return fail(404, { entryMessage: 'Charge nicht gefunden' });
-
-		const targetLocationId = Number(formData.get('targetLocationId'));
-		if (!Number.isInteger(targetLocationId) || targetLocationId === entry.locationId) {
-			return fail(400, { entryMessage: 'Bitte einen anderen Ziel-Lagerort wählen' });
-		}
-		const target = db.select().from(storageLocations).where(eq(storageLocations.id, targetLocationId)).get();
-		if (!target) return fail(400, { entryMessage: 'Ziel-Lagerort nicht gefunden' });
-
-		moveStockEntry(entry.id, targetLocationId, locals.user?.username ?? null);
-		return { moved: true, targetName: target.name };
+		const result = moveStockEntryFromForm(
+			await request.formData(),
+			{ articleId: article.id },
+			locals.user?.username ?? null
+		);
+		if (!result.ok) return fail(result.status, { entryMessage: result.message });
+		return { moved: true, targetName: result.targetName };
 	}
 };

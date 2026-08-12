@@ -2,7 +2,7 @@
  * Lagerbuchungen auf Chargen-Basis.
  */
 import { db } from '$lib/server/db';
-import { stockEntries } from '$lib/server/db/schema';
+import { stockEntries, storageLocations } from '$lib/server/db/schema';
 import { auditEdit, auditNew } from '$lib/server/audit';
 import { and, eq, sql } from 'drizzle-orm';
 
@@ -115,4 +115,81 @@ export function moveStockEntry(entryId: number, targetLocationId: number, user: 
 			.run();
 	}
 	return true;
+}
+
+/**
+ * Chargen bearbeiten die Lagerort- und die Artikelseite gleichermaßen — nur der
+ * Rahmen unterscheidet sich. Die folgenden Helfer kapseln die gemeinsame Logik;
+ * die Routen mappen das Ergebnis auf ihr jeweiliges `fail()`-Feld.
+ */
+export type StockEntryScope = { articleId: number } | { locationId: number };
+type EntryResult<T> = ({ ok: true } & T) | { ok: false; status: number; message: string };
+
+/** Lädt eine Charge und stellt sicher, dass sie zum erwarteten Rahmen gehört. */
+function findScopedEntry(entryId: unknown, scope: StockEntryScope) {
+	const id = Number(entryId);
+	if (!Number.isInteger(id)) return undefined;
+	const belongsTo =
+		'articleId' in scope
+			? eq(stockEntries.articleId, scope.articleId)
+			: eq(stockEntries.locationId, scope.locationId);
+	return db
+		.select()
+		.from(stockEntries)
+		.where(and(eq(stockEntries.id, id), belongsTo))
+		.get();
+}
+
+/** Anzahl und MHD einer Charge übernehmen; Anzahl 0 löscht die Charge. */
+export function updateStockEntryFromForm(
+	formData: FormData,
+	scope: StockEntryScope,
+	user: string | null
+): EntryResult<object> {
+	const entry = findScopedEntry(formData.get('entryId'), scope);
+	if (!entry) return { ok: false, status: 404, message: 'Charge nicht gefunden' };
+
+	const quantity = Number(formData.get('quantity'));
+	if (!Number.isInteger(quantity) || quantity < 0) {
+		return { ok: false, status: 400, message: 'Anzahl ist ungültig' };
+	}
+	const bestBeforeRaw = formData.get('bestBefore');
+	const bestBefore =
+		typeof bestBeforeRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(bestBeforeRaw)
+			? bestBeforeRaw
+			: null;
+
+	if (quantity === 0) {
+		db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
+	} else {
+		db.update(stockEntries)
+			.set({ quantity, bestBefore, ...auditEdit(user) })
+			.where(eq(stockEntries.id, entry.id))
+			.run();
+	}
+	return { ok: true };
+}
+
+/** Charge in einen anderen Lagerort umlagern. */
+export function moveStockEntryFromForm(
+	formData: FormData,
+	scope: StockEntryScope,
+	user: string | null
+): EntryResult<{ targetName: string }> {
+	const entry = findScopedEntry(formData.get('entryId'), scope);
+	if (!entry) return { ok: false, status: 404, message: 'Charge nicht gefunden' };
+
+	const targetLocationId = Number(formData.get('targetLocationId'));
+	if (!Number.isInteger(targetLocationId) || targetLocationId === entry.locationId) {
+		return { ok: false, status: 400, message: 'Bitte einen anderen Ziel-Lagerort wählen' };
+	}
+	const target = db
+		.select()
+		.from(storageLocations)
+		.where(eq(storageLocations.id, targetLocationId))
+		.get();
+	if (!target) return { ok: false, status: 400, message: 'Ziel-Lagerort nicht gefunden' };
+
+	moveStockEntry(entry.id, targetLocationId, user);
+	return { ok: true, targetName: target.name };
 }

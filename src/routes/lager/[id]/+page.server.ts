@@ -1,8 +1,7 @@
 import { db } from '$lib/server/db';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
-import { auditEdit } from '$lib/server/audit';
-import { moveStockEntry } from '$lib/server/stock';
-import { and, eq, sql } from 'drizzle-orm';
+import { moveStockEntryFromForm, updateStockEntryFromForm } from '$lib/server/stock';
+import { eq, sql } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -64,60 +63,28 @@ export const load: PageServerLoad = ({ params }) => {
 	};
 };
 
-/** Lädt eine Charge und stellt sicher, dass sie zu diesem Lagerort gehört. */
-function getEntry(locationId: number, entryId: unknown) {
-	const id = Number(entryId);
-	if (!Number.isInteger(id)) return null;
-	return db
-		.select()
-		.from(stockEntries)
-		.where(and(eq(stockEntries.id, id), eq(stockEntries.locationId, locationId)))
-		.get();
-}
-
 export const actions: Actions = {
 	updateEntry: async ({ params, request, locals }) => {
 		const location = getLocation(params.id);
-		const formData = await request.formData();
-		const entry = getEntry(location.id, formData.get('entryId'));
-		if (!entry) return fail(404, { message: 'Charge nicht gefunden' });
-
-		const quantity = Number(formData.get('quantity'));
-		if (!Number.isInteger(quantity) || quantity < 0) {
-			return fail(400, { message: 'Anzahl ist ungültig' });
-		}
-		const bestBeforeRaw = formData.get('bestBefore');
-		const bestBefore =
-			typeof bestBeforeRaw === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(bestBeforeRaw)
-				? bestBeforeRaw
-				: null;
-
-		if (quantity === 0) {
-			db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
-		} else {
-			db.update(stockEntries)
-				.set({ quantity, bestBefore, ...auditEdit(locals.user?.username) })
-				.where(eq(stockEntries.id, entry.id))
-				.run();
-		}
+		const scope = { locationId: location.id };
+		const result = updateStockEntryFromForm(
+			await request.formData(),
+			scope,
+			locals.user?.username ?? null
+		);
+		if (!result.ok) return fail(result.status, { message: result.message });
 		return { ok: true };
 	},
 
 	// Charge komplett in einen anderen Lagerort umlagern (z.B. falsch gebucht)
 	moveEntry: async ({ params, request, locals }) => {
 		const location = getLocation(params.id);
-		const formData = await request.formData();
-		const entry = getEntry(location.id, formData.get('entryId'));
-		if (!entry) return fail(404, { message: 'Charge nicht gefunden' });
-
-		const targetLocationId = Number(formData.get('targetLocationId'));
-		if (!Number.isInteger(targetLocationId) || targetLocationId === location.id) {
-			return fail(400, { message: 'Bitte einen anderen Ziel-Lagerort wählen' });
-		}
-		const target = db.select().from(storageLocations).where(eq(storageLocations.id, targetLocationId)).get();
-		if (!target) return fail(400, { message: 'Ziel-Lagerort nicht gefunden' });
-
-		moveStockEntry(entry.id, targetLocationId, locals.user?.username ?? null);
-		return { moved: true, targetName: target.name };
+		const result = moveStockEntryFromForm(
+			await request.formData(),
+			{ locationId: location.id },
+			locals.user?.username ?? null
+		);
+		if (!result.ok) return fail(result.status, { message: result.message });
+		return { moved: true, targetName: result.targetName };
 	}
 };
