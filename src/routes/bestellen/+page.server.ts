@@ -4,6 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import {
 	getConnectionState,
 	getCartQuantities,
+	getOpenOrderQuantities,
 	login,
 	request2FACode,
 	verify2FA,
@@ -39,35 +40,41 @@ function loadSuggestions() {
 
 export const load: PageServerLoad = async () => {
 	const connection = getConnectionState();
-	let suggestions = loadSuggestions().map((s) => ({ ...s, inCartQty: 0 }));
-	const inCart: string[] = [];
-	// Warenkorb nicht lesbar: Der Abgleich fällt aus — das muss sichtbar sein,
+	let suggestions = loadSuggestions().map((s) => ({ ...s, inCartQty: 0, onOrderQty: 0 }));
+	const covered: string[] = [];
+	// Nicht lesbare Quellen: Der Abgleich fällt aus — das muss sichtbar sein,
 	// sonst wirkt es wie „Picnic ignoriert meine Bestellung"
 	let cartUnavailable = false;
+	let openOrdersUnavailable = false;
 
-	// Abgleich mit dem Picnic-Warenkorb: Was schon (teilweise) drinliegt, wird
-	// nicht erneut in voller Menge vorgeschlagen. Fehler dürfen die Seite nicht
-	// blockieren — dann bleibt der Abgleich einfach aus.
+	// Abgleich mit Warenkorb UND noch nicht gelieferten Bestellungen: Was schon
+	// unterwegs oder vorgemerkt ist, wird nicht erneut in voller Menge
+	// vorgeschlagen. Beide Quellen unabhängig voneinander — fällt eine aus,
+	// bleibt der Abgleich mit der anderen erhalten.
 	if (connection === 'connected') {
-		try {
-			const cartQuantities = await getCartQuantities();
-			suggestions = suggestions
-				.map((s) => {
-					const inCartQty = s.picnicId ? (cartQuantities.get(s.picnicId) ?? 0) : 0;
-					return { ...s, inCartQty, needed: s.needed - inCartQty };
-				})
-				.filter((s) => {
-					if (s.needed > 0) return true;
-					inCart.push(s.name);
-					return false;
-				});
-		} catch {
-			// Warenkorb nicht abrufbar — Vorschläge ungefiltert anzeigen
-			cartUnavailable = true;
-		}
+		const [cartResult, ordersResult] = await Promise.allSettled([
+			getCartQuantities(),
+			getOpenOrderQuantities()
+		]);
+		const cartQuantities = cartResult.status === 'fulfilled' ? cartResult.value : new Map();
+		const orderQuantities = ordersResult.status === 'fulfilled' ? ordersResult.value : new Map();
+		cartUnavailable = cartResult.status === 'rejected';
+		openOrdersUnavailable = ordersResult.status === 'rejected';
+
+		suggestions = suggestions
+			.map((s) => {
+				const inCartQty = s.picnicId ? (cartQuantities.get(s.picnicId) ?? 0) : 0;
+				const onOrderQty = s.picnicId ? (orderQuantities.get(s.picnicId) ?? 0) : 0;
+				return { ...s, inCartQty, onOrderQty, needed: s.needed - inCartQty - onOrderQty };
+			})
+			.filter((s) => {
+				if (s.needed > 0) return true;
+				covered.push(s.name);
+				return false;
+			});
 	}
 
-	return { suggestions, inCart, connection, cartUnavailable };
+	return { suggestions, covered, connection, cartUnavailable, openOrdersUnavailable };
 };
 
 export const actions: Actions = {

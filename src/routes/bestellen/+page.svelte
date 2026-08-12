@@ -131,10 +131,16 @@
 		Produkt-ID vermutlich nicht mehr. Bitte die Picnic-Verknüpfung im Artikel neu setzen.
 	</div>
 {/if}
-{#if data.cartUnavailable}
+{#if data.cartUnavailable || data.openOrdersUnavailable}
 	<div class="mt-4 max-w-2xl rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-		Der Picnic-Warenkorb konnte nicht gelesen werden — die Vorschläge sind daher nicht mit ihm
-		abgeglichen und könnten bereits Bestelltes enthalten.
+		{#if data.cartUnavailable && data.openOrdersUnavailable}
+			Warenkorb und offene Bestellungen konnten nicht gelesen werden
+		{:else if data.cartUnavailable}
+			Der Picnic-Warenkorb konnte nicht gelesen werden
+		{:else}
+			Offene Bestellungen konnten nicht gelesen werden
+		{/if}
+		— die Vorschläge sind daher nicht vollständig abgeglichen und könnten bereits Bestelltes enthalten.
 	</div>
 {/if}
 
@@ -142,8 +148,8 @@
 {#if data.suggestions.length === 0}
 	<div class="mt-6 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
 		Alles ausreichend bevorratet — keine Vorschläge. Mindestbestände legst du je Artikel fest.
-		{#if data.inCart.length > 0}
-			<div class="mt-2 text-xs text-gray-400">Bereits im Picnic-Warenkorb: {data.inCart.join(', ')}</div>
+		{#if data.covered.length > 0}
+			<div class="mt-2 text-xs text-gray-400">Bereits im Warenkorb oder bestellt: {data.covered.join(', ')}</div>
 		{/if}
 	</div>
 {:else}
@@ -187,7 +193,10 @@
 						<div class="text-xs text-gray-500">
 							{packageSize(item.amount, item.unit)} · Bestand {item.stock}/{item.minStock}
 							{#if item.inCartQty > 0}
-								· {item.inCartQty} bereits im Warenkorb
+								· {item.inCartQty} im Warenkorb
+							{/if}
+							{#if item.onOrderQty > 0}
+								· {item.onOrderQty} bereits bestellt
 							{/if}
 							{#if !item.picnicId}
 								· <a href={`/artikel/${item.id}`} class="text-amber-600 underline">Picnic verknüpfen</a>
@@ -216,8 +225,8 @@
 		{#if connection !== 'connected'}
 			<p class="mt-2 text-xs text-gray-500">Zum Übertragen zuerst oben mit Picnic verbinden.</p>
 		{/if}
-		{#if data.inCart.length > 0}
-			<p class="mt-2 text-xs text-gray-400">Bereits im Picnic-Warenkorb (nicht mehr vorgeschlagen): {data.inCart.join(', ')}</p>
+		{#if data.covered.length > 0}
+			<p class="mt-2 text-xs text-gray-400">Bereits im Warenkorb oder bestellt (nicht mehr vorgeschlagen): {data.covered.join(', ')}</p>
 		{/if}
 	</form>
 {/if}

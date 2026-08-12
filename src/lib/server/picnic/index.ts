@@ -170,6 +170,38 @@ export async function getCartQuantities(): Promise<Map<string, number>> {
 	return quantities;
 }
 
+/**
+ * Bereits bestellte, aber noch nicht gelieferte Mengen je Produkt-ID — zusammen
+ * mit dem Warenkorb der Abgleich für die Bestellvorschläge.
+ *
+ * Die Lieferungsliste enthält keine Positionen, die kommen erst im Detailabruf
+ * (live geprüft), deshalb je offener Lieferung ein zusätzlicher Aufruf. In der
+ * Praxis ist höchstens eine Lieferung offen; die Obergrenze deckelt nur den
+ * Ausreißerfall.
+ */
+export async function getOpenOrderQuantities(): Promise<Map<string, number>> {
+	await ensureLoggedIn();
+	const deliveries = await getClient().delivery.getDeliveries();
+	// Bewusst per Ausschluss statt per Positivliste: ein künftiger
+	// Zwischenstatus von Picnic soll als „noch nicht geliefert" zählen
+	const open = deliveries
+		.filter((delivery) => delivery.status !== 'COMPLETED' && delivery.status !== 'CANCELLED')
+		.slice(0, 5);
+
+	const quantities = new Map<string, number>();
+	for (const delivery of open) {
+		const detail = await getClient().delivery.getDelivery(delivery.delivery_id);
+		// Stornierte Teilbestellungen kommen nicht mehr — die zählen nicht mit
+		const orders = (detail.orders ?? []).filter(
+			(order) => (order as { status?: string }).status !== 'CANCELLED'
+		);
+		for (const item of aggregateChecklist(orders)) {
+			quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
+		}
+	}
+	return quantities;
+}
+
 export type DeliverySummary = {
 	id: string;
 	creationTime: string;
