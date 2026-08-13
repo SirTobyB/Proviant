@@ -38,7 +38,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Wochenplan** für sieben Tage mit gebündelter Einkaufsliste, die den Vorrat
   über die ganze Woche verrechnet.
 - **Benutzerverwaltung** mit Rollen und Audit-Feldern auf allen Datensätzen.
-- **Versionsanzeige** auf der Konto-Seite mit Build-Zeitpunkt und Commit.
+- **Versionsanzeige** auf der Konto-Seite mit Build-Zeitpunkt und Commit,
+  darunter dieser Changelog.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 

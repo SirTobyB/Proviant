@@ -159,7 +159,10 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), deutsche
   Kategorien „Hinzugefügt/Geändert/Behoben/…"): laufende Arbeit unter
   `## [Unveröffentlicht]`, beim Release daraus ein Versionsabschnitt mit Datum
-  und `package.json` mitziehen. Die Datei wird per `?raw` ins Bundle gezogen
+  und `package.json` mitziehen. Der Eintrag gehört **in denselben Commit wie
+  die Änderung** und ist ohne gesonderte Aufforderung zu pflegen (so vom
+  Nutzer festgelegt) — reine Aufräumarbeiten ohne spürbare Wirkung bleiben
+  außen vor. Die Datei wird per `?raw` ins Bundle gezogen
   und auf der Konto-Seite gerendert — das Docker-Image enthält nur `build/`,
   ein Lesen vom Dateisystem zur Laufzeit würde also fehlschlagen. Geparst wird
   mit `src/lib/changelog.ts` (bewusst eigener Mini-Parser, damit kein HTML aus
