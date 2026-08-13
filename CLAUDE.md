@@ -46,7 +46,8 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     undokumentierten PML-/Fusion-Rezeptseiten), `unitQuantity.ts`
     (Gebindegrößen wie „6er Pack", „2 x 125g").
   - `auth.ts` / `password.ts` – Sessions (DB-gestützt, httpOnly-Cookie) und
-    scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder.
+    scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder. `log.ts` –
+    Zeilen-Logging mit Zeitstempel (siehe Fallstrick unten).
   - `stock.ts` (Buchungen, FEFO), `tags.ts` (Rezept-Tags), `articleTags.ts`
     (Artikel-Tags — **eigener Tag-Pool**, bewusst getrennt von den
     Rezept-`tags`, inkl. Bulk-Map `tagsForArticles` gegen N+1 auf
@@ -73,7 +74,8 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 - **Auth-Enforcement** in `src/hooks.server.ts`: ohne Login → `/login`;
   `/benutzer` nur für Admins. `locals.user` (Typ in `src/app.d.ts`) trägt den
   angemeldeten Benutzer. Das Root-Layout zeigt die Navigation nur, wenn
-  `data.user` gesetzt ist (deshalb rendert `/login` ohne App-Chrome).
+  `data.user` gesetzt ist (deshalb rendert `/login` ohne App-Chrome). Dieselbe
+  Datei protokolliert Fehler und schreibt die Startzeile.
 
 ## Wichtige Konventionen & Fallstricke
 
@@ -150,12 +152,33 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 - **Nicht committen:** `local.db*`, `/data`, `/images`, `picnic-auth-key`, `.env`
   (alle gitignored). Testdaten in der lokalen DB nach Verifikation wieder
   aufräumen.
+- **Versionierung & Changelog:** Die App folgt
+  [Semantic Versioning](https://semver.org/lang/de/); die Version steht in
+  `package.json` und wird auf der Konto-Seite angezeigt. **Jede nennenswerte
+  Änderung gehört in `CHANGELOG.md`** (Format:
+  [Keep a Changelog](https://keepachangelog.com/de/1.1.0/), deutsche
+  Kategorien „Hinzugefügt/Geändert/Behoben/…"): laufende Arbeit unter
+  `## [Unveröffentlicht]`, beim Release daraus ein Versionsabschnitt mit Datum
+  und `package.json` mitziehen. Die Datei wird per `?raw` ins Bundle gezogen
+  und auf der Konto-Seite gerendert — das Docker-Image enthält nur `build/`,
+  ein Lesen vom Dateisystem zur Laufzeit würde also fehlschlagen. Geparst wird
+  mit `src/lib/changelog.ts` (bewusst eigener Mini-Parser, damit kein HTML aus
+  der Datei in die Seite gelangt).
 - **Deployment:** Push auf `main` baut per GitHub Actions das Multi-Arch-Image
   nach GHCR. `docker-compose.prod.yml` (Traefik) fürs Ziehen des Images. Der
   Workflow reicht `GIT_SHA`/`BUILD_TIME` als Build-Args ins Image; die
   Konto-Seite zeigt beides unter **Version** an. Bei „läuft mein Fix schon?"
   **immer zuerst dort nachsehen** — das war schon mehrfach die Ursache
   vermeintlicher Bugs.
+- **Logging:** SvelteKit ruft `handleError` **nur bei unerwarteten
+  Ausnahmen** — alles, was per `error()` geworfen wird, gilt als „erwartet"
+  und ginge sonst spurlos raus (deshalb blieb ein 500er im Betrieb einmal
+  unauffindbar). `hooks.server.ts` protokolliert deshalb **am Statuscode**:
+  jede Antwort ab 500 landet mit Methode, Pfad, Benutzer und Dauer im Log;
+  `handleError` ergänzt Stacktrace und eine Fehler-ID, die auch auf der
+  Fehlerseite steht. Neue Log-Ausgaben über `logInfo`/`logWarn`/`logError`
+  aus `server/log.ts`, nicht per nacktem `console.*` — sonst fehlt der
+  Zeitstempel, und im Container-Log ist nichts mehr zuzuordnen.
 - **Formulare:** `use:enhance` macht standardmäßig ein `form.reset()` nach
   erfolgreichem Absenden. Svelte setzt `value`/`checked` nur als DOM-Property
   (ohne HTML-Attribut), Felder fallen dadurch auf **leer** zurück. Überall,

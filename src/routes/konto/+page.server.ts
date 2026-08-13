@@ -6,7 +6,14 @@ import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
+import { parseChangelog } from '$lib/changelog';
+// Als Text ins Bundle: Das Docker-Image enthält nur build/, die Datei selbst
+// liegt dort nicht — ein Lesen zur Laufzeit würde im Betrieb scheitern.
+import changelogText from '../../../CHANGELOG.md?raw';
+import { version as appVersion } from '../../../package.json';
 import type { Actions, PageServerLoad } from './$types';
+
+const releases = parseChangelog(changelogText);
 
 export const load: PageServerLoad = ({ locals }) => {
 	// locals.user ist durch den Hook garantiert vorhanden
@@ -14,7 +21,8 @@ export const load: PageServerLoad = ({ locals }) => {
 		account: locals.user,
 		// Herkunft des laufenden Images (im Dockerfile aus Build-Args gesetzt) —
 		// zum Abgleich, ob der Server wirklich den erwarteten Stand fährt
-		version: { commit: env.GIT_SHA || null, buildTime: env.BUILD_TIME || null }
+		version: { app: appVersion, commit: env.GIT_SHA || null, buildTime: env.BUILD_TIME || null },
+		releases
 	};
 };
 

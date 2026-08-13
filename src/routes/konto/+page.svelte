@@ -21,6 +21,13 @@
 		});
 	});
 	const commitLabel = $derived(data.version.commit ? data.version.commit.slice(0, 7) : 'unbekannt');
+
+	/** Datum aus dem Changelog deutsch, ohne die feste Zeitzone zu brauchen. */
+	function releaseDate(iso: string | null): string {
+		if (!iso) return '';
+		const [year, month, day] = iso.split('-');
+		return day && month && year ? `${day}.${month}.${year}` : iso;
+	}
 </script>
 
 <svelte:head><title>Konto – LebensmittelKumpel</title></svelte:head>
@@ -80,6 +87,10 @@
 		<h2 class="text-sm font-semibold text-gray-700">Version</h2>
 		<dl class="mt-2 space-y-1 text-sm">
 			<div class="flex justify-between gap-3">
+				<dt class="text-gray-500">App</dt>
+				<dd class="font-medium">{data.version.app}</dd>
+			</div>
+			<div class="flex justify-between gap-3">
 				<dt class="text-gray-500">Build</dt>
 				<dd>{buildLabel}</dd>
 			</div>
@@ -89,4 +100,42 @@
 			</div>
 		</dl>
 	</div>
+
+	<!-- Changelog: neueste Version offen, ältere zum Aufklappen -->
+	{#if data.releases.length > 0}
+		<div class="rounded-xl border border-gray-200 bg-white p-4">
+			<h2 class="text-sm font-semibold text-gray-700">Änderungen</h2>
+			<div class="mt-2 space-y-2">
+				{#each data.releases as release, index (release.version)}
+					<details open={index === 0} class="group">
+						<summary class="flex cursor-pointer items-center gap-2 text-sm font-medium marker:content-['']">
+							<span class="text-gray-400 transition group-open:rotate-90">▸</span>
+							<span>{release.version}</span>
+							{#if release.date}
+								<span class="text-xs font-normal text-gray-500">{releaseDate(release.date)}</span>
+							{/if}
+						</summary>
+						<div class="mt-1 pl-5">
+							{#if release.note}
+								<p class="text-xs text-gray-500">{release.note}</p>
+							{/if}
+							{#each release.sections as section (section.title)}
+								<h3 class="mt-2 text-xs font-semibold text-gray-600">{section.title}</h3>
+								<ul class="mt-1 space-y-1">
+									{#each section.entries as entry, i (i)}
+										<li class="flex gap-1.5 text-sm text-gray-700">
+											<span class="text-gray-300">•</span>
+											<span>
+												{#if entry.label}<span class="font-medium">{entry.label}</span>{' '}{/if}{entry.text}
+											</span>
+										</li>
+									{/each}
+								</ul>
+							{/each}
+						</div>
+					</details>
+				{/each}
+			</div>
+		</div>
+	{/if}
 </div>

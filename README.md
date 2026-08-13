@@ -10,9 +10,10 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
 - **Anmeldung & Benutzer** — Login mit Benutzername + Passwort (scrypt-Hashing),
   Rollen Benutzer/Admin. Nur Admins verwalten Benutzer; jeder kann sein eigenes
   Passwort ändern. Alle Datensätze tragen anlegenden/ändernden Benutzer und
-  Zeitstempel (Audit). Die Konto-Seite zeigt unter **Version** Build-Zeitpunkt
-  und Commit der laufenden Instanz — praktisch, um zu prüfen, ob der Server
-  wirklich den erwarteten Stand fährt.
+  Zeitstempel (Audit). Die Konto-Seite zeigt unter **Version** die
+  App-Version, Build-Zeitpunkt und Commit der laufenden Instanz — praktisch,
+  um zu prüfen, ob der Server wirklich den erwarteten Stand fährt — und
+  darunter den **Changelog** der Versionen.
 - **Lagerverwaltung** — Bestände in fünf Lagerorten (Küchenschrank, Kühlschrank,
   Gefrierschrank, Vorratsregal, Getränkekeller), geführt als Chargen mit eigenem
   MHD. Ein-/Ausbuchen per Barcode-Scan (FEFO beim Ausbuchen), MHD-Ampel und
@@ -63,6 +64,13 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
   wird dabei über die ganze Woche verrechnet (kein Doppelzählen, keine
   unnötigen Mehrfachbestellungen desselben Artikels).
 
+## Versionierung
+
+Die App folgt [Semantic Versioning](https://semver.org/lang/de/). Änderungen
+werden in [CHANGELOG.md](CHANGELOG.md) nach dem Muster von
+[Keep a Changelog](https://keepachangelog.com/de/1.1.0/) gepflegt; derselbe
+Inhalt erscheint in der App auf der Konto-Seite.
+
 ## Stack
 
 SvelteKit (adapter-node) · TypeScript · SQLite (better-sqlite3 + Drizzle ORM) ·
@@ -110,7 +118,14 @@ docker compose -f docker-compose.prod.yml up -d
 
 Die App läuft auf Port 3000; alle persistenten Daten (Datenbank, Bilder,
 Picnic-Auth-Key) liegen im Volume `./data`. Migrationen und der Lagerort-/Admin-
-Seed laufen beim Containerstart automatisch. Images werden per GitHub Actions
+Seed laufen beim Containerstart automatisch.
+
+Ins Container-Log (z.B. in Portainer sichtbar) schreibt die App beim Start eine
+Zeile mit Commit und Build-Zeitpunkt — ein unbemerkter Neustart fällt dadurch
+sofort auf. Jede Fehlerantwort ab Status 500 wird mit Zeitstempel, Pfad,
+Benutzer und Dauer protokolliert; bei unerwarteten Ausnahmen zusätzlich mit
+Stacktrace und einer kurzen Fehler-ID, die auch auf der Fehlerseite erscheint.
+Bleibt das Log bei einem Fehler still, lag es nicht an der App. Images werden per GitHub Actions
 für amd64 und arm64 nach GHCR veröffentlicht:
 `ghcr.io/sirtobyb/lebensmittelkumpel:latest`. `docker-compose.prod.yml` enthält
 Traefik-Labels (externes Netzwerk `proxy`, websecure, Certresolver `tls_resolver`).
