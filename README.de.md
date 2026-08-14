@@ -18,6 +18,10 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
 > offizielle Schnittstelle an, Änderungen dort können die Funktion jederzeit
 > brechen. Bestellt wird bewusst nie automatisch.
 
+📖 **[Benutzerhandbuch im Wiki](https://github.com/SirTobyB/Proviant/wiki)**
+(englisch) — Installation, täglicher Umgang, Rezepte und Wochenplan, die
+Picnic-Funktionen und eine FAQ zur Fehlersuche.
+
 ## Screenshots
 
 <table>

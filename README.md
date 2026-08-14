@@ -18,6 +18,10 @@ light & dark following the system setting), with a desktop layout.
 > API, so changes on their side can break these features at any time. Orders
 > are never placed automatically, by design.
 
+📖 **[User guide in the wiki](https://github.com/SirTobyB/Proviant/wiki)** —
+installation, everyday use, recipes and meal planning, the Picnic features and
+a troubleshooting FAQ.
+
 ## Screenshots
 
 <table>

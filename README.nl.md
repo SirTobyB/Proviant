@@ -19,6 +19,10 @@ desktopweergave.
 > Picnic biedt geen officiële API, dus wijzigingen aan hun kant kunnen deze
 > functies op elk moment breken. Er wordt bewust nooit automatisch besteld.
 
+📖 **[Handleiding in de wiki](https://github.com/SirTobyB/Proviant/wiki)**
+(Engels) — installatie, dagelijks gebruik, recepten en weekplanning, de
+Picnic-functies en een FAQ voor probleemoplossing.
+
 ## Schermafbeeldingen
 
 <table>

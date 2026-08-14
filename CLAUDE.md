@@ -256,6 +256,20 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   ein Lesen vom Dateisystem zur Laufzeit würde also fehlschlagen. Geparst wird
   mit `src/lib/changelog.ts` (bewusst eigener Mini-Parser, damit kein HTML aus
   der Datei in die Seite gelangt).
+- **Doku wandert mit der Funktion:** Zu **jeder** Funktionsänderung oder
+  -erweiterung gehören ohne gesonderte Aufforderung (so vom Nutzer festgelegt)
+  drei Stellen — `CHANGELOG.md`, die **drei READMEs** (`README.md` englisch als
+  Standard, `README.de.md`, `README.nl.md` — inhaltsgleich halten!) und das
+  **Wiki**, sofern die Änderung für Anwender sichtbar ist. Reine
+  Aufräumarbeiten ohne spürbare Wirkung bleiben überall außen vor. Das Wiki
+  liegt in einem **eigenen Repository** (`Proviant.wiki.git`, klonen und
+  pushen wie ein normales Repo) und ist **englisch**; es hat damit eine
+  getrennte Historie und wandert nicht automatisch im selben Commit mit —
+  genau deshalb steht es hier: es ist die Stelle, die beim Weiterbauen am
+  leichtesten vergessen wird. Seitenstruktur: Home, Getting-started,
+  Stock, Scanning, Stocktake, Items, Recipes, Meal-plan, Ordering,
+  Delivery-check, Journal, Storage-locations, Users, Account, FAQ, dazu
+  `_Sidebar.md` für die Navigation — eine neue Seite gehört auch dort hinein.
 - **Deployment:** Push auf `main` baut per GitHub Actions das Multi-Arch-Image
   nach GHCR. `docker-compose.prod.yml` (Traefik) fürs Ziehen des Images. Der
   Workflow reicht `GIT_SHA`/`BUILD_TIME` als Build-Args ins Image; die
