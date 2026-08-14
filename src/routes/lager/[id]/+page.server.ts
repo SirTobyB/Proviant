@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator, type Translate } from '$lib/i18n';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
 import { activeLocationsExcept } from '$lib/server/locations';
 import { moveStockEntryFromForm, updateStockEntryFromForm } from '$lib/server/stock';
@@ -6,16 +7,17 @@ import { eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-function getLocation(id: string) {
+function getLocation(id: string, t: Translate) {
 	const locationId = Number(id);
-	if (!Number.isInteger(locationId)) throw error(404, 'Lagerort nicht gefunden');
+	if (!Number.isInteger(locationId)) throw error(404, t('msg.locationNotFound'));
 	const location = db.select().from(storageLocations).where(eq(storageLocations.id, locationId)).get();
-	if (!location) throw error(404, 'Lagerort nicht gefunden');
+	if (!location) throw error(404, t('msg.locationNotFound'));
 	return location;
 }
 
-export const load: PageServerLoad = ({ params }) => {
-	const location = getLocation(params.id);
+export const load: PageServerLoad = ({ params, locals }) => {
+	const t = translator(locals.locale);
+	const location = getLocation(params.id, t);
 
 	const entries = db
 		.select({
@@ -61,12 +63,14 @@ export const load: PageServerLoad = ({ params }) => {
 
 export const actions: Actions = {
 	updateEntry: async ({ params, request, locals }) => {
-		const location = getLocation(params.id);
+		const t = translator(locals.locale);
+		const location = getLocation(params.id, t);
 		const scope = { locationId: location.id };
 		const result = updateStockEntryFromForm(
 			await request.formData(),
 			scope,
-			locals.user?.username ?? null
+			locals.user?.username ?? null,
+			t
 		);
 		if (!result.ok) return fail(result.status, { message: result.message });
 		return { ok: true };
@@ -74,11 +78,13 @@ export const actions: Actions = {
 
 	// Charge komplett in einen anderen Lagerort umlagern (z.B. falsch gebucht)
 	moveEntry: async ({ params, request, locals }) => {
-		const location = getLocation(params.id);
+		const t = translator(locals.locale);
+		const location = getLocation(params.id, t);
 		const result = moveStockEntryFromForm(
 			await request.formData(),
 			{ locationId: location.id },
-			locals.user?.username ?? null
+			locals.user?.username ?? null,
+			t
 		);
 		if (!result.ok) return fail(result.status, { message: result.message });
 		return { moved: true, targetName: result.targetName };

@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { recipes, recipeIngredientArticles, recipeIngredients } from '$lib/server/db/schema';
 import { getRecipeIngredients, loadRecipeOr404 } from '$lib/server/recipeData';
 import { parseRecipeForm } from '$lib/server/recipeForm';
@@ -9,8 +10,9 @@ import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ params }) => {
-	const recipe = loadRecipeOr404(params.id);
+export const load: PageServerLoad = ({ params, locals }) => {
+	const t = translator(locals.locale);
+	const recipe = loadRecipeOr404(params.id, t);
 	return {
 		recipe,
 		ingredients: getRecipeIngredients(recipe.id),
@@ -21,9 +23,10 @@ export const load: PageServerLoad = ({ params }) => {
 
 export const actions: Actions = {
 	default: async ({ params, request, locals }) => {
+		const t = translator(locals.locale);
 		const user = locals.user?.username ?? null;
-		const recipe = loadRecipeOr404(params.id);
-		const { values, ingredients, tags, imagePath, error: message } = await parseRecipeForm(await request.formData());
+		const recipe = loadRecipeOr404(params.id, t);
+		const { values, ingredients, tags, imagePath, error: message } = await parseRecipeForm(await request.formData(), t);
 		if (message) return fail(400, { message });
 
 		db.update(recipes)

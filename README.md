@@ -37,6 +37,11 @@ light & dark following the system setting), with a desktop layout.
 
 ## Features
 
+- **Interface in English, German or Dutch** — chosen per user on the account
+  page and applied on every device. The default is "system language": the app
+  follows the browser's setting, falling back to English. Dates, weekdays,
+  numbers, prices and singular/plural follow the language too. Your own data —
+  items, tags, recipes and location names — stays exactly as you typed it.
 - **Login & users** — username + password (scrypt hashing), roles user/admin.
   Only admins manage users; everyone can change their own password. Every
   record carries the creating/modifying user and timestamps (audit). The

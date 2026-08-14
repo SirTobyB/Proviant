@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { recipes, recipeTags, tags } from '$lib/server/db/schema';
 import { getRecipe, getRecipeIngredients, isRecipeCookable } from '$lib/server/recipeData';
 import { allTagNames, tagsForRecipe } from '$lib/server/tags';
@@ -84,8 +85,9 @@ export const actions: Actions = {
 	},
 
 	markCooked: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const id = Number((await request.formData()).get('recipeId'));
-		if (!Number.isInteger(id) || !getRecipe(id)) return fail(400, { message: 'Rezept nicht gefunden' });
+		if (!Number.isInteger(id) || !getRecipe(id)) return fail(400, { message: t('msg.recipeNotFound') });
 		db.update(recipes)
 			.set({ lastCookedAt: new Date(), ...auditEdit(locals.user?.username) })
 			.where(eq(recipes.id, id))

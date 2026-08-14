@@ -38,6 +38,12 @@ desktopweergave.
 
 ## Functies
 
+- **Interface in het Engels, Duits of Nederlands** — per gebruiker gekozen op
+  de accountpagina en geldig op elk apparaat. Standaard staat het op
+  „systeemtaal": de app volgt de instelling van de browser, anders geldt
+  Engels. Datum, weekdagen, getallen, prijzen en enkel-/meervoud volgen de taal
+  mee. Je eigen gegevens — artikelen, tags, recepten en locatienamen — blijven
+  precies zoals je ze hebt ingevoerd.
 - **Inloggen & gebruikers** — gebruikersnaam + wachtwoord (scrypt-hashing),
   rollen gebruiker/beheerder. Alleen beheerders beheren gebruikers; iedereen
   kan zijn eigen wachtwoord wijzigen. Elk record bevat de aanmakende/wijzigende

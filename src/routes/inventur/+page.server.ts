@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
 import { allArticleTagNames, tagsForArticles } from '$lib/server/articleTags';
 import { bookingLocationId } from '$lib/server/locations';
@@ -69,6 +70,7 @@ export const actions: Actions = {
 	 * entspricht der Bestand immer dem gezählten Wert.
 	 */
 	setStock: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const user = locals.user?.username ?? null;
 
@@ -76,12 +78,12 @@ export const actions: Actions = {
 		const article = Number.isInteger(articleId)
 			? db.select().from(articles).where(eq(articles.id, articleId)).get()
 			: undefined;
-		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
+		if (!article) return fail(400, { message: t('msg.articleNotFound') });
 
 		// 0 ist ein gültiger Zählwert (alles verbraucht) — bewusst NICHT parseQuantity
 		const newTotal = Number(formData.get('newTotal'));
 		if (!Number.isInteger(newTotal) || newTotal < 0 || newTotal > 999) {
-			return fail(400, { message: 'Zählwert muss eine ganze Zahl zwischen 0 und 999 sein' });
+			return fail(400, { message: t('msg.countRange') });
 		}
 
 		// Ab hier kein await mehr: better-sqlite3 ist synchron, dadurch sind
@@ -97,7 +99,7 @@ export const actions: Actions = {
 		if (delta > 0) {
 			// Zugang ohne MHD in den Standard-Lagerort (wie die Schnellkorrektur auf /artikel)
 			const locationId = bookingLocationId(article.defaultLocationId);
-			if (!locationId) return fail(400, { message: 'Kein Lagerort vorhanden' });
+			if (!locationId) return fail(400, { message: t('msg.noLocation') });
 			bookIn(article.id, locationId, delta, null, user, 'inventur');
 		} else if (delta < 0) {
 			bookOut(article.id, -delta, user, 'inventur');

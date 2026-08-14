@@ -3,40 +3,33 @@
  * die Zuordnung von Buchungsart zu Text testbar bleibt.
  */
 
+import type { Translate } from '$lib/i18n';
+
 export type MovementType = 'in' | 'out' | 'move' | 'correction';
 
-const TYPE_LABELS: Record<MovementType, string> = {
-	in: 'Zugang',
-	out: 'Abgang',
-	move: 'Umlagerung',
-	correction: 'Korrektur'
-};
+const TYPES: MovementType[] = ['in', 'out', 'move', 'correction'];
+const SOURCES = ['scan', 'inventur', 'lieferung', 'artikelliste', 'charge'];
 
-const SOURCE_LABELS: Record<string, string> = {
-	scan: 'Scanner',
-	inventur: 'Inventur',
-	lieferung: 'Lieferung',
-	artikelliste: 'Artikelliste',
-	charge: 'Charge'
-};
-
-export function movementTypeLabel(type: string): string {
-	return TYPE_LABELS[type as MovementType] ?? type;
+/** Unbekannte Art (z.B. aus einer neueren Version) unverändert zeigen. */
+export function movementTypeLabel(type: string, t: Translate): string {
+	return TYPES.includes(type as MovementType) ? t(`journal.type.${type as MovementType}`) : type;
 }
 
 /** Unbekannte Herkunft (z.B. aus einer älteren Version) unverändert zeigen. */
-export function movementSourceLabel(source: string | null): string {
+export function movementSourceLabel(source: string | null, t: Translate): string {
 	if (!source) return '';
-	return SOURCE_LABELS[source] ?? source;
+	return SOURCES.includes(source)
+		? t(`journal.source.${source as 'scan'}`)
+		: source;
 }
 
 /**
  * Mengenangabe je Buchungsart: Zu-/Abgänge mit Vorzeichen, Umlagerungen ohne
  * (der Gesamtbestand ändert sich nicht), reine MHD-Korrekturen ohne Zahl.
  */
-export function movementAmountLabel(type: string, quantity: number): string {
+export function movementAmountLabel(type: string, quantity: number, t: Translate): string {
 	if (type === 'move') return `${Math.abs(quantity)}×`;
-	if (quantity === 0) return 'MHD';
+	if (quantity === 0) return t('journal.bestBeforeOnly');
 	return `${quantity > 0 ? '+' : '−'}${Math.abs(quantity)}`;
 }
 

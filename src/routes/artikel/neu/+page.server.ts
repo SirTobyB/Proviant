@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { articles } from '$lib/server/db/schema';
 import { activeLocations } from '$lib/server/locations';
 import { parseArticleForm } from '$lib/server/articleForm';
@@ -18,8 +19,9 @@ export const load: PageServerLoad = ({ url }) => {
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const user = locals.user?.username ?? null;
-		const { values, imagePath, tags, error } = await parseArticleForm(await request.formData());
+		const { values, imagePath, tags, error } = await parseArticleForm(await request.formData(), t);
 		if (error) return fail(400, { message: error });
 
 		let articleId: number;
@@ -31,7 +33,7 @@ export const actions: Actions = {
 				.get().id;
 		} catch (err) {
 			if (err instanceof Error && err.message.includes('UNIQUE constraint failed: articles.ean')) {
-				return fail(400, { message: `Ein Artikel mit der EAN ${values.ean} existiert bereits` });
+				return fail(400, { message: t('msg.eanExists', { ean: values.ean ?? '' }) });
 			}
 			throw err;
 		}

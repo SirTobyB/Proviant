@@ -37,6 +37,12 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
 
 ## Funktionen
 
+- **Oberfläche auf Englisch, Deutsch oder Niederländisch** — je Benutzer auf
+  der Konto-Seite gewählt und auf allen Geräten wirksam. Voreingestellt ist
+  „Systemsprache": die App folgt der Einstellung des Browsers, sonst gilt
+  Englisch. Datum, Wochentage, Zahlen, Preise und Ein-/Mehrzahl folgen der
+  Sprache mit. Die eigenen Daten — Artikel, Tags, Rezepte und Lagerortnamen —
+  bleiben genau so, wie sie eingegeben wurden.
 - **Anmeldung & Benutzer** — Login mit Benutzername + Passwort (scrypt-Hashing),
   Rollen Benutzer/Admin. Nur Admins verwalten Benutzer; jeder kann sein eigenes
   Passwort ändern. Alle Datensätze tragen anlegenden/ändernden Benutzer und

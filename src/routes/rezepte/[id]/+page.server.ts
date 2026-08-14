@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { recipes } from '$lib/server/db/schema';
 import { getRecipeIngredients, loadRecipeOr404 } from '$lib/server/recipeData';
 import { tagsForRecipe } from '$lib/server/tags';
@@ -10,8 +11,9 @@ import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ params }) => {
-	const recipe = loadRecipeOr404(params.id);
+export const load: PageServerLoad = ({ params, locals }) => {
+	const t = translator(locals.locale);
+	const recipe = loadRecipeOr404(params.id, t);
 	return {
 		recipe,
 		ingredients: getRecipeIngredients(recipe.id),
@@ -23,7 +25,8 @@ export const load: PageServerLoad = ({ params }) => {
 export const actions: Actions = {
 	// Fehlende Zutaten (aufgerundet auf Gebinde) in den Picnic-Warenkorb legen
 	addToCart: async ({ params, request, locals }) => {
-		const recipe = loadRecipeOr404(params.id);
+		const t = translator(locals.locale);
+		const recipe = loadRecipeOr404(params.id, t);
 		const portions = Math.max(1, Number((await request.formData()).get('portions')) || recipe.servings);
 		const ingredients = getRecipeIngredients(recipe.id);
 
@@ -82,7 +85,8 @@ export const actions: Actions = {
 
 	// Manuell als heute gekocht markieren (Vorrat gereicht, keine Bestellung nötig)
 	markCooked: ({ params, locals }) => {
-		const recipe = loadRecipeOr404(params.id);
+		const t = translator(locals.locale);
+		const recipe = loadRecipeOr404(params.id, t);
 		db.update(recipes)
 			.set({ lastCookedAt: new Date(), ...auditEdit(locals.user?.username) })
 			.where(eq(recipes.id, recipe.id))
@@ -90,8 +94,9 @@ export const actions: Actions = {
 		return { cooked: true };
 	},
 
-	delete: ({ params }) => {
-		const recipe = loadRecipeOr404(params.id);
+	delete: ({ params, locals }) => {
+		const t = translator(locals.locale);
+		const recipe = loadRecipeOr404(params.id, t);
 		db.delete(recipes).where(eq(recipes.id, recipe.id)).run();
 		deleteImage(recipe.imagePath);
 		redirect(303, '/rezepte');

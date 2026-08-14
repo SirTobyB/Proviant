@@ -6,7 +6,6 @@
 
 	let { data, form } = $props();
 
-	// Vorerst nur für die Zahlformate; die Texte dieser Seite folgen später
 	const t = $derived(translator(data.locale));
 
 	// Auswahl und Mengen pro Vorschlag (Fehlmenge vorbelegt)
@@ -28,12 +27,12 @@
 		quantities = defaultQuantities();
 	});
 
-	const connectionLabel: Record<string, string> = {
-		unconfigured: 'Keine Zugangsdaten hinterlegt',
-		disconnected: 'Nicht verbunden',
-		needs2FA: 'Bestätigung per SMS-Code nötig',
-		connected: 'Mit Picnic verbunden'
-	};
+	// Schluessel entsprechen den Zustaenden des Picnic-Adapters
+	const connectionLabel = $derived((zustand: string) =>
+		zustand === 'unconfigured' || zustand === 'disconnected' || zustand === 'needs2FA' || zustand === 'connected'
+			? t(`order.state.${zustand}`)
+			: zustand
+	);
 
 	// Nach dem 2FA-Code-Versand das Eingabefeld zeigen
 	let codeSent = $state(false);
@@ -63,10 +62,10 @@
 
 </script>
 
-<svelte:head><title>Bestellen – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('order.title')} – LebensmittelKumpel</title></svelte:head>
 
-<h1 class="text-2xl font-bold">Bestellen</h1>
-<p class="mt-1 text-sm text-gray-500">Artikel unter Mindestbestand → Picnic-Warenkorb</p>
+<h1 class="text-2xl font-bold">{t('order.title')}</h1>
+<p class="mt-1 text-sm text-gray-500">{t('order.subtitle')}</p>
 
 <!-- Verbindungspanel -->
 <div class="mt-4 max-w-2xl rounded-xl border border-gray-200 bg-white p-4">
@@ -78,25 +77,24 @@
 					? 'bg-amber-500'
 					: 'bg-gray-300'}"
 		></span>
-		<span class="text-sm font-medium">{connectionLabel[connection]}</span>
+		<span class="text-sm font-medium">{connectionLabel(connection)}</span>
 	</div>
 
 	{#if connection === 'unconfigured'}
 		<p class="mt-2 text-sm text-gray-500">
-			Hinterlege <code class="rounded bg-gray-100 px-1">PICNIC_USERNAME</code> und
-			<code class="rounded bg-gray-100 px-1">PICNIC_PASSWORD</code> in der Umgebung, um den Warenkorb zu befüllen.
+			{t('order.unconfiguredHint', { username: 'PICNIC_USERNAME', password: 'PICNIC_PASSWORD' })}
 		</p>
 	{:else if connection === 'disconnected'}
 		<form method="POST" action="?/connect" use:enhance class="mt-3">
 			<button type="submit" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
-				Mit Picnic verbinden
+				{t('order.connect')}
 			</button>
 		</form>
 	{:else if connection === 'needs2FA'}
 		<div class="mt-3 space-y-3">
 			<form method="POST" action="?/send2FACode" use:enhance>
 				<button type="submit" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-					{codeSent ? 'Code erneut senden' : 'SMS-Code anfordern'}
+					{codeSent ? t('order.resendCode') : t('order.requestCode')}
 				</button>
 			</form>
 			<form method="POST" action="?/verify2FA" use:enhance class="flex gap-2">
@@ -104,11 +102,11 @@
 					name="code"
 					type="text"
 					inputmode="numeric"
-					placeholder="SMS-Code"
+					placeholder={t('order.codePlaceholder')}
 					class="block w-40 rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 				/>
 				<button type="submit" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
-					Bestätigen
+					{t('order.confirmCode')}
 				</button>
 			</form>
 		</div>
@@ -120,38 +118,36 @@
 {/if}
 {#if form && 'added' in form && form.added}
 	<div class="mt-4 max-w-2xl rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">
-		{form.totalUnits} Gebinde ({form.added} Artikel) in den Picnic-Warenkorb gelegt.
-		Der Checkout bleibt bewusst in der Picnic-App.
+		{t('order.added', { packs: t('common.packs', { n: form.totalUnits }), items: t('order.addedItems', { n: form.added }) })}
 		{#if form.skipped.length > 0}
-			<div class="mt-1 text-green-700">Ohne Picnic-Verknüpfung übersprungen: {form.skipped.join(', ')}</div>
+			<div class="mt-1 text-green-700">{t('order.skipped', { names: form.skipped.join(', ') })}</div>
 		{/if}
 	</div>
 {/if}
 {#if form && 'notInCart' in form && form.notInCart?.length}
 	<div class="mt-4 max-w-2xl rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
-		Nicht im Warenkorb angekommen: {form.notInCart.join(', ')} — Picnic kennt die hinterlegte
-		Produkt-ID vermutlich nicht mehr. Bitte die Picnic-Verknüpfung im Artikel neu setzen.
+		{t('order.notInCart', { names: form.notInCart.join(', ') })}
 	</div>
 {/if}
 {#if data.cartUnavailable || data.openOrdersUnavailable}
 	<div class="mt-4 max-w-2xl rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
 		{#if data.cartUnavailable && data.openOrdersUnavailable}
-			Warenkorb und offene Bestellungen konnten nicht gelesen werden
+			{t('order.cartAndOrdersUnavailable')}
 		{:else if data.cartUnavailable}
-			Der Picnic-Warenkorb konnte nicht gelesen werden
+			{t('order.cartUnavailable')}
 		{:else}
-			Offene Bestellungen konnten nicht gelesen werden
+			{t('order.openOrdersUnavailable')}
 		{/if}
-		— die Vorschläge sind daher nicht vollständig abgeglichen und könnten bereits Bestelltes enthalten.
+		{t('order.unavailableSuffix')}
 	</div>
 {/if}
 
 <!-- Vorschlagsliste -->
 {#if data.suggestions.length === 0}
 	<div class="mt-6 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-		Alles ausreichend bevorratet — keine Vorschläge. Mindestbestände legst du je Artikel fest.
+		{t('order.empty')}
 		{#if data.covered.length > 0}
-			<div class="mt-2 text-xs text-gray-400">Bereits im Warenkorb oder bestellt: {data.covered.join(', ')}</div>
+			<div class="mt-2 text-xs text-gray-400">{t('order.covered', { names: data.covered.join(', ') })}</div>
 		{/if}
 	</div>
 {:else}
@@ -167,7 +163,7 @@
 		{#if selectableCount > 0}
 			<div class="mb-2 flex justify-end">
 				<button type="button" onclick={toggleAll} class="text-sm font-medium text-green-700 underline hover:text-green-800">
-					{allSelected ? 'Alle abwählen' : 'Alle auswählen'}
+					{allSelected ? t('order.deselectAll') : t('order.selectAll')}
 				</button>
 			</div>
 		{/if}
@@ -193,15 +189,15 @@
 					<div class="min-w-0 flex-1">
 						<a href={`/artikel/${item.id}`} class="block truncate font-medium hover:underline">{item.name}</a>
 						<div class="text-xs text-gray-500">
-							{packageSize(item.amount, item.unit, data.locale, t)} · Bestand {item.stock}/{item.minStock}
+							{packageSize(item.amount, item.unit, data.locale, t)} · {t('order.stock', { stock: item.stock, min: item.minStock })}
 							{#if item.inCartQty > 0}
-								· {item.inCartQty} im Warenkorb
+								· {t('order.inCart', { n: item.inCartQty })}
 							{/if}
 							{#if item.onOrderQty > 0}
-								· {item.onOrderQty} bereits bestellt
+								· {t('order.onOrder', { n: item.onOrderQty })}
 							{/if}
 							{#if !item.picnicId}
-								· <a href={`/artikel/${item.id}`} class="text-amber-600 underline">Picnic verknüpfen</a>
+								· <a href={`/artikel/${item.id}`} class="text-amber-600 underline">{t('order.linkPicnic')}</a>
 							{/if}
 						</div>
 					</div>
@@ -222,13 +218,13 @@
 			disabled={connection !== 'connected' || selectedCount === 0}
 			class="mt-4 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 sm:w-auto"
 		>
-			{selectedCount} Artikel in den Picnic-Warenkorb
+			{t('order.submit', { n: selectedCount })}
 		</button>
 		{#if connection !== 'connected'}
-			<p class="mt-2 text-xs text-gray-500">Zum Übertragen zuerst oben mit Picnic verbinden.</p>
+			<p class="mt-2 text-xs text-gray-500">{t('order.connectFirst')}</p>
 		{/if}
 		{#if data.covered.length > 0}
-			<p class="mt-2 text-xs text-gray-400">Bereits im Warenkorb oder bestellt (nicht mehr vorgeschlagen): {data.covered.join(', ')}</p>
+			<p class="mt-2 text-xs text-gray-400">{t('order.coveredNotSuggested', { names: data.covered.join(', ') })}</p>
 		{/if}
 	</form>
 {/if}

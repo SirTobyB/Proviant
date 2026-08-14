@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { articles } from '$lib/server/db/schema';
 import { activeLocations } from '$lib/server/locations';
 import {
@@ -43,6 +44,7 @@ export const load: PageServerLoad = async () => {
 
 export const actions: Actions = {
 	import: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const defaultLocationRaw = Number(formData.get('defaultLocationId'));
 		const defaultLocationId =
@@ -54,9 +56,9 @@ export const actions: Actions = {
 			if (!Array.isArray(raw)) throw new Error();
 			selected = raw;
 		} catch {
-			return fail(400, { message: 'Ungültige Produktauswahl' });
+			return fail(400, { message: t('msg.invalidProductSelection') });
 		}
-		if (selected.length === 0) return fail(400, { message: 'Nichts ausgewählt' });
+		if (selected.length === 0) return fail(400, { message: t('msg.nothingSelected') });
 
 		const user = locals.user?.username ?? null;
 		let created = 0;

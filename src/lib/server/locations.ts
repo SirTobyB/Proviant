@@ -12,6 +12,7 @@ import { db } from '$lib/server/db';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
 import { auditEdit, auditNew } from '$lib/server/audit';
 import { and, eq, ne, sql } from 'drizzle-orm';
+import type { Translate } from '$lib/i18n';
 
 export type StorageLocation = typeof storageLocations.$inferSelect;
 
@@ -85,20 +86,20 @@ export type LocationResult = { ok: true; message: string } | { ok: false; status
 const NAME_MAX = 40;
 
 /** Name prüfen und Dubletten abfangen (der Unique-Index würde sonst 500en). */
-function checkName(name: string, exceptId?: number): string | null {
-	if (name.length < 2) return 'Name: mindestens 2 Zeichen';
-	if (name.length > NAME_MAX) return `Name: höchstens ${NAME_MAX} Zeichen`;
+function checkName(name: string, t: Translate, exceptId?: number): string | null {
+	if (name.length < 2) return t('msg.locationNameShort');
+	if (name.length > NAME_MAX) return t('msg.locationNameLong', { n: NAME_MAX });
 	const existing = db
 		.select({ id: storageLocations.id })
 		.from(storageLocations)
 		.where(sql`${storageLocations.name} = ${name} collate nocase`)
 		.get();
-	if (existing && existing.id !== exceptId) return `Lagerort „${name}" existiert bereits`;
+	if (existing && existing.id !== exceptId) return t('msg.locationExists', { name });
 	return null;
 }
 
-export function createLocation(name: string, user: string | null): LocationResult {
-	const problem = checkName(name);
+export function createLocation(name: string, user: string | null, t: Translate): LocationResult {
+	const problem = checkName(name, t);
 	if (problem) return { ok: false, status: 400, message: problem };
 
 	// Ans Ende der Liste; max + 1 statt count, damit Lücken nicht kollidieren
@@ -109,21 +110,26 @@ export function createLocation(name: string, user: string | null): LocationResul
 	db.insert(storageLocations)
 		.values({ name, sortOrder: last.max + 1, ...auditNew(user) })
 		.run();
-	return { ok: true, message: `Lagerort „${name}" angelegt` };
+	return { ok: true, message: t('msg.locationCreated', { name }) };
 }
 
-export function renameLocation(id: number, name: string, user: string | null): LocationResult {
+export function renameLocation(
+	id: number,
+	name: string,
+	user: string | null,
+	t: Translate
+): LocationResult {
 	const location = db.select().from(storageLocations).where(eq(storageLocations.id, id)).get();
-	if (!location) return { ok: false, status: 404, message: 'Lagerort nicht gefunden' };
-	const problem = checkName(name, id);
+	if (!location) return { ok: false, status: 404, message: t('msg.locationNotFound') };
+	const problem = checkName(name, t, id);
 	if (problem) return { ok: false, status: 400, message: problem };
-	if (name === location.name) return { ok: true, message: 'Unverändert' };
+	if (name === location.name) return { ok: true, message: t('msg.unchanged') };
 
 	db.update(storageLocations)
 		.set({ name, ...auditEdit(user) })
 		.where(eq(storageLocations.id, id))
 		.run();
-	return { ok: true, message: `„${location.name}" heißt jetzt „${name}"` };
+	return { ok: true, message: t('msg.locationRenamed', { old: location.name, name }) };
 }
 
 /**
@@ -131,12 +137,17 @@ export function renameLocation(id: number, name: string, user: string | null): L
  * Bestand aus allen Auswahllisten, während er in den Summen weiterzählt.
  * Der letzte aktive Lagerort bleibt aktiv, sonst ließe sich nichts mehr buchen.
  */
-export function setLocationActive(id: number, active: boolean, user: string | null): LocationResult {
+export function setLocationActive(
+	id: number,
+	active: boolean,
+	user: string | null,
+	t: Translate
+): LocationResult {
 	const location = db.select().from(storageLocations).where(eq(storageLocations.id, id)).get();
-	if (!location) return { ok: false, status: 404, message: 'Lagerort nicht gefunden' };
-	if (location.active === active) return { ok: true, message: 'Unverändert' };
+	if (!location) return { ok: false, status: 404, message: t('msg.locationNotFound') };
+	if (location.active === active) return { ok: true, message: t('msg.unchanged') };
 
-	let hint = '';
+	let betroffeneArtikel = 0;
 	if (!active) {
 		const [stock] = db
 			.select({ total: sql<number>`coalesce(sum(${stockEntries.quantity}), 0)` })
@@ -147,7 +158,10 @@ export function setLocationActive(id: number, active: boolean, user: string | nu
 			return {
 				ok: false,
 				status: 400,
-				message: `Noch ${stock.total} Gebinde in „${location.name}" — bitte zuerst umlagern oder ausbuchen`
+				message: t('msg.locationHasStock', {
+					packs: t('common.packs', { n: stock.total }),
+					name: location.name
+				})
 			};
 		}
 		const [remaining] = db
@@ -156,7 +170,7 @@ export function setLocationActive(id: number, active: boolean, user: string | nu
 			.where(and(eq(storageLocations.active, true), ne(storageLocations.id, id)))
 			.all();
 		if (remaining.n === 0) {
-			return { ok: false, status: 400, message: 'Der letzte aktive Lagerort kann nicht stillgelegt werden' };
+			return { ok: false, status: 400, message: t('msg.lastActiveLocation') };
 		}
 
 		// Artikel, die auf diesen Ort zeigen, würden sonst auf etwas verweisen,
@@ -166,9 +180,7 @@ export function setLocationActive(id: number, active: boolean, user: string | nu
 			.set({ defaultLocationId: null, ...auditEdit(user) })
 			.where(eq(articles.defaultLocationId, id))
 			.run().changes;
-		if (affected > 0) {
-			hint = ` — Standard-Lagerort bei ${affected} Artikel${affected === 1 ? '' : 'n'} entfernt`;
-		}
+		betroffeneArtikel = affected;
 	}
 
 	db.update(storageLocations)
@@ -177,7 +189,11 @@ export function setLocationActive(id: number, active: boolean, user: string | nu
 		.run();
 	return {
 		ok: true,
-		message: active ? `„${location.name}" ist wieder aktiv` : `„${location.name}" stillgelegt${hint}`
+		message: active
+			? t('msg.locationActivated', { name: location.name })
+			: betroffeneArtikel > 0
+				? t('msg.locationRetiredWithArticles', { name: location.name, n: betroffeneArtikel })
+				: t('msg.locationRetired', { name: location.name })
 	};
 }
 
@@ -186,13 +202,18 @@ export function setLocationActive(id: number, active: boolean, user: string | nu
  * direkten Nachbarn — auch inaktive zählen als Nachbar, damit ein
  * Reaktivierter dort wieder auftaucht, wo er einsortiert war.
  */
-export function moveLocation(id: number, direction: 'up' | 'down', user: string | null): LocationResult {
+export function moveLocation(
+	id: number,
+	direction: 'up' | 'down',
+	user: string | null,
+	t: Translate
+): LocationResult {
 	const ordered = db.select().from(storageLocations).orderBy(storageLocations.sortOrder, storageLocations.id).all();
 	const index = ordered.findIndex((l) => l.id === id);
-	if (index === -1) return { ok: false, status: 404, message: 'Lagerort nicht gefunden' };
+	if (index === -1) return { ok: false, status: 404, message: t('msg.locationNotFound') };
 
 	const targetIndex = direction === 'up' ? index - 1 : index + 1;
-	if (targetIndex < 0 || targetIndex >= ordered.length) return { ok: true, message: 'Unverändert' };
+	if (targetIndex < 0 || targetIndex >= ordered.length) return { ok: true, message: t('msg.unchanged') };
 
 	// Positionen neu durchnummerieren: die gespeicherten sort_order-Werte
 	// dürfen doppelt vorkommen (Default 0), ein reiner Tausch wäre dann wirkungslos.
@@ -206,5 +227,5 @@ export function moveLocation(id: number, direction: 'up' | 'down', user: string 
 			.where(eq(storageLocations.id, location.id))
 			.run();
 	}
-	return { ok: true, message: `„${ordered[index].name}" verschoben` };
+	return { ok: true, message: t('msg.locationMoved', { name: ordered[index].name }) };
 }

@@ -9,10 +9,10 @@ MHD), Inventur, Artikelstamm (mit Tags), Rezepte (mit Alternativartikeln je
 Zutat), Wochenplan und Picnic-Anbindung (Bestellvorschläge — abgeglichen mit
 Warenkorb und offenen Bestellungen —, Lieferungs-Check mit Auto-Anlage
 fehlender Artikel). SvelteKit + TypeScript + SQLite (Drizzle), als
-Docker-Image für amd64/arm64. Kommentare und Commit-Messages sind **deutsch**;
-die Oberfläche wird gerade auf **Englisch (Standard), Deutsch und
-Niederländisch** umgestellt — neue Texte gehören deshalb nach
-`src/lib/i18n/messages/` und nicht mehr fest in die Komponente.
+Docker-Image für amd64/arm64. Kommentare und Commit-Messages sind **deutsch**,
+die Oberfläche dagegen **dreisprachig** (Englisch als Standard, Deutsch,
+Niederländisch) — neue Texte gehören deshalb nach `src/lib/i18n/messages/`
+und nie fest in eine Komponente oder eine Server-Action.
 
 ## Befehle
 
@@ -176,6 +176,26 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     nichts im Warenkorb, die App meldete trotzdem Erfolg. Nach dem Befüllen
     deshalb gegenprüfen (siehe `notInCart` auf der Bestellseite). Dasselbe
     Produkt existiert im Katalog teils unter mehreren IDs.
+- **Bilder:** Der Dateityp wird in `server/images.ts` **aus dem Inhalt**
+  bestimmt (Signatur der ersten Bytes), nie aus `File.type` oder einem
+  `Content-Type` — beides kommt vom Absender und ist frei wählbar, das `accept`
+  am Eingabefeld ist reine Oberfläche. **SVG ist bewusst nicht erlaubt**: es ist
+  ein aktives Dokument und lief beim direkten Aufruf von `/api/images/…` auf der
+  Origin der App. Externe Bild-URLs sind auf `openfoodfacts.org` beschränkt
+  (`redirect: 'error'`, sonst führte eine Weiterleitung aus der Allowlist
+  heraus) — sonst wäre der Server ein Sprungbrett ins Heimnetz.
+- **CSP** steht in `vite.config.ts` unter `kit.csp`, **nicht** im Hook: nur dort
+  bekommen SvelteKits Inline-Scripte ihren Nonce, ein selbst gesetzter Header
+  müsste `'unsafe-inline'` erlauben und wäre wirkungslos. Die übrigen
+  Schutzheader setzt `hooks.server.ts`. Neue externe Quellen (Schriften, Bilder,
+  API-Aufrufe) brauchen dort einen Eintrag, sonst blockt der Browser sie
+  stillschweigend. `wasm-unsafe-eval` ist für den Scanner nötig.
+- **Barcode-Scanner:** `barcode-detector` (JS-Anbindung) und `zxing-wasm`
+  (WASM-Datei) müssen **dieselbe Version** tragen; `zxing-wasm` ist nur deshalb
+  eine direkte Abhängigkeit, weil die WASM-Datei mitgebaut statt von
+  `fastly.jsdelivr.net` geladen wird. `src/lib/zxingVersion.test.ts` wacht
+  darüber — ohne den Test fiele ein Auseinanderdriften erst am iPhone auf
+  (Android Chrome nutzt den nativen BarcodeDetector und lädt gar kein WASM).
 - **Dark Theme:** implementiert als gezielte Utility-Overrides in
   `src/routes/layout.css` unter `prefers-color-scheme: dark` (bewusst **nicht**
   die `--color-*`-Variablen global umbiegen — `text-white` auf Buttons muss

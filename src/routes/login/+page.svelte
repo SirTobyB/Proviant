@@ -1,8 +1,13 @@
 <script lang="ts">
-	let { form } = $props();
+	import { translator } from '$lib/i18n';
+	let { data, form } = $props();
+
+	// locale kommt aus dem Root-Layout — die Anmeldeseite rendert ohne App-Chrome,
+	// braucht die Sprache aber genauso
+	const t = $derived(translator(data.locale));
 </script>
 
-<svelte:head><title>Anmelden – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('login.title')} – LebensmittelKumpel</title></svelte:head>
 
 <div class="flex min-h-dvh items-center justify-center bg-gray-50 p-4">
 	<div class="w-full max-w-sm">
@@ -16,7 +21,7 @@
 				<div class="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{form.message}</div>
 			{/if}
 
-			<label for="username" class="block text-sm font-medium text-gray-700">Benutzername</label>
+			<label for="username" class="block text-sm font-medium text-gray-700">{t('login.username')}</label>
 			<input
 				id="username"
 				name="username"
@@ -27,7 +32,7 @@
 				class="mt-1 mb-4 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 			/>
 
-			<label for="password" class="block text-sm font-medium text-gray-700">Passwort</label>
+			<label for="password" class="block text-sm font-medium text-gray-700">{t('login.password')}</label>
 			<input
 				id="password"
 				name="password"
@@ -38,7 +43,7 @@
 			/>
 
 			<button type="submit" class="w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
-				Anmelden
+				{t('login.submit')}
 			</button>
 		</form>
 	</div>

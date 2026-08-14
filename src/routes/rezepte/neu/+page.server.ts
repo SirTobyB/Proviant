@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { recipes, recipeIngredientArticles, recipeIngredients } from '$lib/server/db/schema';
 import { parseRecipeForm } from '$lib/server/recipeForm';
 import { allTagNames, setRecipeTags } from '$lib/server/tags';
@@ -12,8 +13,9 @@ export const load: PageServerLoad = () => {
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const user = locals.user?.username ?? null;
-		const { values, ingredients, tags, imagePath, error } = await parseRecipeForm(await request.formData());
+		const { values, ingredients, tags, imagePath, error } = await parseRecipeForm(await request.formData(), t);
 		if (error) return fail(400, { message: error });
 
 		const recipeId = db

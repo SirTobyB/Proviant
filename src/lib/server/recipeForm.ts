@@ -3,6 +3,7 @@
  * Zutaten werden als JSON-Array im Feld `ingredients` übergeben.
  */
 import { saveImageFromUpload } from '$lib/server/images';
+import type { Translate } from '$lib/i18n';
 
 export type ParsedIngredient = {
 	/** Akzeptierte Artikel (Hauptartikel + Alternativen), in erfasster Reihenfolge. */
@@ -37,7 +38,10 @@ function parseTags(formData: FormData): string[] {
 	}
 }
 
-export async function parseRecipeForm(formData: FormData): Promise<RecipeFormResult> {
+export async function parseRecipeForm(
+	formData: FormData,
+	t: Translate
+): Promise<RecipeFormResult> {
 	const text = (key: string) => {
 		const value = formData.get(key);
 		return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
@@ -46,7 +50,8 @@ export async function parseRecipeForm(formData: FormData): Promise<RecipeFormRes
 	const tags = parseTags(formData);
 	const name = text('name');
 	const empty = { name: '', category: 'meal' as const, servings: 4, instructions: null };
-	if (!name) return { values: empty, ingredients: [], tags, imagePath: undefined, error: 'Name ist erforderlich' };
+	if (!name)
+		return { values: empty, ingredients: [], tags, imagePath: undefined, error: t('msg.nameRequired') };
 
 	const category = text('category') === 'cake' ? 'cake' : 'meal';
 	const servings = Math.max(1, parseInt(text('servings') ?? '4', 10) || 4);
@@ -81,7 +86,7 @@ export async function parseRecipeForm(formData: FormData): Promise<RecipeFormRes
 			ingredients: [],
 			tags,
 			imagePath: undefined,
-			error: 'Zutatenliste konnte nicht gelesen werden'
+			error: t('msg.ingredientListUnreadable')
 		};
 	}
 

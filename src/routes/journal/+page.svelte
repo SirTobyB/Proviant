@@ -6,7 +6,7 @@
 		movementTypeLabel
 	} from '$lib/journal';
 	import { formatDate } from '$lib/mhd';
-	import { translator } from '$lib/i18n';
+	import { translator, BCP47 } from '$lib/i18n';
 
 	let { data } = $props();
 
@@ -19,7 +19,7 @@
 	function bookedAtLabel(value: Date | string): string {
 		const date = value instanceof Date ? value : new Date(value);
 		if (Number.isNaN(date.getTime())) return String(value);
-		return date.toLocaleString('de-DE', {
+		return date.toLocaleString(BCP47[data.locale], {
 			timeZone: 'Europe/Berlin',
 			day: '2-digit',
 			month: '2-digit',
@@ -51,16 +51,16 @@
 	);
 </script>
 
-<svelte:head><title>Journal – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('journal.title')} – LebensmittelKumpel</title></svelte:head>
 
 <div class="flex flex-wrap items-center justify-between gap-3">
 	<div>
-		<h1 class="text-2xl font-bold">Buchungsjournal</h1>
-		<p class="mt-1 text-sm text-gray-500">Jede Bestandsveränderung mit Zeitpunkt, Benutzer und Lagerort</p>
+		<h1 class="text-2xl font-bold">{t('journal.title')}</h1>
+		<p class="mt-1 text-sm text-gray-500">{t('journal.subtitle')}</p>
 	</div>
 	{#if hasFilter}
 		<a href="/journal" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-			Filter zurücksetzen
+			{t('journal.resetFilter')}
 		</a>
 	{/if}
 </div>
@@ -72,7 +72,7 @@
 		onchange={(e) => (window.location.href = filterHref({ artikel: e.currentTarget.value || null }))}
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	>
-		<option value="">Alle Artikel</option>
+		<option value="">{t('journal.allArticles')}</option>
 		{#each data.articleOptions as option (option.id)}
 			<option value={option.id} selected={data.filters.article === option.id}>{option.name}</option>
 		{/each}
@@ -82,7 +82,7 @@
 		onchange={(e) => (window.location.href = filterHref({ ort: e.currentTarget.value || null }))}
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	>
-		<option value="">Alle Lagerorte</option>
+		<option value="">{t('journal.allLocations')}</option>
 		{#each data.locationOptions as option (option.id)}
 			<option value={option.id} selected={data.filters.location === option.id}>{option.name}</option>
 		{/each}
@@ -92,7 +92,7 @@
 		onchange={(e) => (window.location.href = filterHref({ benutzer: e.currentTarget.value || null }))}
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	>
-		<option value="">Alle Benutzer</option>
+		<option value="">{t('journal.allUsers')}</option>
 		{#each data.userOptions as name (name)}
 			<option value={name} selected={data.filters.user === name}>{name}</option>
 		{/each}
@@ -102,9 +102,9 @@
 		onchange={(e) => (window.location.href = filterHref({ typ: e.currentTarget.value || null }))}
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	>
-		<option value="">Alle Arten</option>
+		<option value="">{t('journal.allTypes')}</option>
 		{#each ['in', 'out', 'move', 'correction'] as type (type)}
-			<option value={type} selected={data.filters.type === type}>{movementTypeLabel(type)}</option>
+			<option value={type} selected={data.filters.type === type}>{movementTypeLabel(type, t)}</option>
 		{/each}
 	</select>
 </form>
@@ -112,8 +112,8 @@
 {#if data.movements.length === 0}
 	<div class="mt-6 max-w-3xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
 		{hasFilter
-			? 'Keine Buchungen zu diesem Filter.'
-			: 'Noch keine Buchungen erfasst — die erste Ein- oder Ausbuchung erscheint hier.'}
+			? t('journal.emptyFiltered')
+			: t('journal.empty')}
 	</div>
 {:else}
 	<ul class="mt-4 max-w-3xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -129,12 +129,12 @@
 							{movement.articleName}
 						</a>
 					{:else}
-						<div class="block truncate text-sm font-medium text-gray-500" title="Artikel wurde gelöscht">
+						<div class="block truncate text-sm font-medium text-gray-500" title={t('journal.deletedArticle')}>
 							{movement.articleName}
 						</div>
 					{/if}
 					<div class="flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
-						<span>{movementTypeLabel(movement.type)}</span>
+						<span>{movementTypeLabel(movement.type, t)}</span>
 						{#if movement.type === 'move'}
 							<span>{movement.fromLocationName ?? '?'} → {movement.locationName ?? '?'}</span>
 						{:else if movement.locationName}
@@ -144,12 +144,12 @@
 							<span>{t('mhd.label', { date: formatDate(movement.bestBefore, data.locale) })}</span>
 						{/if}
 						{#if movement.source}
-							<span class="rounded bg-gray-100 px-1.5 py-0.5">{movementSourceLabel(movement.source)}</span>
+							<span class="rounded bg-gray-100 px-1.5 py-0.5">{movementSourceLabel(movement.source, t)}</span>
 						{/if}
 					</div>
 				</div>
 				<span class="shrink-0 text-sm font-semibold {movementAmountClass(movement.type, movement.quantity)}">
-					{movementAmountLabel(movement.type, movement.quantity)}
+					{movementAmountLabel(movement.type, movement.quantity, t)}
 				</span>
 			</li>
 		{/each}
@@ -161,10 +161,10 @@
 				href={filterHref({ limit: data.limit + 100 })}
 				class="inline-block rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
 			>
-				Weitere 100 anzeigen
+				{t('journal.showMore')}
 			</a>
 		{:else}
-			<span class="text-xs text-gray-400">{data.movements.length} Buchung(en) — das ist alles.</span>
+			<span class="text-xs text-gray-400">{t('journal.thatsAll', { n: data.movements.length })}</span>
 		{/if}
 	</div>
 {/if}

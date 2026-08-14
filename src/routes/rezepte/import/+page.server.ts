@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { recipes, recipeIngredients } from '$lib/server/db/schema';
 import {
 	getConnectionState,
@@ -46,10 +47,11 @@ export const load: PageServerLoad = async () => {
 
 export const actions: Actions = {
 	import: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const id = String(formData.get('id') ?? '').trim();
 		const name = String(formData.get('name') ?? '').trim();
-		if (!id || !name) return fail(400, { message: 'Ungültiges Rezept' });
+		if (!id || !name) return fail(400, { message: t('msg.invalidRecipe') });
 
 		let parsed;
 		try {
@@ -60,7 +62,7 @@ export const actions: Actions = {
 			});
 		}
 		if (parsed.ingredients.length === 0 && parsed.steps.length === 0) {
-			return fail(422, { message: `„${name}" konnte nicht ausgelesen werden (unbekanntes Seitenformat)` });
+			return fail(422, { message: t('msg.recipeParseFailed', { name }) });
 		}
 
 		const user = locals.user?.username ?? null;

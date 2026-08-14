@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { articles, stockEntries } from '$lib/server/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import {
@@ -97,9 +98,10 @@ export const actions: Actions = {
 		}
 	},
 
-	verify2FA: async ({ request }) => {
+	verify2FA: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const code = String((await request.formData()).get('code') ?? '').trim();
-		if (!code) return fail(400, { message: 'Bitte den Code eingeben' });
+		if (!code) return fail(400, { message: t('msg.enterCode') });
 		try {
 			await verify2FA(code);
 			return { connection: getConnectionState() };
@@ -109,7 +111,8 @@ export const actions: Actions = {
 	},
 
 	// Ausgewählte Vorschläge in den Picnic-Warenkorb legen
-	addToCart: async ({ request }) => {
+	addToCart: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const suggestions = loadSuggestions();
 		const byId = new Map(suggestions.map((s) => [String(s.id), s]));
@@ -133,7 +136,7 @@ export const actions: Actions = {
 				message:
 					skipped.length > 0
 						? `Keine Picnic-Verknüpfung bei: ${skipped.join(', ')}`
-						: 'Nichts ausgewählt'
+						: t('msg.nothingSelected')
 			});
 		}
 

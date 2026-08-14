@@ -2,8 +2,11 @@
 	import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { translator } from '$lib/i18n';
 
 	let { data } = $props();
+
+	const t = $derived(translator(data.locale));
 
 	// Einzelimport einer nicht verknüpften Position als Artikel
 	let importingProduct = $state<string | null>(null);
@@ -18,10 +21,10 @@
 		const result = deserialize(await response.text());
 		importingProduct = null;
 		if (result.type === 'success') {
-			showToast(`„${item.name}" als Artikel angelegt`);
+			showToast(t('delivery.toast.created', { name: item.name }));
 			await invalidateAll(); // Position erscheint jetzt als verknüpft
 		} else {
-			showToast('Import fehlgeschlagen', 'warn');
+			showToast(t('delivery.toast.importFailed'), 'warn');
 		}
 	}
 
@@ -77,18 +80,18 @@
 		const result = await response.json();
 		if (!result.found || !result.article) {
 			unknownEan = ean;
-			showToast(`Unbekannter Barcode ${ean}`, 'warn');
+			showToast(t('delivery.toast.unknownBarcode', { ean }), 'warn');
 			return;
 		}
 		const article = result.article;
 		const item = data.items.find((i) => i.productId === article.picnicId);
 		if (!item) {
-			showToast(`„${article.name}" ist nicht in dieser Lieferung`, 'warn');
+			showToast(t('delivery.toast.notInDelivery', { name: article.name }), 'warn');
 			resetScanner();
 			return;
 		}
 		if ((checked[item.productId] ?? 0) >= item.quantity) {
-			showToast(`„${item.name}" ist bereits vollständig geprüft`, 'warn');
+			showToast(t('delivery.toast.alreadyChecked', { name: item.name }), 'warn');
 			resetScanner();
 			return;
 		}
@@ -103,7 +106,7 @@
 		if (!pending) return;
 		const { item, locationId, bestBefore } = pending;
 		if (!locationId) {
-			showToast('Bitte einen Ziel-Lagerort wählen', 'warn');
+			showToast(t('delivery.toast.pickLocation'), 'warn');
 			return;
 		}
 		const body = new FormData();
@@ -115,11 +118,11 @@
 		const result = deserialize(await response.text());
 		if (result.type === 'success') {
 			checked[item.productId] = (checked[item.productId] ?? 0) + 1;
-			showToast(`„${item.name}" eingebucht (${checked[item.productId]}/${item.quantity})`);
+			showToast(t('delivery.toast.booked', { name: item.name, checked: checked[item.productId], total: item.quantity }));
 			resetScanner();
 		} else {
-			const message = result.type === 'failure' ? (result.data?.message as string) : 'Einbuchen fehlgeschlagen';
-			showToast(message ?? 'Einbuchen fehlgeschlagen', 'warn');
+			const message = result.type === 'failure' ? (result.data?.message as string) : undefined;
+			showToast(message ?? t('delivery.toast.bookFailed'), 'warn');
 		}
 	}
 
@@ -146,15 +149,15 @@
 			// Alles als gesehen markieren
 			for (const i of data.items) checked[i.productId] = i.quantity;
 			const data_ = result.data as { booked: number; imported: number; noLocation: string[]; failed: string[] };
-			let suffix = data_.imported ? ` · ${data_.imported} Artikel neu angelegt` : '';
+			let suffix = data_.imported ? t('delivery.toast.bulkImported', { n: data_.imported }) : '';
 			if (data_.noLocation?.length) suffix += ` · ohne Lagerort übersprungen: ${data_.noLocation.join(', ')}`;
 			if (data_.failed?.length) suffix += ` · fehlgeschlagen: ${data_.failed.join(', ')}`;
-			showToast(`Sichtprüfung bestätigt — ${data_.booked} Gebinde eingebucht${suffix}`, data_.failed?.length ? 'warn' : 'ok');
+			showToast(t('delivery.toast.bulkDone', { packs: t('common.packs', { n: data_.booked }) }) + suffix, data_.failed?.length ? 'warn' : 'ok');
 			showBulk = false;
 			await invalidateAll(); // neu angelegte Artikel als verknüpft anzeigen
 			resetScanner();
 		} else {
-			showToast('Sammelbestätigung fehlgeschlagen', 'warn');
+			showToast(t('delivery.toast.bulkFailed'), 'warn');
 		}
 	}
 
@@ -182,12 +185,12 @@
 		if (result.type === 'success') {
 			checked[item.productId] = (checked[item.productId] ?? 0) + 1;
 			const data_ = result.data as { created: boolean; locationName: string };
-			const created = data_.created ? ' · Artikel neu angelegt' : '';
-			showToast(`„${item.name}" 1× eingebucht (${data_.locationName})${created}`);
+			const created = data_.created ? t('delivery.toast.createdSuffix') : '';
+			showToast(t('delivery.toast.bookedOne', { name: item.name, location: data_.locationName }) + created);
 			await invalidateAll();
 		} else {
-			const message = result.type === 'failure' ? (result.data?.message as string) : 'Einbuchen fehlgeschlagen';
-			showToast(message ?? 'Einbuchen fehlgeschlagen', 'warn');
+			const message = result.type === 'failure' ? (result.data?.message as string) : undefined;
+			showToast(message ?? t('delivery.toast.bookFailed'), 'warn');
 		}
 	}
 
@@ -196,18 +199,18 @@
 	}
 </script>
 
-<svelte:head><title>Lieferung prüfen – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('delivery.title')} – LebensmittelKumpel</title></svelte:head>
 
 <div class="flex items-center gap-2">
-	<a href="/lieferung" class="text-sm text-gray-500 hover:text-gray-700">← Lieferungen</a>
+	<a href="/lieferung" class="text-sm text-gray-500 hover:text-gray-700">← {t('delivery.back')}</a>
 </div>
-<h1 class="mt-1 text-2xl font-bold">Lieferung auspacken</h1>
+<h1 class="mt-1 text-2xl font-bold">{t('delivery.title')}</h1>
 
 <!-- Fortschritt -->
 <div class="mt-3 max-w-md">
 	<div class="flex items-center justify-between text-sm">
-		<span class="font-medium">{totalChecked} von {totalExpected} Gebinde geprüft</span>
-		{#if allDone}<span class="font-semibold text-green-700">Alles da ✓</span>{/if}
+		<span class="font-medium">{t('delivery.progress', { checked: totalChecked, total: totalExpected })}</span>
+		{#if allDone}<span class="font-semibold text-green-700">{t('delivery.allThere')}</span>{/if}
 	</div>
 	<div class="mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
 		<div class="h-full rounded-full bg-green-600 transition-all" style={`width: ${totalExpected ? (totalChecked / totalExpected) * 100 : 0}%`}></div>
@@ -221,15 +224,14 @@
 				onclick={() => (showBulk = true)}
 				class="mt-3 w-full rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
 			>
-				✓ Sichtprüfung: alle {openCount} offenen Positionen bestätigen
+				{t('delivery.bulkOpen', { n: openCount })}
 			</button>
 		{:else}
 			<div class="mt-3 rounded-xl border border-gray-200 bg-white p-4">
 				<p class="text-sm text-gray-700">
-					Alle offenen Positionen als vorhanden bestätigen und einbuchen. Jeder Artikel landet in
-					seinem Standard-Lagerort; Artikel ohne Standard kommen in den gewählten Lagerort.
+					{t('delivery.bulkExplain')}
 				</p>
-				<label for="bulkLoc" class="mt-3 block text-xs font-medium text-gray-500">Lagerort für Artikel ohne Standard</label>
+				<label for="bulkLoc" class="mt-3 block text-xs font-medium text-gray-500">{t('delivery.bulkLocation')}</label>
 				<select id="bulkLoc" bind:value={bulkLocation} class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600">
 					{#each data.locations as location (location.id)}
 						<option value={String(location.id)}>{location.name}</option>
@@ -237,10 +239,10 @@
 				</select>
 				<div class="mt-3 flex gap-2">
 					<button type="button" onclick={confirmAll} class="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
-						Alles bestätigen &amp; einbuchen
+						{t('delivery.bulkConfirm')}
 					</button>
 					<button type="button" onclick={() => (showBulk = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-						Abbrechen
+						{t('form.cancel')}
 					</button>
 				</div>
 			</div>
@@ -252,7 +254,7 @@
 	<div class="mt-4 max-w-md rounded-lg px-4 py-3 text-sm font-medium {toastKind === 'ok' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
 		{toast}
 		{#if unknownEan}
-			<a href={`/artikel/neu?ean=${unknownEan}`} class="ml-1 underline">Artikel anlegen</a>
+			<a href={`/artikel/neu?ean=${unknownEan}`} class="ml-1 underline">{t('delivery.createArticle')}</a>
 		{/if}
 	</div>
 {/if}
@@ -282,12 +284,12 @@
 					{:else}
 						<div class="truncate font-semibold">{item.name}</div>
 					{/if}
-					<div class="text-xs text-gray-500">{item.unitQuantity} · geprüft {checked[item.productId] ?? 0}/{item.quantity}</div>
+					<div class="text-xs text-gray-500">{item.unitQuantity} · {t('delivery.checkedOf', { checked: checked[item.productId] ?? 0, total: item.quantity })}</div>
 				</div>
 			</div>
 			<div class="mt-3 grid grid-cols-2 gap-2">
 				<div>
-					<label for="loc" class="block text-xs font-medium text-gray-500">Ziel-Lagerort</label>
+					<label for="loc" class="block text-xs font-medium text-gray-500">{t('delivery.targetLocation')}</label>
 					<select id="loc" bind:value={pending.locationId} class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600">
 						<option value="" disabled>—</option>
 						{#each data.locations as location (location.id)}
@@ -296,24 +298,24 @@
 					</select>
 				</div>
 				<div>
-					<label for="bb" class="block text-xs font-medium text-gray-500">MHD (optional)</label>
+					<label for="bb" class="block text-xs font-medium text-gray-500">{t('delivery.bestBefore')}</label>
 					<input id="bb" type="date" bind:value={pending.bestBefore} class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600" />
 				</div>
 			</div>
 			<div class="mt-3 flex gap-2">
 				<button type="button" onclick={confirmBooking} class="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
-					Einbuchen &amp; weiter
+					{t('delivery.bookAndNext')}
 				</button>
 				<button type="button" onclick={resetScanner} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-					Überspringen
+					{t('delivery.skip')}
 				</button>
 			</div>
 		</div>
 	{:else if allDone}
 		<div class="rounded-xl border border-green-200 bg-green-50 p-6 text-center">
 			<div class="text-3xl">✅</div>
-			<p class="mt-2 font-semibold text-green-800">Lieferung vollständig geprüft</p>
-			<a href="/" class="mt-3 inline-block rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">Zum Lager</a>
+			<p class="mt-2 font-semibold text-green-800">{t('delivery.done')}</p>
+			<a href="/" class="mt-3 inline-block rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">{t('delivery.toStock')}</a>
 		</div>
 	{:else}
 		{#key scannerKey}
@@ -323,7 +325,7 @@
 </div>
 
 <!-- Checkliste -->
-<h2 class="mt-8 text-sm font-semibold text-gray-700">Bestellte Positionen</h2>
+<h2 class="mt-8 text-sm font-semibold text-gray-700">{t('delivery.lines')}</h2>
 <ul class="mt-2 max-w-md divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
 	{#each data.items as item (item.productId)}
 		{@const done = itemStatus(item) === 'done'}
@@ -350,13 +352,13 @@
 					<div class="truncate text-sm font-medium {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
 					<div class="text-xs text-gray-500">
 						{item.unitQuantity}
-						· <span class="text-amber-600">nicht verknüpft</span>
+						· <span class="text-amber-600">{t('delivery.notLinked')}</span>
 						· <button
 								type="button"
 								onclick={() => importArticle(item)}
 								disabled={importingProduct !== null}
 								class="text-green-700 underline disabled:opacity-50"
-							>{importingProduct === item.productId ? 'importiere …' : '+ Artikel'}</button>
+							>{importingProduct === item.productId ? t('delivery.importing') : t('delivery.addArticle')}</button>
 					</div>
 				</div>
 			{/if}
@@ -369,6 +371,5 @@
 	{/each}
 </ul>
 <p class="mt-2 max-w-md text-xs text-gray-500">
-	Scannen und die +-Taste buchen ins Lager ein (fehlende Artikel werden dabei automatisch aus Picnic angelegt).
-	Die −-Taste korrigiert nur den Zähler, bucht aber nichts aus — Bestandskorrekturen im Lager oder über die Inventur vornehmen.
+	{t('delivery.hint')}
 </p>

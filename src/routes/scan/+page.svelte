@@ -82,10 +82,10 @@
 
 </script>
 
-<svelte:head><title>Scannen – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('scan.title')} – LebensmittelKumpel</title></svelte:head>
 
-<h1 class="text-2xl font-bold">Scannen</h1>
-<p class="mt-1 text-sm text-gray-500">Barcode vor die Kamera halten — Ein- und Ausbuchen in Sekunden</p>
+<h1 class="text-2xl font-bold">{t('scan.title')}</h1>
+<p class="mt-1 text-sm text-gray-500">{t('scan.subtitle')}</p>
 
 <div class="mt-4 max-w-md">
 	{#if toast}
@@ -102,7 +102,7 @@
 	{:else if mode === 'unknown'}
 		<div class="rounded-xl border border-gray-200 bg-white p-5 text-center">
 			<div class="text-3xl">🤔</div>
-			<p class="mt-2 font-medium">Unbekannter Barcode</p>
+			<p class="mt-2 font-medium">{t('scan.unknownBarcode')}</p>
 			<p class="mt-1 text-sm text-gray-500">EAN {scannedEan} ist noch nicht im Artikelstamm.</p>
 			<div class="mt-4 flex justify-center gap-3">
 				<a
@@ -154,7 +154,7 @@
 				<input type="hidden" name="articleId" value={article.id} />
 				<div class="grid grid-cols-3 gap-2">
 					<div>
-						<label for="quantity" class="block text-xs font-medium text-gray-500">Anzahl</label>
+						<label for="quantity" class="block text-xs font-medium text-gray-500">{t('scan.quantity')}</label>
 						<input
 							id="quantity"
 							name="quantity"
@@ -175,7 +175,7 @@
 						/>
 					</div>
 					<div>
-						<label for="locationId" class="block text-xs font-medium text-gray-500">Lagerort</label>
+						<label for="locationId" class="block text-xs font-medium text-gray-500">{t('scan.location')}</label>
 						<select
 							id="locationId"
 							name="locationId"

@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { articles } from '$lib/server/db/schema';
 import { activeLocation, activeLocations } from '$lib/server/locations';
 import { getConnectionState, getDeliveryChecklist } from '$lib/server/picnic';
@@ -8,16 +9,17 @@ import { eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const t = translator(locals.locale);
 	if (getConnectionState() !== 'connected') {
-		throw error(403, 'Nicht mit Picnic verbunden');
+		throw error(403, t('msg.notConnected'));
 	}
 
 	let checklist;
 	try {
 		checklist = await getDeliveryChecklist(params.id);
 	} catch (err) {
-		throw error(502, err instanceof Error ? err.message : 'Lieferung konnte nicht geladen werden');
+		throw error(502, err instanceof Error ? err.message : t('msg.notConnected'));
 	}
 
 	// Picnic-Produkte mit unserem Artikelstamm verknüpfen (über picnicId)
@@ -64,6 +66,7 @@ function deliveryLocationId(defaultLocationId: number | null, fallbackId: number
 export const actions: Actions = {
 	// Bucht ein einzelnes gescanntes Gebinde beim Auspacken ein
 	book: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const articleId = Number(formData.get('articleId'));
 		const locationId = Number(formData.get('locationId'));
@@ -72,12 +75,12 @@ export const actions: Actions = {
 		const article = Number.isInteger(articleId)
 			? db.select().from(articles).where(eq(articles.id, articleId)).get()
 			: undefined;
-		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
+		if (!article) return fail(400, { message: t('msg.articleNotFound') });
 		if (!Number.isInteger(locationId) || !activeLocation(locationId)) {
-			return fail(400, { message: 'Bitte einen Ziel-Lagerort wählen' });
+			return fail(400, { message: t('msg.pickTargetLocation') });
 		}
 		if (!Number.isInteger(quantity) || quantity < 1) {
-			return fail(400, { message: 'Ungültige Anzahl' });
+			return fail(400, { message: t('msg.invalidQuantity') });
 		}
 
 		const bestBeforeRaw = formData.get('bestBefore');
@@ -96,6 +99,7 @@ export const actions: Actions = {
 	// vorher automatisch aus Picnic angelegt (idempotent per picnicId-Dedupe).
 	// Jede Position landet im Standard-Lagerort ihres Artikels, sonst im Fallback.
 	confirmAll: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const fallbackLocationId = Number(formData.get('fallbackLocationId')) || null;
 		let requested: {
@@ -109,7 +113,7 @@ export const actions: Actions = {
 			const raw = JSON.parse(String(formData.get('items') ?? '[]'));
 			if (Array.isArray(raw)) requested = raw;
 		} catch {
-			return fail(400, { message: 'Ungültige Positionsliste' });
+			return fail(400, { message: t('msg.invalidLineList') });
 		}
 
 		// Picnic-ID → eigener Artikel (mit Standard-Lagerort)
@@ -180,13 +184,14 @@ export const actions: Actions = {
 	// Manuelle Bestätigung einer einzelnen Position ("+"-Taste): bucht 1 Gebinde
 	// ein und legt den Artikel vorher automatisch aus Picnic an, falls er fehlt.
 	bookOne: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const productId = String(formData.get('productId') ?? '').trim();
 		const name = String(formData.get('name') ?? '').trim();
 		const unitQuantity = String(formData.get('unitQuantity') ?? '');
 		const imageId = String(formData.get('imageId') ?? '') || null;
 		const fallbackLocationId = Number(formData.get('fallbackLocationId')) || null;
-		if (!productId || !name) return fail(400, { message: 'Ungültiges Produkt' });
+		if (!productId || !name) return fail(400, { message: t('msg.invalidProduct') });
 
 		const user = locals.user?.username ?? null;
 		const existing = db.select().from(articles).where(eq(articles.picnicId, productId)).get();
@@ -202,9 +207,9 @@ export const actions: Actions = {
 
 		// Import liefert keine defaultLocationId — frisch angelegte Artikel haben keine
 		const locationId = deliveryLocationId(existing?.defaultLocationId ?? null, fallbackLocationId);
-		if (!locationId) return fail(400, { message: 'Kein Lagerort verfügbar' });
+		if (!locationId) return fail(400, { message: t('msg.noLocation') });
 		const location = activeLocation(locationId);
-		if (!location) return fail(400, { message: 'Lagerort nicht gefunden' });
+		if (!location) return fail(400, { message: t('msg.locationNotFound') });
 
 		bookIn(articleId, locationId, 1, null, user, 'lieferung');
 		return { bookedOne: productId, created, locationName: location.name };
@@ -212,12 +217,13 @@ export const actions: Actions = {
 
 	// Nicht verknüpfte Lieferposition direkt als Artikel importieren
 	importArticle: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const productId = String(formData.get('productId') ?? '').trim();
 		const name = String(formData.get('name') ?? '').trim();
 		const unitQuantity = String(formData.get('unitQuantity') ?? '');
 		const imageId = String(formData.get('imageId') ?? '') || null;
-		if (!productId || !name) return fail(400, { message: 'Ungültiges Produkt' });
+		if (!productId || !name) return fail(400, { message: t('msg.invalidProduct') });
 
 		const result = await importArticleFromPicnic(
 			{ productId, name, unitQuantity, imageId },

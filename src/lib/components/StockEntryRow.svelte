@@ -54,16 +54,16 @@
 		>
 			<input type="hidden" name="entryId" value={entry.id} />
 			<div>
-				<label for={`q-${entry.id}`} class="block text-xs text-gray-500">Anzahl</label>
+				<label for={`q-${entry.id}`} class="block text-xs text-gray-500">{t('entry.quantity')}</label>
 				<input id={`q-${entry.id}`} name="quantity" type="number" min="0" value={entry.quantity} class="mt-0.5 w-20 rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600" />
 			</div>
 			<div>
 				<label for={`b-${entry.id}`} class="block text-xs text-gray-500">MHD</label>
 				<input id={`b-${entry.id}`} name="bestBefore" type="date" value={entry.bestBefore ?? ''} class="mt-0.5 rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600" />
 			</div>
-			<button type="submit" class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700">Speichern</button>
-			<button type="button" onclick={() => onMode('view')} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
-			<span class="ml-auto text-xs text-gray-400">Anzahl 0 = löschen</span>
+			<button type="submit" class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700">{t('form.save')}</button>
+			<button type="button" onclick={() => onMode('view')} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">{t('form.cancel')}</button>
+			<span class="ml-auto text-xs text-gray-400">{t('entry.zeroDeletes')}</span>
 		</form>
 	{:else if mode === 'move'}
 		<form
@@ -74,15 +74,15 @@
 		>
 			<input type="hidden" name="entryId" value={entry.id} />
 			<div>
-				<label for={`t-${entry.id}`} class="block text-xs text-gray-500">Neuer Lagerort</label>
+				<label for={`t-${entry.id}`} class="block text-xs text-gray-500">{t('entry.newLocation')}</label>
 				<select id={`t-${entry.id}`} name="targetLocationId" bind:value={moveTarget} class="mt-0.5 rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600">
 					{#each moveTargets as target (target.id)}
 						<option value={String(target.id)}>{target.name}</option>
 					{/each}
 				</select>
 			</div>
-			<button type="submit" class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700">Umlagern</button>
-			<button type="button" onclick={() => onMode('view')} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">Abbrechen</button>
+			<button type="submit" class="rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700">{t('entry.move')}</button>
+			<button type="button" onclick={() => onMode('view')} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">{t('form.cancel')}</button>
 		</form>
 	{:else}
 		<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -92,14 +92,14 @@
 					<input type="hidden" name="entryId" value={entry.id} />
 					<input type="hidden" name="quantity" value={entry.quantity - 1} />
 					<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />
-					<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Ein Gebinde weniger">−</button>
+					<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label={t('entry.onePackLess')}>−</button>
 				</form>
 				<span class="w-10 text-center text-sm font-medium text-gray-700">{entry.quantity}×</span>
 				<form method="POST" action="?/updateEntry" use:enhance={keepValues}>
 					<input type="hidden" name="entryId" value={entry.id} />
 					<input type="hidden" name="quantity" value={entry.quantity + 1} />
 					<input type="hidden" name="bestBefore" value={entry.bestBefore ?? ''} />
-					<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Ein Gebinde mehr">+</button>
+					<button type="submit" class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label={t('entry.onePackMore')}>+</button>
 				</form>
 			</div>
 			<span class="min-w-0 flex-1 text-sm text-gray-600">
@@ -113,8 +113,8 @@
 				{mhdLabel(entry.bestBefore, t)}
 			</span>
 			<div class="flex shrink-0 items-center gap-3">
-				<button type="button" onclick={openMove} class="text-sm text-gray-500 underline hover:text-gray-700">Umlagern</button>
-				<button type="button" onclick={() => onMode('edit')} class="text-sm text-gray-500 underline hover:text-gray-700">Ändern</button>
+				<button type="button" onclick={openMove} class="text-sm text-gray-500 underline hover:text-gray-700">{t('entry.move')}</button>
+				<button type="button" onclick={() => onMode('edit')} class="text-sm text-gray-500 underline hover:text-gray-700">{t('entry.edit')}</button>
 			</div>
 		</div>
 	{/if}

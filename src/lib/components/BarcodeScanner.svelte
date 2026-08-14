@@ -1,8 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { translator } from '$lib/i18n';
 	import { playScanBeep, unlockAudio } from '$lib/sound';
+	// Die WASM-Datei wird mitgebaut und aus dem eigenen Build ausgeliefert.
+	// Voreingestellt lädt zxing-wasm sie zur Laufzeit von fastly.jsdelivr.net —
+	// damit führte die App fremden Code aus einer Quelle aus, die niemand hier
+	// kontrolliert, jeder Scan meldete die IP dorthin, und ohne Internet (oder
+	// bei DNS-Sperren) blieb der Scanner auf dem iPhone schlicht stehen.
+	import zxingWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 
 	let { onDetect }: { onDetect: (ean: string) => void } = $props();
+
+	const t = $derived(translator(page.data.locale));
 
 	let video = $state<HTMLVideoElement>();
 	let cameraError = $state(false);
@@ -29,14 +39,18 @@
 	async function start() {
 		try {
 			// Ponyfill: nutzt den nativen BarcodeDetector, wo vorhanden (Android Chrome), sonst WASM
-			const { BarcodeDetector } = await import('barcode-detector/ponyfill');
+			const { BarcodeDetector, setZXingModuleOverrides } = await import('barcode-detector/ponyfill');
+			// Muss vor dem ersten detect() stehen — danach ist das Modul geladen.
+			setZXingModuleOverrides({
+				locateFile: (pfad: string, prefix: string) => (pfad.endsWith('.wasm') ? zxingWasm : prefix + pfad)
+			});
 			const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8'] });
 
 			stream = await navigator.mediaDevices.getUserMedia({
 				video: { facingMode: 'environment' },
 				audio: false
 			});
-			if (!video) throw new Error('Video-Element fehlt');
+			if (!video) throw new Error(t('scan.cameraMissing'));
 			video.srcObject = stream;
 			await video.play();
 			starting = false;
@@ -105,7 +119,7 @@
 		type="text"
 		inputmode="numeric"
 		bind:value={manualEan}
-		placeholder="EAN von Hand eingeben"
+		placeholder={t('scan.manualEan')}
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	/>
 	<button

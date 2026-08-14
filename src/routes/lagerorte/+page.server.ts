@@ -6,6 +6,7 @@ import {
 	setLocationActive,
 	type LocationResult
 } from '$lib/server/locations';
+import { translator } from '$lib/i18n';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -27,29 +28,34 @@ function locationId(formData: FormData): number {
 
 export const actions: Actions = {
 	create: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const name = String((await request.formData()).get('name') ?? '').trim();
-		return respond(createLocation(name, locals.user?.username ?? null));
+		return respond(createLocation(name, locals.user?.username ?? null, t));
 	},
 
 	rename: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const name = String(formData.get('name') ?? '').trim();
-		return respond(renameLocation(locationId(formData), name, locals.user?.username ?? null));
+		return respond(renameLocation(locationId(formData), name, locals.user?.username ?? null, t));
 	},
 
 	deactivate: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
-		return respond(setLocationActive(locationId(formData), false, locals.user?.username ?? null));
+		return respond(setLocationActive(locationId(formData), false, locals.user?.username ?? null, t));
 	},
 
 	activate: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
-		return respond(setLocationActive(locationId(formData), true, locals.user?.username ?? null));
+		return respond(setLocationActive(locationId(formData), true, locals.user?.username ?? null, t));
 	},
 
 	move: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const direction = formData.get('direction') === 'up' ? 'up' : 'down';
-		return respond(moveLocation(locationId(formData), direction, locals.user?.username ?? null));
+		return respond(moveLocation(locationId(formData), direction, locals.user?.username ?? null, t));
 	}
 };

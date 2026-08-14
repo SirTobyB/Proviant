@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { mealPlanEntries, recipes, recipeTags, tags } from '$lib/server/db/schema';
 import { getRecipe, getRecipeIngredients, isRecipeCookable } from '$lib/server/recipeData';
 import { allTagNames } from '$lib/server/tags';
@@ -92,12 +93,13 @@ export const actions: Actions = {
 	// Für angehakte leere Tage automatisch Vorschläge würfeln (keine
 	// Wiederholung innerhalb derselben Woche)
 	roll: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const requestedDates = [...new Set(formData.getAll('dates').map(String).filter(Boolean))].sort();
 		const selectedTags = formData.getAll('tags').map(String).filter(Boolean);
 		const user = locals.user?.username ?? null;
 
-		if (requestedDates.length === 0) return fail(400, { message: 'Keine Tage ausgewählt' });
+		if (requestedDates.length === 0) return fail(400, { message: t('msg.noDaysSelected') });
 
 		const dates = weekDates();
 		const start = dates[0];
@@ -135,7 +137,7 @@ export const actions: Actions = {
 			.all();
 
 		if (recipeRows.length === 0) {
-			return fail(400, { message: 'Keine passenden Rezepte gefunden.', tags: selectedTags });
+			return fail(400, { message: t('msg.noMatchingRecipes'), tags: selectedTags });
 		}
 
 		const now = Date.now();
@@ -166,7 +168,7 @@ export const actions: Actions = {
 		}
 
 		if (pickedByDate.size === 0) {
-			return fail(400, { message: 'Keine passenden Rezepte mehr übrig.', tags: selectedTags });
+			return fail(400, { message: t('msg.noRecipesLeft'), tags: selectedTags });
 		}
 
 		db.transaction((tx) => {
@@ -184,13 +186,14 @@ export const actions: Actions = {
 
 	// Manuelle Zuweisung eines Rezepts zu einem Datum
 	setDay: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const date = String(formData.get('date') ?? '');
 		const recipeId = Number(formData.get('recipeId'));
 		const user = locals.user?.username ?? null;
-		if (!date || !Number.isInteger(recipeId)) return fail(400, { message: 'Ungültige Eingabe' });
+		if (!date || !Number.isInteger(recipeId)) return fail(400, { message: t('msg.invalidInput') });
 		const recipe = getRecipe(recipeId);
-		if (!recipe) return fail(404, { message: 'Rezept nicht gefunden' });
+		if (!recipe) return fail(404, { message: t('msg.recipeNotFound') });
 
 		db.delete(mealPlanEntries).where(eq(mealPlanEntries.date, date)).run();
 		db.insert(mealPlanEntries)
@@ -200,19 +203,21 @@ export const actions: Actions = {
 		return { set: true };
 	},
 
-	removeDay: async ({ request }) => {
+	removeDay: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const id = Number((await request.formData()).get('id'));
-		if (!Number.isInteger(id)) return fail(400, { message: 'Ungültige Eingabe' });
+		if (!Number.isInteger(id)) return fail(400, { message: t('msg.invalidInput') });
 		db.delete(mealPlanEntries).where(eq(mealPlanEntries.id, id)).run();
 		return { removed: true };
 	},
 
 	updateServings: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const id = Number(formData.get('id'));
 		const servings = Math.max(1, Number(formData.get('servings')) || 1);
 		const user = locals.user?.username ?? null;
-		if (!Number.isInteger(id)) return fail(400, { message: 'Ungültige Eingabe' });
+		if (!Number.isInteger(id)) return fail(400, { message: t('msg.invalidInput') });
 
 		db.update(mealPlanEntries)
 			.set({ servings, ...auditEdit(user) })
@@ -224,6 +229,7 @@ export const actions: Actions = {
 
 	// Fehlende Zutaten der ganzen Woche gebündelt in den Picnic-Warenkorb legen
 	buildCart: async ({ locals }) => {
+		const t = translator(locals.locale);
 		const dates = weekDates();
 		const start = dates[0];
 		const end = dates[dates.length - 1];
@@ -236,7 +242,7 @@ export const actions: Actions = {
 			.all();
 
 		if (entries.length === 0) {
-			return fail(400, { message: 'Für diese Woche ist noch nichts geplant.' });
+			return fail(400, { message: t('msg.nothingPlanned') });
 		}
 
 		const { items, unlinked, incomparable } = planWeekShoppingList(entries);

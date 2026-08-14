@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
 import { allArticleTagNames, tagsForArticles } from '$lib/server/articleTags';
 import { bookingLocationId } from '$lib/server/locations';
@@ -59,20 +60,22 @@ function parseQuantity(formData: FormData): number {
 export const actions: Actions = {
 	// Schnell einbuchen: in den Standard-Lagerort (oder ersten Lagerort), ohne MHD
 	bookIn: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const article = getArticle(formData);
-		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
+		if (!article) return fail(400, { message: t('msg.articleNotFound') });
 		const locationId = bookingLocationId(article.defaultLocationId);
-		if (!locationId) return fail(400, { message: 'Kein Lagerort vorhanden' });
+		if (!locationId) return fail(400, { message: t('msg.noLocation') });
 		bookIn(article.id, locationId, parseQuantity(formData), null, locals.user?.username ?? null, 'artikelliste');
 		return { adjusted: article.id };
 	},
 
 	// Schnell ausbuchen: FEFO (nächstes MHD zuerst)
 	bookOut: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const formData = await request.formData();
 		const article = getArticle(formData);
-		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
+		if (!article) return fail(400, { message: t('msg.articleNotFound') });
 		bookOut(article.id, parseQuantity(formData), locals.user?.username ?? null, 'artikelliste');
 		return { adjusted: article.id };
 	}

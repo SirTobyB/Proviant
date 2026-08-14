@@ -70,18 +70,19 @@ export const actions: Actions = {
 	},
 
 	changePassword: async ({ request, locals, cookies }) => {
+		const t = translator(locals.locale);
 		const username = locals.user!.username;
 		const fd = await request.formData();
 		const current = String(fd.get('current') ?? '');
 		const next = String(fd.get('next') ?? '');
 		const confirm = String(fd.get('confirm') ?? '');
 
-		if (next.length < 6) return fail(400, { message: 'Neues Passwort: mindestens 6 Zeichen' });
-		if (next !== confirm) return fail(400, { message: 'Die neuen Passwörter stimmen nicht überein' });
+		if (next.length < 6) return fail(400, { message: t('msg.newPasswordShort') });
+		if (next !== confirm) return fail(400, { message: t('msg.passwordsDiffer') });
 
 		const user = db.select().from(users).where(eq(users.username, username)).get();
 		if (!user || !(await verifyPassword(current, user.passwordHash))) {
-			return fail(400, { message: 'Aktuelles Passwort ist falsch' });
+			return fail(400, { message: t('msg.currentPasswordWrong') });
 		}
 
 		db.update(users)

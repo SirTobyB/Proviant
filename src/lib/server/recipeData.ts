@@ -3,6 +3,7 @@
  * Alternativartikel) – Gebindegröße, Picnic-ID und aktuellem Gesamtbestand.
  */
 import { db } from '$lib/server/db';
+import type { Translate } from '$lib/i18n';
 import { articles, recipeIngredientArticles, recipeIngredients, recipes, stockEntries } from '$lib/server/db/schema';
 import { coverageMulti, scaleAmount } from '$lib/units';
 import { eq, inArray, sql } from 'drizzle-orm';
@@ -32,11 +33,11 @@ export function getRecipe(id: number) {
 }
 
 /** Rezept aus einem Routen-Parameter laden oder mit 404 abbrechen. */
-export function loadRecipeOr404(idParam: string) {
+export function loadRecipeOr404(idParam: string, t: Translate) {
 	const id = Number(idParam);
-	if (!Number.isInteger(id)) throw error(404, 'Rezept nicht gefunden');
+	if (!Number.isInteger(id)) throw error(404, t('msg.recipeNotFound'));
 	const recipe = getRecipe(id);
-	if (!recipe) throw error(404, 'Rezept nicht gefunden');
+	if (!recipe) throw error(404, t('msg.recipeNotFound'));
 	return recipe;
 }
 

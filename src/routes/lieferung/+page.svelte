@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { formatPrice } from '$lib/format';
+	import { translator, BCP47 } from '$lib/i18n';
 	let { data } = $props();
+
+	const t = $derived(translator(data.locale));
 
 	function formatDate(iso: string | null): string {
 		if (!iso) return '';
-		return new Date(iso).toLocaleDateString('de-DE', {
+		return new Date(iso).toLocaleDateString(BCP47[data.locale], {
 			weekday: 'short',
 			day: '2-digit',
 			month: '2-digit',
@@ -13,32 +16,32 @@
 	}
 
 
-	const statusLabel: Record<string, string> = {
-		CURRENT: 'Unterwegs',
-		COMPLETED: 'Geliefert',
-		CANCELLED: 'Storniert'
-	};
+	// Picnic liefert genau diese drei Zustaende; Unbekanntes bleibt roh stehen
+	const statusLabel = $derived((status: string) =>
+		status === 'CURRENT' || status === 'COMPLETED' || status === 'CANCELLED'
+			? t(`deliveries.status.${status}`)
+			: status
+	);
 </script>
 
-<svelte:head><title>Lieferung prüfen – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('deliveries.title')} – LebensmittelKumpel</title></svelte:head>
 
-<h1 class="text-2xl font-bold">Lieferung prüfen</h1>
-<p class="mt-1 text-sm text-gray-500">Picnic-Lieferung auspacken, scannen und direkt einbuchen</p>
+<h1 class="text-2xl font-bold">{t('deliveries.title')}</h1>
+<p class="mt-1 text-sm text-gray-500">{t('deliveries.subtitle')}</p>
 
 {#if data.connection !== 'connected'}
 	<div class="mt-6 max-w-2xl rounded-xl border border-gray-200 bg-white p-6 text-center">
 		<div class="text-3xl">🔌</div>
-		<p class="mt-2 font-medium">Noch nicht mit Picnic verbunden</p>
+		<p class="mt-2 font-medium">{t('deliveries.notConnected')}</p>
 		<p class="mt-1 text-sm text-gray-500">
-			Stelle die Verbindung auf der Seite <a href="/bestellen" class="text-green-700 underline">Bestellen</a> her,
-			dann erscheinen hier deine Lieferungen.
+			{t('deliveries.connectBefore')}<a href="/bestellen" class="text-green-700 underline">{t('nav.order')}</a>{t('deliveries.connectAfter')}
 		</p>
 	</div>
 {:else if data.error}
 	<div class="mt-6 max-w-2xl rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{data.error}</div>
 {:else if data.deliveries.length === 0}
 	<div class="mt-6 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-		Keine Lieferungen gefunden.
+		{t('deliveries.empty')}
 	</div>
 {:else}
 	<ul class="mt-6 max-w-2xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -57,7 +60,7 @@
 								? 'bg-gray-100 text-gray-500'
 								: 'bg-green-100 text-green-700'}"
 					>
-						{statusLabel[delivery.status] ?? delivery.status}
+						{statusLabel(delivery.status)}
 					</span>
 				</a>
 			</li>

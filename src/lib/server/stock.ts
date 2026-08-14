@@ -10,6 +10,7 @@ import { db } from '$lib/server/db';
 import { articles, stockEntries, stockMovements } from '$lib/server/db/schema';
 import { auditEdit, auditNew } from '$lib/server/audit';
 import { activeLocation } from '$lib/server/locations';
+import type { Translate } from '$lib/i18n';
 import { and, eq, sql } from 'drizzle-orm';
 
 /** Woher eine Buchung ausgelöst wurde — im Journal sichtbar. */
@@ -225,14 +226,15 @@ function findScopedEntry(entryId: unknown, scope: StockEntryScope) {
 export function updateStockEntryFromForm(
 	formData: FormData,
 	scope: StockEntryScope,
-	user: string | null
+	user: string | null,
+	t: Translate
 ): EntryResult<object> {
 	const entry = findScopedEntry(formData.get('entryId'), scope);
-	if (!entry) return { ok: false, status: 404, message: 'Charge nicht gefunden' };
+	if (!entry) return { ok: false, status: 404, message: t('msg.entryNotFound') };
 
 	const quantity = Number(formData.get('quantity'));
 	if (!Number.isInteger(quantity) || quantity < 0) {
-		return { ok: false, status: 400, message: 'Anzahl ist ungültig' };
+		return { ok: false, status: 400, message: t('msg.quantityInvalid') };
 	}
 	const bestBeforeRaw = formData.get('bestBefore');
 	const bestBefore =
@@ -269,19 +271,20 @@ export function updateStockEntryFromForm(
 export function moveStockEntryFromForm(
 	formData: FormData,
 	scope: StockEntryScope,
-	user: string | null
+	user: string | null,
+	t: Translate
 ): EntryResult<{ targetName: string }> {
 	const entry = findScopedEntry(formData.get('entryId'), scope);
-	if (!entry) return { ok: false, status: 404, message: 'Charge nicht gefunden' };
+	if (!entry) return { ok: false, status: 404, message: t('msg.entryNotFound') };
 
 	const targetLocationId = Number(formData.get('targetLocationId'));
 	if (!Number.isInteger(targetLocationId) || targetLocationId === entry.locationId) {
-		return { ok: false, status: 400, message: 'Bitte einen anderen Ziel-Lagerort wählen' };
+		return { ok: false, status: 400, message: t('msg.pickOtherTargetLocation') };
 	}
 	// Nur aktive Ziele: ein stillgelegter Lagerort ist wie gelöscht und darf
 	// auch aus einem veralteten Formular heraus nichts mehr aufnehmen
 	const target = activeLocation(targetLocationId);
-	if (!target) return { ok: false, status: 400, message: 'Ziel-Lagerort nicht gefunden' };
+	if (!target) return { ok: false, status: 400, message: t('msg.targetLocationNotFound') };
 
 	moveStockEntry(entry.id, targetLocationId, user, 'charge');
 	return { ok: true, targetName: target.name };

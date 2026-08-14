@@ -17,7 +17,7 @@
 <svelte:head><title>{data.location.name} – LebensmittelKumpel</title></svelte:head>
 
 <div class="flex items-center gap-2">
-	<a href="/" class="text-sm text-gray-500 hover:text-gray-700">← Lager</a>
+	<a href="/" class="text-sm text-gray-500 hover:text-gray-700">← {t('stockLocation.back')}</a>
 </div>
 <h1 class="mt-1 text-2xl font-bold">{data.location.name}</h1>
 
@@ -25,12 +25,12 @@
 	<div class="mt-4 max-w-2xl rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{form.message}</div>
 {/if}
 {#if form && 'moved' in form && form.moved}
-	<div class="mt-4 max-w-2xl rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">Nach „{form.targetName}" umgelagert.</div>
+	<div class="mt-4 max-w-2xl rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">{t('item.stock.moved', { name: form.targetName })}</div>
 {/if}
 
 {#if data.articles.length === 0}
 	<div class="mt-6 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-		Keine Bestände in diesem Lagerort. Per <a href="/scan" class="text-green-700 underline">Scannen</a> einbuchen.
+		{t('stockLocation.emptyBefore')}<a href="/scan" class="text-green-700 underline">{t('nav.scan')}</a>{t('stockLocation.emptyAfter')}
 	</div>
 {:else}
 	<div class="mt-6 max-w-2xl space-y-4">

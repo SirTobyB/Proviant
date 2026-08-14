@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { translator, BCP47 } from '$lib/i18n';
 	import { invalidateAll } from '$app/navigation';
 
 	let { data, form } = $props();
+
+	const t = $derived(translator(data.locale));
 
 	let query = $state('');
 	// Auswahl je Produkt-ID; neu Ladbares (nicht Verknüpftes) ist vorausgewählt
@@ -41,28 +44,26 @@
 	}
 
 	function formatDate(iso: string | null): string {
-		return iso ? new Date(iso).toLocaleDateString('de-DE') : '';
+		return iso ? new Date(iso).toLocaleDateString(BCP47[data.locale]) : '';
 	}
 </script>
 
-<svelte:head><title>Artikel-Import – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('itemImport.title')} – LebensmittelKumpel</title></svelte:head>
 
 <div class="flex items-center gap-2">
-	<a href="/artikel" class="text-sm text-gray-500 hover:text-gray-700">← Artikel</a>
+	<a href="/artikel" class="text-sm text-gray-500 hover:text-gray-700">← {t('itemImport.back')}</a>
 </div>
-<h1 class="mt-1 text-2xl font-bold">Aus Bestellungen importieren</h1>
+<h1 class="mt-1 text-2xl font-bold">{t('itemImport.title')}</h1>
 <p class="mt-1 text-sm text-gray-500">
-	Alle Produkte aus deinen letzten 10 Picnic-Lieferungen. Der Import übernimmt Name,
-	Gebindegröße, Bild und die Picnic-Verknüpfung — die EAN liefert Picnic nicht,
-	sie lässt sich später im Artikel ergänzen (z.B. nach dem ersten Scan).
+	{t('itemImport.description')}
 </p>
 
 {#if data.connection !== 'connected'}
 	<div class="mt-6 max-w-2xl rounded-xl border border-gray-200 bg-white p-6 text-center">
 		<div class="text-3xl">🔌</div>
-		<p class="mt-2 font-medium">Noch nicht mit Picnic verbunden</p>
+		<p class="mt-2 font-medium">{t('recipeImport.notConnected')}</p>
 		<p class="mt-1 text-sm text-gray-500">
-			Stelle die Verbindung auf der Seite <a href="/bestellen" class="text-green-700 underline">Bestellen</a> her.
+			{t('recipeImport.connectBefore')}<a href="/bestellen" class="text-green-700 underline">{t('nav.order')}</a>{t('recipeImport.connectAfter')}
 		</p>
 	</div>
 {:else if data.error}
@@ -74,7 +75,7 @@
 	{#if form && 'imported' in form}
 		<div class="mt-4 max-w-2xl rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">
 			{form.imported} Artikel importiert{form.skipped ? ` · ${form.skipped} übersprungen (bereits verknüpft)` : ''}.
-			<a href="/artikel" class="underline">Zur Artikelliste</a>
+			<a href="/artikel" class="underline">{t('itemImport.toItems')}</a>
 		</div>
 	{/if}
 
@@ -82,11 +83,11 @@
 		<input
 			type="search"
 			bind:value={query}
-			placeholder="Produkte durchsuchen …"
+			placeholder={t('itemImport.search')}
 			class="block w-full max-w-xs rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 		/>
-		<button type="button" onclick={() => setAll(true)} class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">Alle wählen</button>
-		<button type="button" onclick={() => setAll(false)} class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">Keine</button>
+		<button type="button" onclick={() => setAll(true)} class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">{t('itemImport.selectAll')}</button>
+		<button type="button" onclick={() => setAll(false)} class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">{t('itemImport.selectNone')}</button>
 	</div>
 
 	<p class="mt-2 text-xs text-gray-500">{filtered.length} von {data.products.length} Produkten</p>
@@ -112,11 +113,11 @@
 					<div class="text-xs text-gray-500">
 						{product.unitQuantity}
 						· {product.timesOrdered}× bestellt
-						{#if product.lastOrderedAt}· zuletzt {formatDate(product.lastOrderedAt)}{/if}
+						{#if product.lastOrderedAt}· {t('itemImport.lastOrdered', { date: formatDate(product.lastOrderedAt) })}{/if}
 					</div>
 				</div>
 				{#if linked}
-					<span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">vorhanden</span>
+					<span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{t('itemImport.exists')}</span>
 				{/if}
 			</li>
 		{/each}
@@ -138,7 +139,7 @@
 		<input type="hidden" name="products" value={productsJson} />
 		<div class="flex flex-wrap items-end gap-3">
 			<div>
-				<label for="loc" class="block text-xs font-medium text-gray-500">Standard-Lagerort für alle (optional)</label>
+				<label for="loc" class="block text-xs font-medium text-gray-500">{t('itemImport.defaultLocation')}</label>
 				<select id="loc" name="defaultLocationId" bind:value={defaultLocationId} class="mt-1 block rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600">
 					<option value="">—</option>
 					{#each data.locations as location (location.id)}

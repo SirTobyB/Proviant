@@ -2,6 +2,7 @@
  * Gemeinsame Auswertung des Artikelformulars (Neuanlage und Bearbeitung).
  */
 import { saveImageFromUpload, saveImageFromUrl, saveImageFromDataUri } from '$lib/server/images';
+import type { Translate } from '$lib/i18n';
 import { ensureLoggedIn, getProductImage } from '$lib/server/picnic';
 
 export const UNITS = ['g', 'kg', 'ml', 'l', 'Stück'] as const;
@@ -33,7 +34,10 @@ function parseTags(formData: FormData): string[] {
 	}
 }
 
-export async function parseArticleForm(formData: FormData): Promise<ArticleFormResult> {
+export async function parseArticleForm(
+	formData: FormData,
+	t: Translate
+): Promise<ArticleFormResult> {
 	const text = (key: string) => {
 		const value = formData.get(key);
 		return typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
@@ -41,12 +45,13 @@ export async function parseArticleForm(formData: FormData): Promise<ArticleFormR
 
 	const tags = parseTags(formData);
 	const name = text('name');
-	if (!name) return { values: emptyValues(), imagePath: undefined, tags, error: 'Name ist erforderlich' };
+	if (!name)
+		return { values: emptyValues(), imagePath: undefined, tags, error: t('msg.nameRequired') };
 
 	const amountRaw = text('amount');
 	const amount = amountRaw ? parseFloat(amountRaw.replace(',', '.')) : null;
 	if (amountRaw && Number.isNaN(amount)) {
-		return { values: emptyValues(), imagePath: undefined, tags, error: 'Menge ist keine Zahl' };
+		return { values: emptyValues(), imagePath: undefined, tags, error: t('msg.amountNotNumber') };
 	}
 
 	const values: ArticleFormResult['values'] = {

@@ -1,4 +1,5 @@
 import { db } from '$lib/server/db';
+import { translator } from '$lib/i18n';
 import { users } from '$lib/server/db/schema';
 import { hashPassword } from '$lib/server/password';
 import { auditNew } from '$lib/server/audit';
@@ -28,6 +29,7 @@ export const load: PageServerLoad = () => {
 
 export const actions: Actions = {
 	create: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const fd = await request.formData();
 		const username = String(fd.get('username') ?? '').trim();
 		const email = String(fd.get('email') ?? '').trim();
@@ -35,12 +37,12 @@ export const actions: Actions = {
 		const role = fd.get('role') === 'admin' ? 'admin' : 'user';
 
 		if (!USERNAME_RE.test(username)) {
-			return fail(400, { message: 'Benutzername: min. 3 Zeichen, nur Buchstaben/Zahlen/._-' });
+			return fail(400, { message: t('msg.usernameRules') });
 		}
-		if (!EMAIL_RE.test(email)) return fail(400, { message: 'Ungültige E-Mail-Adresse' });
-		if (password.length < 6) return fail(400, { message: 'Passwort: mindestens 6 Zeichen' });
+		if (!EMAIL_RE.test(email)) return fail(400, { message: t('msg.invalidEmail') });
+		if (password.length < 6) return fail(400, { message: t('msg.passwordShort') });
 		if (db.select().from(users).where(eq(users.username, username)).get()) {
-			return fail(400, { message: `Benutzer „${username}" existiert bereits` });
+			return fail(400, { message: t('msg.userExists', { name: username }) });
 		}
 
 		db.insert(users)
@@ -56,6 +58,7 @@ export const actions: Actions = {
 	},
 
 	update: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const fd = await request.formData();
 		const username = String(fd.get('username') ?? '').trim();
 		const email = String(fd.get('email') ?? '').trim();
@@ -63,14 +66,14 @@ export const actions: Actions = {
 		const newPassword = String(fd.get('password') ?? '');
 
 		const target = db.select().from(users).where(eq(users.username, username)).get();
-		if (!target) return fail(404, { message: 'Benutzer nicht gefunden' });
-		if (!EMAIL_RE.test(email)) return fail(400, { message: 'Ungültige E-Mail-Adresse' });
+		if (!target) return fail(404, { message: t('msg.userNotFound') });
+		if (!EMAIL_RE.test(email)) return fail(400, { message: t('msg.invalidEmail') });
 		// Sich selbst nicht die Admin-Rolle entziehen (sonst kein Admin mehr erreichbar)
 		if (username === locals.user?.username && role !== 'admin') {
-			return fail(400, { message: 'Du kannst dir die Admin-Rolle nicht selbst entziehen' });
+			return fail(400, { message: t('msg.cannotRemoveOwnAdmin') });
 		}
 		if (newPassword && newPassword.length < 6) {
-			return fail(400, { message: 'Passwort: mindestens 6 Zeichen' });
+			return fail(400, { message: t('msg.passwordShort') });
 		}
 
 		db.update(users)
@@ -89,12 +92,13 @@ export const actions: Actions = {
 	},
 
 	delete: async ({ request, locals }) => {
+		const t = translator(locals.locale);
 		const username = String((await request.formData()).get('username') ?? '').trim();
 		if (username === locals.user?.username) {
-			return fail(400, { message: 'Du kannst dich nicht selbst löschen' });
+			return fail(400, { message: t('msg.cannotDeleteSelf') });
 		}
 		const [count] = db.select({ n: sql<number>`count(*)` }).from(users).all();
-		if (count.n <= 1) return fail(400, { message: 'Der letzte Benutzer kann nicht gelöscht werden' });
+		if (count.n <= 1) return fail(400, { message: t('msg.lastUser') });
 		db.delete(users).where(eq(users.username, username)).run();
 		return { deleted: username };
 	}
