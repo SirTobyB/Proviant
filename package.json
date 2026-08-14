@@ -26,24 +26,24 @@
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.5.4",
 		"@sveltejs/kit": "^2.63.0",
-		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@sveltejs/vite-plugin-svelte": "^7.3.0",
 		"@tailwindcss/forms": "^0.5.11",
-		"@tailwindcss/vite": "^4.3.0",
+		"@tailwindcss/vite": "^4.3.3",
 		"@types/better-sqlite3": "^7.6.13",
 		"@types/node": "^22",
 		"drizzle-kit": "^0.31.10",
 		"drizzle-orm": "^0.45.2",
-		"svelte": "^5.56.1",
-		"svelte-check": "^4.6.0",
+		"svelte": "^5.56.8",
+		"svelte-check": "^4.7.5",
 		"tailwindcss": "^4.3.0",
 		"typescript": "^6.0.3",
-		"vite": "^8.0.16",
+		"vite": "^8.2.1",
 		"vitest": "^4.1.10"
 	},
 	"dependencies": {
-		"barcode-detector": "^3.2.0",
+		"barcode-detector": "^3.2.1",
 		"better-sqlite3": "^12.10.0",
 		"picnic-api": "^4.6.0",
-		"zxing-wasm": "3.1.0"
+		"zxing-wasm": "3.1.1"
 	}
 }
