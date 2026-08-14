@@ -2,8 +2,11 @@
 	import { packageSize, tagFilterHref } from '$lib/format';
 	import { keepValues } from '$lib/forms';
 	import { enhance } from '$app/forms';
+	import { translator } from '$lib/i18n';
 
 	let { data } = $props();
+
+	const t = $derived(translator(data.locale));
 
 	// Buchungsmenge je Artikel für die Schnellkorrektur (Default 1)
 	let quantities = $state<Record<number, number>>({});
@@ -18,25 +21,25 @@
 		tagFilterHref('/artikel', tag, { query: data.query, activeTag: data.tagFilter });
 </script>
 
-<svelte:head><title>Artikel – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('items.title')} – LebensmittelKumpel</title></svelte:head>
 
 <div class="flex flex-wrap items-center justify-between gap-3">
 	<div>
-		<h1 class="text-2xl font-bold">Artikel</h1>
-		<p class="mt-1 text-sm text-gray-500">{data.articles.length} Artikel im Stamm</p>
+		<h1 class="text-2xl font-bold">{t('items.title')}</h1>
+		<p class="mt-1 text-sm text-gray-500">{t('items.count', { n: data.articles.length })}</p>
 	</div>
 	<div class="flex flex-wrap gap-2">
 		<a
 			href="/artikel/import"
 			class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
 		>
-			⬇ Picnic-Import
+			⬇ {t('items.picnicImport')}
 		</a>
 		<a
 			href="/artikel/neu"
 			class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
 		>
-			+ Neuer Artikel
+			+ {t('items.new')}
 		</a>
 	</div>
 </div>
@@ -46,7 +49,7 @@
 		type="search"
 		name="q"
 		value={data.query}
-		placeholder="Suchen (Name oder EAN) …"
+		placeholder={t('items.search')}
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	/>
 	{#if data.tagFilter}<input type="hidden" name="tag" value={data.tagFilter} />{/if}
@@ -67,7 +70,7 @@
 
 {#if data.articles.length === 0}
 	<div class="mt-8 rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-		{data.query ? 'Keine Artikel gefunden.' : 'Noch keine Artikel — lege den ersten an!'}
+		{data.query ? t('items.emptyFiltered') : t('items.empty')}
 	</div>
 {:else}
 	<ul class="mt-4 max-w-2xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -107,7 +110,7 @@
 				<form method="POST" action="?/bookOut" use:enhance={keepValues}>
 					<input type="hidden" name="articleId" value={article.id} />
 					<input type="hidden" name="quantity" value={quantityFor(article.id)} />
-					<button type="submit" disabled={article.stock === 0} class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30" aria-label="Ausbuchen">−</button>
+					<button type="submit" disabled={article.stock === 0} class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-30" aria-label={t('items.bookOut')}>−</button>
 				</form>
 				<div class="w-14 shrink-0 text-center">
 					<input
@@ -117,18 +120,18 @@
 						inputmode="numeric"
 						value={quantityFor(article.id)}
 						oninput={(e) => (quantities[article.id] = Number(e.currentTarget.value))}
-						aria-label="Buchungsmenge"
+						aria-label={t('items.quantityLabel')}
 						class="w-14 rounded-lg border-gray-300 px-1 py-1 text-center text-sm focus:border-green-600 focus:ring-green-600"
 					/>
 					<span class="mt-0.5 block text-xs font-semibold {article.stock === 0 ? 'text-gray-400' : 'text-gray-600'}">{article.stock}×</span>
 					{#if article.minStock > 0 && article.stock < article.minStock}
-						<span class="block text-[10px] text-amber-600">min. {article.minStock}</span>
+						<span class="block text-[10px] text-amber-600">{t('items.minStock', { n: article.minStock })}</span>
 					{/if}
 				</div>
 				<form method="POST" action="?/bookIn" use:enhance={keepValues}>
 					<input type="hidden" name="articleId" value={article.id} />
 					<input type="hidden" name="quantity" value={quantityFor(article.id)} />
-					<button type="submit" class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label="Einbuchen">+</button>
+					<button type="submit" class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50" aria-label={t('items.bookIn')}>+</button>
 				</form>
 			</li>
 		{/each}

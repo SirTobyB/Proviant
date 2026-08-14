@@ -14,8 +14,9 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   je Benutzer gespeichert und auf allen Geräten wirksam. Voreingestellt ist
   „Systemsprache" — dann folgt die App der Spracheinstellung des Browsers,
   ansonsten gilt Englisch. Übersetzt sind bereits die **Navigation**, die
-  **Lagerseite** und alle **MHD-Angaben** (auch in der Chargenzeile der
-  Lagerort- und Artikelseite); Datum und Zahlen folgen der Sprache
+  Seiten **Lager**, **Inventur** und **Artikel** sowie alle **MHD-Angaben**
+  (auch in der Chargenzeile der Lagerort- und Artikelseite); Datum und Zahlen
+  folgen der Sprache
   (en-GB: 14/08/2026). Die übrigen Seiten werden nach und nach nachgezogen
   und sind vorerst weiterhin deutsch.
 

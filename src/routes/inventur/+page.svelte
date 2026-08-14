@@ -2,8 +2,11 @@
 	import { packageSize, tagFilterHref } from '$lib/format';
 	import { keepValues } from '$lib/forms';
 	import { enhance } from '$app/forms';
+	import { translator } from '$lib/i18n';
 
 	let { data, form } = $props();
+
+	const t = $derived(translator(data.locale));
 
 	// Zählwert je Artikel; ohne Eingabe wird der aktuelle Bestand vorbefüllt
 	let counts = $state<Record<number, string>>({});
@@ -27,11 +30,11 @@
 		tagFilterHref('/inventur', tag, { query: data.query, activeTag: data.tagFilter });
 </script>
 
-<svelte:head><title>Inventur – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('stocktake.title')} – LebensmittelKumpel</title></svelte:head>
 
-<h1 class="text-2xl font-bold">Inventur</h1>
+<h1 class="text-2xl font-bold">{t('stocktake.title')}</h1>
 <p class="mt-1 text-sm text-gray-500">
-	Alle Bestände auf einen Blick — Zählwert eintragen und speichern, die Differenz wird automatisch gebucht.
+	{t('stocktake.description')}
 </p>
 
 <form method="GET" class="mt-4 max-w-md">
@@ -39,7 +42,7 @@
 		type="search"
 		name="q"
 		value={data.query}
-		placeholder="Artikel suchen …"
+		placeholder={t('stocktake.search')}
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	/>
 	{#if data.tagFilter}<input type="hidden" name="tag" value={data.tagFilter} />{/if}
@@ -64,7 +67,7 @@
 
 {#if data.articles.length === 0}
 	<div class="mt-8 rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-		{data.query || data.tagFilter ? 'Keine passenden Bestände gefunden.' : 'Keine Bestände vorhanden.'}
+		{data.query || data.tagFilter ? t('stocktake.emptyFiltered') : t('stocktake.empty')}
 	</div>
 {:else}
 	<ul class="mt-4 max-w-2xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -111,7 +114,7 @@
 						inputmode="numeric"
 						value={countFor(article)}
 						oninput={(e) => (counts[article.id] = e.currentTarget.value)}
-						aria-label="Gezählter Bestand"
+						aria-label={t('stocktake.countedLabel')}
 						class="w-16 rounded-lg border-gray-300 px-1 py-1 text-center text-sm focus:border-green-600 focus:ring-green-600"
 					/>
 					<button
@@ -119,7 +122,7 @@
 						disabled={!isChanged(article)}
 						class="flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold
 							{isChanged(article) ? 'bg-green-600 text-white hover:bg-green-700' : 'border border-gray-200 text-gray-300'}"
-						aria-label="Zählwert speichern"
+						aria-label={t('stocktake.saveLabel')}
 					>
 						✓
 					</button>
@@ -128,7 +131,6 @@
 		{/each}
 	</ul>
 	<p class="mt-3 max-w-2xl text-xs text-gray-500">
-		Mehrbestand wird ohne MHD in den Standard-Lagerort gebucht, Minderbestand nach nächstem MHD zuerst
-		ausgebucht. Für gezielte Korrekturen einzelner Chargen den jeweiligen Lagerort öffnen.
+		{t('stocktake.hint')}
 	</p>
 {/if}

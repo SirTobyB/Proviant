@@ -24,6 +24,30 @@ export const de: Messages = {
 	'stock.deliveryShort': 'Lieferung',
 	'stock.journalShort': 'Journal',
 
+	'stocktake.title': 'Inventur',
+	'stocktake.description':
+		'Alle Bestände auf einen Blick — Zählwert eintragen und speichern, die Differenz wird automatisch gebucht.',
+	'stocktake.search': 'Artikel suchen …',
+	'stocktake.emptyFiltered': 'Keine passenden Bestände gefunden.',
+	'stocktake.empty': 'Keine Bestände vorhanden.',
+	'stocktake.countedLabel': 'Gezählter Bestand',
+	'stocktake.saveLabel': 'Zählwert speichern',
+	'stocktake.hint':
+		'Mehrbestand wird ohne MHD in den Standard-Lagerort gebucht, Minderbestand nach nächstem MHD zuerst ausgebucht. Für gezielte Korrekturen einzelner Chargen den jeweiligen Lagerort öffnen.',
+
+	'items.title': 'Artikel',
+	'items.count_one': '{n} Artikel im Stamm',
+	'items.count_other': '{n} Artikel im Stamm',
+	'items.picnicImport': 'Picnic-Import',
+	'items.new': 'Neuer Artikel',
+	'items.search': 'Suchen (Name oder EAN) …',
+	'items.emptyFiltered': 'Keine Artikel gefunden.',
+	'items.empty': 'Noch keine Artikel — lege den ersten an!',
+	'items.bookOut': 'Ausbuchen',
+	'items.bookIn': 'Einbuchen',
+	'items.quantityLabel': 'Buchungsmenge',
+	'items.minStock': 'min. {n}',
+
 	'mhd.none': 'kein MHD',
 	'mhd.expired': 'abgelaufen ({n} Tage)',
 	'mhd.expiredYesterday': 'seit gestern abgelaufen',

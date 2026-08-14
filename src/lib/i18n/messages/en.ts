@@ -34,6 +34,30 @@ export const en = {
 	'stock.deliveryShort': 'Delivery',
 	'stock.journalShort': 'Journal',
 
+	'stocktake.title': 'Stocktake',
+	'stocktake.description':
+		'Everything in stock at a glance — enter the counted amount and save, the difference is booked automatically.',
+	'stocktake.search': 'Search items …',
+	'stocktake.emptyFiltered': 'No stock matches this filter.',
+	'stocktake.empty': 'Nothing in stock.',
+	'stocktake.countedLabel': 'Counted amount',
+	'stocktake.saveLabel': 'Save counted amount',
+	'stocktake.hint':
+		'A surplus is booked into the default location without a best-before date, a shortfall is booked out by nearest best-before date first. To correct individual batches, open the storage location.',
+
+	'items.title': 'Items',
+	'items.count_one': '{n} item in the catalogue',
+	'items.count_other': '{n} items in the catalogue',
+	'items.picnicImport': 'Picnic import',
+	'items.new': 'New item',
+	'items.search': 'Search (name or EAN) …',
+	'items.emptyFiltered': 'No items found.',
+	'items.empty': 'No items yet — create the first one!',
+	'items.bookOut': 'Book out',
+	'items.bookIn': 'Book in',
+	'items.quantityLabel': 'Booking quantity',
+	'items.minStock': 'min. {n}',
+
 	'mhd.none': 'no best-before date',
 	'mhd.expired': 'expired ({n} days ago)',
 	'mhd.expiredYesterday': 'expired yesterday',
