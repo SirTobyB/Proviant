@@ -1,7 +1,8 @@
 # Produktions-Compose für den Server: zieht das fertige Image aus der
 # GitHub Container Registry statt lokal zu bauen.
 #
-# Einmalig:  docker login ghcr.io -u SirTobyB   (PAT mit Scope read:packages)
+# Einmalig:  docker login ghcr.io -u DEIN-GITHUB-NAME   (PAT mit Scope
+#            read:packages) — nur nötig, solange das GHCR-Paket privat ist.
 # Start:     docker compose -f docker-compose.prod.yml up -d
 # Update:    docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
 #
@@ -27,7 +28,7 @@ services:
     environment:
       # Öffentliche URL der App — adapter-node braucht sie für den
       # CSRF-Schutz der Formulare. MUSS zur Host-Regel unten passen.
-      ORIGIN: "https://lebensmittel.tobiasbestier.de" # <-- anpassen
+      ORIGIN: "https://lebensmittel.example.de" # <-- anpassen
       # Picnic-Zugangsdaten. Werte immer in doppelte Anführungszeichen setzen —
       # in YAML startet ein unquotiertes # einen Kommentar (dein Passwort enthält
       # eins). In "..." bleibt das # erhalten.
@@ -42,7 +43,7 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.lebensmittel.rule=Host(`lebensmittel.tobiasbestier.de`)" # <-- anpassen
+      - "traefik.http.routers.lebensmittel.rule=Host(`lebensmittel.example.de`)" # <-- anpassen
       - "traefik.http.routers.lebensmittel.entrypoints=websecure"
       - "traefik.http.routers.lebensmittel.tls.certresolver=tls_resolver"
       - "traefik.http.services.lebensmittel.loadbalancer.server.port=3000"

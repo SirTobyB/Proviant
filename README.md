@@ -5,6 +5,17 @@ für Vorrat in Keller und Küche, Bestellvorschläge und Lieferungs-Check über 
 Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
 (PWA, hell & dunkel je nach Systemeinstellung), mit Desktop-Ansicht.
 
+> **Für wen ist das?** Für Haushalte, die ihren Vorrat selbst verwalten wollen,
+> ohne ihn einem fremden Dienst anzuvertrauen — alles läuft auf dem eigenen
+> Server, die Daten liegen in einer SQLite-Datei. Die Picnic-Funktionen setzen
+> ein Konto beim Lieferdienst [Picnic](https://picnic.app) voraus (Deutschland,
+> Niederlande, Frankreich); ohne Picnic-Konto funktioniert alles andere — Lager,
+> Inventur, Artikelstamm, Rezepte, Wochenplan, Journal — unverändert. Die
+> Anbindung nutzt die inoffizielle Bibliothek
+> [picnic-api](https://github.com/MRVDH/picnic-api); Picnic bietet keine
+> offizielle Schnittstelle an, Änderungen dort können die Funktion jederzeit
+> brechen. Bestellt wird bewusst nie automatisch.
+
 ## Funktionen
 
 - **Anmeldung & Benutzer** — Login mit Benutzername + Passwort (scrypt-Hashing),
@@ -167,3 +178,16 @@ Check und Rezept-Warenkorb nicht.
 > **Passwörter mit Sonderzeichen** (`#`, `$` …) in `.env` und in der
 > `docker-compose*.yml` immer in Anführungszeichen setzen — ein unquotiertes `#`
 > wird sonst als Kommentar abgeschnitten.
+
+## Mitmachen
+
+Fehlerberichte und Verbesserungsvorschläge gerne als
+[Issue](https://github.com/SirTobyB/LebensmittelKumpel/issues). Vor einem Pull
+Request bitte `npm run check`, `npm test` und `npm run build` laufen lassen.
+Oberfläche, Kommentare und Commit-Nachrichten sind deutsch; die Konventionen
+des Projekts stehen in [CLAUDE.md](CLAUDE.md).
+
+## Lizenz
+
+[MIT](LICENSE) — Nutzung, Änderung und Weitergabe frei, ohne Gewährleistung.
+Die verwendeten Icons stammen von [Heroicons](https://heroicons.com) (MIT).

@@ -29,3 +29,6 @@ vite.config.ts.timestamp-*
 /data
 /images
 picnic-auth-key
+
+# Persoenliche Notizen (Zuruf-Kanal fuer Testfunde) — bleiben lokal
+Beim testen gefundene Bugs.md

@@ -232,4 +232,6 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 - **„Beim testen gefundene Bugs.md":** Kommunikationskanal des Nutzers — dort
   landen beim Testen gefundene Bugs und Feature-Wünsche. Beim Abarbeiten den
   Eintrag durchstreichen und mit **✅ Behoben/Umgesetzt** samt kurzer Erklärung
-  versehen, nicht löschen.
+  versehen, nicht löschen. Die Datei ist **gitignored** und bleibt lokal (sie
+  enthält persönliche Notizen und gehört nicht ins öffentliche Repo) — sie
+  fehlt also in einem frischen Klon, das ist kein Fehler.
