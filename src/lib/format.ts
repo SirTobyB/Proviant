@@ -11,11 +11,17 @@ import { BCP47, type Locale, type Translate } from '$lib/i18n';
  */
 export const UNITS = ['g', 'kg', 'ml', 'l', 'Stück'] as const;
 
-/** Beschriftung einer Einheit; Unbekanntes bleibt unverändert stehen. */
-export function unitLabel(unit: string | null, t: Translate): string {
+/**
+ * Beschriftung einer Einheit; Unbekanntes bleibt unverändert stehen.
+ *
+ * `amount` steuert die Ein-/Mehrzahl („1 pc" gegen „6 pcs"). Ohne Angabe —
+ * etwa als Eintrag einer Auswahlliste — gilt die Mehrzahlform.
+ */
+export function unitLabel(unit: string | null, t: Translate, amount?: number | null): string {
 	if (!unit) return '';
 	// g/kg/ml/l sind international, nur „Stück" hat je Sprache ein eigenes Wort
-	return unit === 'Stück' ? t('form.unitPiece') : unit;
+	if (unit !== 'Stück') return unit;
+	return amount == null ? t('form.unitPiece') : t('form.unitPiece', { n: amount });
 }
 
 /** Gebindegröße als Text, z.B. „500 g"; leer, wenn keine Menge hinterlegt ist. */
@@ -26,7 +32,7 @@ export function packageSize(
 	t: Translate
 ): string {
 	if (amount == null) return '';
-	return `${amount.toLocaleString(BCP47[locale])} ${unitLabel(unit, t)}`.trim();
+	return `${amount.toLocaleString(BCP47[locale])} ${unitLabel(unit, t, amount)}`.trim();
 }
 
 /** Picnic liefert Preise in Cent. Die Währung bleibt Euro, nur die Schreibweise folgt der Sprache. */

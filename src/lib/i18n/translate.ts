@@ -55,7 +55,10 @@ export function translator(locale: Locale): Translate {
 			const text = dictionary[variante] ?? dictionary[ersatz];
 			if (text !== undefined) return interpolate(text, params);
 		}
-		const text = dictionary[key as RawKey];
+		// Ohne Zahl auf die Mehrzahlform zurückfallen: So lässt sich ein
+		// zählbarer Schlüssel auch dort verwenden, wo keine Menge im Spiel ist
+		// (etwa als Beschriftung in einer Auswahlliste).
+		const text = dictionary[key as RawKey] ?? dictionary[`${key}_other` as RawKey];
 		// Nur erreichbar, wenn ein Schlüssel zur Laufzeit hereingereicht wurde
 		// (die Typen schließen es aus) — dann ist der Schlüssel selbst die
 		// ehrlichste Anzeige, statt eine leere Stelle zu hinterlassen.

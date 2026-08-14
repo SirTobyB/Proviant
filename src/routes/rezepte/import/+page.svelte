@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { translator } from '$lib/i18n';
 
 	let { data, form } = $props();
+
+	const t = $derived(translator(data.locale));
 
 	let query = $state('');
 	// Während des Imports den geklickten Eintrag markieren
@@ -16,23 +19,22 @@
 	}
 </script>
 
-<svelte:head><title>Rezept-Import – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('recipeImport.title')} – LebensmittelKumpel</title></svelte:head>
 
 <div class="flex items-center gap-2">
-	<a href="/rezepte" class="text-sm text-gray-500 hover:text-gray-700">← Rezepte</a>
+	<a href="/rezepte" class="text-sm text-gray-500 hover:text-gray-700">← {t('recipes.back')}</a>
 </div>
-<h1 class="mt-1 text-2xl font-bold">Aus Picnic importieren</h1>
+<h1 class="mt-1 text-2xl font-bold">{t('recipeImport.title')}</h1>
 <p class="mt-1 text-sm text-gray-500">
-	Übernimmt Name, Portionen, Zutaten und Zubereitung in die eigene Rezeptsammlung.
-	Zutaten kommen als Freitext an und können danach mit dem Artikelstamm verknüpft werden.
+	{t('recipeImport.description')}
 </p>
 
 {#if data.connection !== 'connected'}
 	<div class="mt-6 max-w-2xl rounded-xl border border-gray-200 bg-white p-6 text-center">
 		<div class="text-3xl">🔌</div>
-		<p class="mt-2 font-medium">Noch nicht mit Picnic verbunden</p>
+		<p class="mt-2 font-medium">{t('recipeImport.notConnected')}</p>
 		<p class="mt-1 text-sm text-gray-500">
-			Stelle die Verbindung auf der Seite <a href="/bestellen" class="text-green-700 underline">Bestellen</a> her.
+			{t('recipeImport.connectBefore')}<a href="/bestellen" class="text-green-700 underline">{t('nav.order')}</a>{t('recipeImport.connectAfter')}
 		</p>
 	</div>
 {:else if data.error}
@@ -45,11 +47,11 @@
 	<input
 		type="search"
 		bind:value={query}
-		placeholder="Rezepte durchsuchen …"
+		placeholder={t('recipeImport.search')}
 		class="mt-4 block w-full max-w-md rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	/>
 
-	<p class="mt-2 text-xs text-gray-500">{filtered.length} von {data.tiles.length} Rezepten</p>
+	<p class="mt-2 text-xs text-gray-500">{t('recipeImport.counted', { shown: filtered.length, total: data.tiles.length })}</p>
 
 	<ul class="mt-2 max-w-2xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
 		{#each filtered as tile (tile.id)}
@@ -57,7 +59,7 @@
 				<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm">🍲</div>
 				<span class="min-w-0 flex-1 truncate text-sm font-medium">{tile.name}</span>
 				{#if alreadyImported(tile.name)}
-					<span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">bereits vorhanden</span>
+					<span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{t('recipeImport.exists')}</span>
 				{/if}
 				<form
 					method="POST"
@@ -77,7 +79,7 @@
 						disabled={importing !== null}
 						class="shrink-0 rounded-lg border border-green-600 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
 					>
-						{importing === tile.id ? 'Importiere …' : 'Importieren'}
+						{importing === tile.id ? t('recipeImport.importing') : t('recipeImport.import')}
 					</button>
 				</form>
 			</li>

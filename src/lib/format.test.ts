@@ -26,6 +26,9 @@ describe('packageSize', () => {
 	it('übersetzt die Stück-Einheit, lässt den gespeicherten Wert aber unangetastet', () => {
 		expect(packageSize(6, 'Stück', 'de', tDe)).toBe('6 Stück');
 		expect(packageSize(6, 'Stück', 'en', tEn)).toBe('6 pcs');
+		// Einzahl darf nicht „1 pcs" werden
+		expect(packageSize(1, 'Stück', 'en', tEn)).toBe('1 pc');
+		expect(packageSize(1, 'Stück', 'nl', tNl)).toBe('1 stuk');
 		expect(packageSize(6, 'Stück', 'nl', tNl)).toBe('6 stuks');
 	});
 
@@ -53,6 +56,8 @@ describe('formatPrice je Sprache', () => {
 describe('unitLabel', () => {
 	it('lässt internationale Einheiten und Unbekanntes stehen', () => {
 		expect(unitLabel('kg', tEn)).toBe('kg');
+		// Ohne Menge (z.B. in einer Auswahlliste) gilt die Mehrzahlform
+		expect(unitLabel('Stück', tEn)).toBe('pcs');
 		expect(unitLabel('Dose', tEn)).toBe('Dose');
 		expect(unitLabel(null, tEn)).toBe('');
 	});
