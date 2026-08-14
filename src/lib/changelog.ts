@@ -89,10 +89,12 @@ export function parseChangelog(markdown: string): ChangelogRelease[] {
 
 		flushEntry();
 
-		// Freitext direkt unter der Versionsüberschrift wird zur Notiz
+		// Freitext direkt unter der Versionsüberschrift wird zur Notiz. Die Zeilen
+		// werden angehängt, nicht nur die erste genommen: Die Absätze in der Datei
+		// sind auf 80 Zeichen umbrochen, sonst endete die Notiz mitten im Satz.
 		const text = line.trim();
-		if (release && !section && text && !text.startsWith('[') && !release.note) {
-			release.note = stripEmphasis(text);
+		if (release && !section && text && !text.startsWith('[')) {
+			release.note = release.note ? `${release.note} ${stripEmphasis(text)}` : stripEmphasis(text);
 		}
 	}
 	flushEntry();

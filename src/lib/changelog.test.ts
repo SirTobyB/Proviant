@@ -46,6 +46,17 @@ describe('parseChangelog', () => {
 		expect(versionen[1].note).toBeNull();
 	});
 
+	it('setzt eine umbrochene Einordnung wieder zusammen', () => {
+		// Die Absätze in CHANGELOG.md sind auf 80 Zeichen umbrochen — nur die
+		// erste Zeile zu nehmen hieße, die Notiz mitten im Satz abzuschneiden
+		const [version] = parseChangelog(
+			`## [3.0.0] - 2026-10-01\n\nDer Image-Pfad hat sich geändert; ein Pull gegen den alten Pfad\nliefert ab hier keine Aktualisierungen mehr.\n\n### Geändert\n\n- Neuer Name\n`
+		);
+		expect(version.note).toBe(
+			'Der Image-Pfad hat sich geändert; ein Pull gegen den alten Pfad liefert ab hier keine Aktualisierungen mehr.'
+		);
+	});
+
 	it('gruppiert die Einträge nach Kategorie', () => {
 		expect(versionen[0].sections.map((s) => s.title)).toEqual(['Hinzugefügt', 'Behoben']);
 		expect(versionen[0].sections[1].entries).toEqual([

@@ -8,6 +8,16 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.0.0] - 2026-08-14
+
+Die App heißt ab dieser Fassung **Proviant**. Für bestehende Installationen ist
+das die einzige Stelle, die Handarbeit braucht: Der Image-Pfad lautet jetzt
+`ghcr.io/sirtobyb/proviant`, ein `docker compose pull` gegen den alten Pfad
+liefert ab hier keine Aktualisierungen mehr. Übernimm dazu die neue
+`docker-compose.prod.yml` (der Container heißt darin ebenfalls `proviant`) und
+trage deine Domain und die Picnic-Zugangsdaten wieder ein. Datenbank, Bilder und
+der Picnic-Auth-Key im Volume bleiben unverändert — zu migrieren gibt es nichts.
+
 ### Hinzugefügt
 
 - **Mehrsprachige Oberfläche: Englisch, Deutsch und Niederländisch.** Die
@@ -19,6 +29,20 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   (en-GB: 14/08/2026, 0.7 l, €1.69). Nicht übersetzt werden bewusst die eigenen
   Daten — Artikel, Tags, Rezepte und Lagerortnamen bleiben, wie sie eingegeben
   wurden — sowie dieser Changelog.
+
+### Geändert
+
+- **Die App heißt jetzt „Proviant".** Der bisherige Name war nur auf Deutsch
+  verständlich, während die Oberfläche englisch voreingestellt ist; „Proviant"
+  steht so im Deutschen wie im Niederländischen und ist für Englischsprachige
+  erschließbar. Betroffen sind Oberfläche, Homescreen-Symbol, Repository und
+  Image-Pfad (`ghcr.io/sirtobyb/proviant`). Der Dateiname der Datenbank im
+  Volume bleibt bewusst unverändert — sonst legte die App beim nächsten Start
+  eine leere Datenbank an.
+- Die fünf **vorgegebenen Lagerorte** heißen bei einer Neuinstallation jetzt
+  englisch (Kitchen cupboard, Fridge, Freezer, Pantry shelf, Drinks cellar) —
+  passend zur Standardsprache. Bestehende Installationen bleiben unberührt,
+  und umbenennen lässt sich jeder Lagerort ohnehin unter „Lagerorte".
 
 ### Sicherheit
 
@@ -55,21 +79,7 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   IP-Adresse dorthin, und ohne Internetzugang blieb der Scanner überall dort
   stehen, wo es keinen eingebauten BarcodeDetector gibt (iPhone).
 - Abhängigkeiten mit bekannten Schwachstellen aktualisiert (`@sveltejs/kit`,
-  `postcss`, `nanoid`).
-
-### Geändert
-
-- **Die App heißt jetzt „Proviant".** Der bisherige Name war nur auf Deutsch
-  verständlich, während die Oberfläche englisch voreingestellt ist; „Proviant"
-  steht so im Deutschen wie im Niederländischen und ist für Englischsprachige
-  erschließbar. Betroffen sind Oberfläche, Homescreen-Symbol, Repository und
-  Image-Pfad (`ghcr.io/sirtobyb/proviant`). Der Dateiname der Datenbank im
-  Volume bleibt bewusst unverändert — sonst legte die App beim nächsten Start
-  eine leere Datenbank an.
-- Die fünf **vorgegebenen Lagerorte** heißen bei einer Neuinstallation jetzt
-  englisch (Kitchen cupboard, Fridge, Freezer, Pantry shelf, Drinks cellar) —
-  passend zur Standardsprache. Bestehende Installationen bleiben unberührt,
-  und umbenennen lässt sich jeder Lagerort ohnehin unter „Lagerorte".
+  `postcss`, `nanoid`). Neue Abhängigkeiten hält ab jetzt Dependabot aktuell.
 
 ## [1.2.0] - 2026-08-14
 
@@ -133,7 +143,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v1.2.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/SirTobyB/Proviant/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/SirTobyB/Proviant/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/SirTobyB/Proviant/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/SirTobyB/Proviant/releases/tag/v1.0.0
