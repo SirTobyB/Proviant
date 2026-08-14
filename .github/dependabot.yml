@@ -19,13 +19,13 @@ updates:
       time: '06:00'
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    # Die Gruppen dürfen sich nicht überschneiden: In diesem Projekt sind
+    # SvelteKit, Tailwind, Vite und Drizzle allesamt devDependencies, eine
+    # Gruppe „alle Entwicklungspakete" verschluckt also jede feinere Gruppe
+    # daneben (genau das ist passiert — ein Sammel-PR ersetzte drei einzelne).
+    # Deshalb nur noch zwei Gruppen, und die Ausnahme wird ausdrücklich
+    # ausgeschlossen statt vorangestellt.
     groups:
-      svelte:
-        patterns: ['svelte', 'svelte-check', '@sveltejs/*']
-      tailwind:
-        patterns: ['tailwindcss', '@tailwindcss/*']
-      drizzle:
-        patterns: ['drizzle-orm', 'drizzle-kit']
       # barcode-detector und zxing-wasm müssen dieselbe Version tragen
       # (src/lib/zxingVersion.test.ts wacht darüber) — also nie einzeln anheben.
       barcode:
@@ -33,6 +33,10 @@ updates:
       werkzeug:
         dependency-type: development
         update-types: ['minor', 'patch']
+      laufzeit:
+        dependency-type: production
+        update-types: ['minor', 'patch']
+        exclude-patterns: ['barcode-detector', 'zxing-wasm']
     commit-message:
       prefix: Aktualisiere
 
@@ -42,6 +46,15 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    # Node-Majors bleiben Handarbeit. `better-sqlite3` ist ein natives Modul:
+    # Für eine frische Major gibt es oft noch keine vorgebauten Binaries, dann
+    # kompiliert der Container-Build selbst — für arm64 unter QEMU langsam bis
+    # brüchig. Dazu will die Frage, ob die Version schon LTS ist, bewusst
+    # beantwortet werden (Dependabot schlug 22 → 26 vor und übersprang 24).
+    # Sicherheits-Updates innerhalb der Linie kommen weiterhin.
+    ignore:
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
     commit-message:
       prefix: Aktualisiere
 

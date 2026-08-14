@@ -1,0 +1,54 @@
+name: Pruefen
+
+# Laeuft auf jedem Pull Request — vorher kamen Dependabot-PRs voellig
+# ungeprueft an, und das Erste, was einen Fehler bemerkt haette, waere der
+# Produktions-Build nach dem Merge gewesen. Zusaetzlich auf main, damit auch
+# direkt gepushte Commits abgedeckt sind.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Nur der jeweils letzte Stand eines Branches ist interessant; aeltere Laeufe
+# derselben Aenderung duerfen abgebrochen werden. (Bewusst anders als in
+# docker.yml: dort veroeffentlichen die Laeufe unterschiedliche Tags.)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          # Muss zur Basis im Dockerfile passen, sonst prueft die CI eine
+          # andere Laufzeit als die, die spaeter im Container laeuft.
+          node-version: 22
+          cache: npm
+
+      # ci statt install: installiert streng nach package-lock.json und schlaegt
+      # fehl, wenn die Datei nicht zur package.json passt — genau das will man
+      # bei einem Abhaengigkeits-PR wissen.
+      - name: Abhaengigkeiten installieren
+        run: npm ci
+
+      - name: Typen pruefen
+        run: npm run check
+
+      - name: Tests
+        run: npm test
+
+      # Faengt, was Typecheck und Tests nicht sehen: Fehler in der Vite-/
+      # SvelteKit-Konfiguration und beim Buendeln (etwa die mitgebaute
+      # ZXing-WASM-Datei).
+      - name: Produktions-Build
+        run: npm run build
