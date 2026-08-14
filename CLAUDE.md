@@ -28,7 +28,7 @@ Dev-Server starten und im Browser prüfen.
 
 **Tests** (`vitest.config.ts`, bewusst ohne SvelteKit-Plugin) decken die
 reinen Logik-Module ab: `units.ts`, `suggest.ts`, `mhd.ts`, `format.ts`,
-`picnic/unitQuantity.ts`, `picnic/checklist.ts`. Genau dort steckten die
+`journal.ts`, `picnic/unitQuantity.ts`, `picnic/checklist.ts`. Genau dort steckten die
 schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 **mit Test**, nicht in eine Route.
 
@@ -48,7 +48,8 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   - `auth.ts` / `password.ts` – Sessions (DB-gestützt, httpOnly-Cookie) und
     scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder. `log.ts` –
     Zeilen-Logging mit Zeitstempel (siehe Fallstrick unten).
-  - `stock.ts` (Buchungen, FEFO), `tags.ts` (Rezept-Tags), `articleTags.ts`
+  - `stock.ts` (Buchungen, FEFO, **Journal-Erfassung** — siehe Fallstrick
+    unten), `tags.ts` (Rezept-Tags), `articleTags.ts`
     (Artikel-Tags — **eigener Tag-Pool**, bewusst getrennt von den
     Rezept-`tags`, inkl. Bulk-Map `tagsForArticles` gegen N+1 auf
     Listenseiten), `recipeData.ts`, `mealPlan.ts` (Wochenplan-Einkaufsliste:
@@ -63,7 +64,8 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   (gewichteter Rezeptvorschlag), `sound.ts` (Scan-Signalton per Web Audio),
   `format.ts` (`packageSize`, `formatPrice`, `tagFilterHref` — vor eigenen
   Formatierern erst hier nachsehen), `stock.ts` (`sumQuantity`), `forms.ts`
-  (`keepValues`, siehe Formular-Fallstrick unten).
+  (`keepValues`, siehe Formular-Fallstrick unten), `journal.ts`
+  (Beschriftungen der Buchungsarten/-herkünfte).
 - **Wiederverwendbare Komponenten** in `src/lib/components/`: `ArticleForm`,
   `RecipeForm`, `TagInput` (Chips + Autocomplete, rendert das
   `name="tags"`-Hiddenfield selbst), `BarcodeScanner`, `StockEntryRow`
@@ -84,6 +86,19 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   `audit.ts` einspreizen und `locals.user?.username` durchreichen
   (`auditNew` / `auditEdit` / `auditLink`). Serverfunktionen wie `bookIn`,
   `bookOut`, `setRecipeTags` nehmen den Benutzernamen als Parameter.
+- **Buchungsjournal:** `stock_movements` historisiert jede Bestandsänderung.
+  Erfasst wird **ausschließlich in `server/stock.ts`** — dort liegen alle
+  Schreibzugriffe auf `stock_entries`, dadurch ist das Journal lückenlos.
+  Wer `stock_entries` künftig aus einer Route heraus schreibt, reißt genau
+  dieses Loch. Jede Buchungsfunktion (`bookIn`, `bookOut`, `moveStockEntry`,
+  `updateStockEntryFromForm`, `moveStockEntryFromForm`) nimmt dafür einen
+  `source` (`scan` | `inventur` | `lieferung` | `artikelliste` | `charge`) —
+  ohne den wäre im Journal nicht erkennbar, woher eine Buchung kam.
+  `bookOut` schreibt **je verbrauchter Charge eine Zeile**, weil FEFO über
+  mehrere Lagerorte laufen kann und „welcher Lagerplatz?" sonst nicht ehrlich
+  zu beantworten wäre. Der Artikelname liegt als Schnappschuss in der Zeile
+  und der FK steht auf `set null` (nicht `cascade` wie bei `stock_entries`),
+  damit die Historie das Löschen eines Artikels überlebt.
 - **Migrationen:** Nach Schema-Änderung `npm run db:generate`. SQLite erlaubt bei
   `ALTER TABLE ADD COLUMN` **keinen nicht-konstanten Default** (`unixepoch()`) —
   für nachgerüstete Zeitstempel-Spalten die generierte Migration von Hand auf

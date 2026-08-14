@@ -8,9 +8,11 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [1.1.0] - 2026-08-14
+
 ### Hinzugefügt
 
-- **Buchungsjournal** unter *Journal*: Jede Bestandsveränderung wird mit
+- **Buchungsjournal** unter „Journal": Jede Bestandsveränderung wird mit
   Zeitpunkt, Benutzer, Artikel, Menge und Lagerort festgehalten — Zu- und
   Abgänge, Umlagerungen (mit Von-/Nach-Lagerort) und Chargen-Korrekturen
   inklusive MHD-Änderungen. Filterbar nach Artikel, Lagerort, Benutzer und
@@ -54,5 +56,6 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.0.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/SirTobyB/LebensmittelKumpel/releases/tag/v1.0.0

@@ -21,6 +21,13 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
   direkt in der Artikelliste, in der Lagerort-Ansicht je Charge mit einem
   Klick (0 löscht die Charge); Chargen lassen sich bearbeiten und zwischen
   Lagerorten umlagern.
+- **Buchungsjournal** — jede Bestandsveränderung wird festgehalten: Zeitpunkt,
+  Benutzer, Artikel, Menge und Lagerort, dazu die Herkunft der Buchung
+  (Scanner, Inventur, Lieferung, Artikelliste, Charge). Zu- und Abgänge,
+  Umlagerungen (mit Von-/Nach-Lagerort) und Chargen-Korrekturen inklusive
+  MHD-Änderungen; ein Abgang über mehrere Chargen erscheint je Charge mit
+  ihrem Lagerort. Filterbar nach Artikel, Lagerort, Benutzer und Buchungsart.
+  Gelöschte Artikel bleiben mit ihrem Namen lesbar.
 - **Inventur** — kompakte Übersicht aller vorhandenen Bestände mit
   Lagerort-Aufschlüsselung. Gezählten Gesamtbestand eintragen, die Differenz
   wird automatisch gebucht (Mehrbestand in den Standard-Lagerort, Minderbestand
