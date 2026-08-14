@@ -10,14 +10,20 @@ import { and, eq, gt } from 'drizzle-orm';
 export const SESSION_COOKIE = 'lmk_session';
 const SESSION_DAYS = 30;
 
-export type SessionUser = { username: string; email: string; role: 'user' | 'admin' };
+export type SessionUser = {
+	username: string;
+	email: string;
+	role: 'user' | 'admin';
+	/** Gewählte Oberflächensprache; null = der Systemsprache folgen. */
+	locale: 'en' | 'de' | 'nl' | null;
+};
 
 /** Prüft Zugangsdaten und liefert den User bei Erfolg. */
 export async function authenticate(username: string, password: string): Promise<SessionUser | null> {
 	const user = db.select().from(users).where(eq(users.username, username)).get();
 	if (!user) return null;
 	if (!(await verifyPassword(password, user.passwordHash))) return null;
-	return { username: user.username, email: user.email, role: user.role };
+	return { username: user.username, email: user.email, role: user.role, locale: user.locale };
 }
 
 /** Legt eine Session an und gibt das Cookie-Token samt Ablauf zurück. */
@@ -32,7 +38,12 @@ export function createSession(username: string): { token: string; expiresAt: Dat
 export function validateSession(token: string | undefined): SessionUser | null {
 	if (!token) return null;
 	const row = db
-		.select({ username: users.username, email: users.email, role: users.role })
+		.select({
+			username: users.username,
+			email: users.email,
+			role: users.role,
+			locale: users.locale
+		})
 		.from(sessions)
 		.innerJoin(users, eq(users.username, sessions.username))
 		.where(and(eq(sessions.token, token), gt(sessions.expiresAt, new Date())))

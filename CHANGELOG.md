@@ -8,6 +8,14 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Sprachwahl** auf der Konto-Seite: Englisch, Deutsch oder Niederländisch,
+  je Benutzer gespeichert und auf allen Geräten wirksam. Voreingestellt ist
+  „Systemsprache" — dann folgt die App der Spracheinstellung des Browsers,
+  ansonsten gilt Englisch. Das Gerüst dafür steht; die Oberfläche selbst wird
+  Seite für Seite übersetzt und ist vorerst weiterhin deutsch.
+
 ## [1.2.0] - 2026-08-14
 
 ### Hinzugefügt

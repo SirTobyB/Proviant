@@ -9,8 +9,10 @@ MHD), Inventur, Artikelstamm (mit Tags), Rezepte (mit Alternativartikeln je
 Zutat), Wochenplan und Picnic-Anbindung (Bestellvorschläge — abgeglichen mit
 Warenkorb und offenen Bestellungen —, Lieferungs-Check mit Auto-Anlage
 fehlender Artikel). SvelteKit + TypeScript + SQLite (Drizzle), als
-Docker-Image für amd64/arm64. UI, Kommentare und Commit-Messages sind
-**deutsch**.
+Docker-Image für amd64/arm64. Kommentare und Commit-Messages sind **deutsch**;
+die Oberfläche wird gerade auf **Englisch (Standard), Deutsch und
+Niederländisch** umgestellt — neue Texte gehören deshalb nach
+`src/lib/i18n/messages/` und nicht mehr fest in die Komponente.
 
 ## Befehle
 
@@ -28,7 +30,8 @@ Dev-Server starten und im Browser prüfen.
 
 **Tests** (`vitest.config.ts`, bewusst ohne SvelteKit-Plugin) decken die
 reinen Logik-Module ab: `units.ts`, `suggest.ts`, `mhd.ts`, `format.ts`,
-`journal.ts`, `picnic/unitQuantity.ts`, `picnic/checklist.ts`. Genau dort steckten die
+`journal.ts`, `i18n/` (Sprachaushandlung, Plurale, Vollständigkeit der
+Wörterbücher), `picnic/unitQuantity.ts`, `picnic/checklist.ts`. Genau dort steckten die
 schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 **mit Test**, nicht in eine Route.
 
@@ -60,6 +63,11 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     `articleForm.ts`, `recipeForm.ts`, `articleImport.ts` (Artikel aus
     Picnic-Produkt, **idempotent** per picnicId-Dedupe — wird auch vom
     Lieferungs-Check zum Auto-Anlegen fehlender Artikel genutzt), `images.ts`.
+- **Sprachen** in `src/lib/i18n/`: `locales.ts` (Sprachliste, Aushandlung),
+  `translate.ts` (`translator(locale)`), `messages/en.ts` als **Quelle der
+  Wahrheit** — `de.ts`/`nl.ts` sind dagegen typisiert (`Messages`), ein
+  fehlender Schlüssel bricht `npm run check`. Serverseitiges Drumherum
+  (Cookie) in `server/locale.ts`. Siehe Fallstrick unten.
 - **Reine Helfer** in `src/lib/` (client- und servertauglich): `units.ts`
   (Mengen/Einheiten; `coverageMulti` summiert Bestand über die
   Alternativartikel einer Zutat), `mhd.ts` (Restlaufzeit/Ampel), `suggest.ts`
@@ -101,6 +109,22 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   zu beantworten wäre. Der Artikelname liegt als Schnappschuss in der Zeile
   und der FK steht auf `set null` (nicht `cascade` wie bei `stock_entries`),
   damit die Historie das Löschen eines Artikels überlebt.
+- **Mehrsprachigkeit (en/de/nl):** Standard ist **Englisch**, `en-GB` beim
+  Formatieren. Die geltende Sprache ermittelt `hooks.server.ts` einmal pro
+  Anfrage (Benutzerwahl → Cookie → `Accept-Language` → Englisch) und legt sie
+  in `locals.locale`; das Root-Layout reicht sie als `data.locale` weiter,
+  Komponenten bilden daraus `translator(data.locale)`. Die Auswertung gehört
+  **auf den Server** — im Browser (`navigator.language`) würde die Seite erst
+  in der Standardsprache rendern und dann umspringen (Flackern plus
+  Hydration-Abweichung). Die aktuelle Sprache darf **niemals** in einer
+  Modul-Variablen liegen: Der Node-Prozess bedient alle Anfragen gleichzeitig,
+  eine solche Variable vertauscht die Sprache zwischen parallelen Requests
+  (fällt lokal nie auf). Server-Actions bilden ihren Übersetzer deshalb
+  explizit aus `locals.locale`. `<html lang>` wird zweifach gepflegt: per
+  `transformPageChunk` beim Server-Rendern **und** per `$effect` im Layout,
+  weil ein Sprachwechsel ohne Neuladen sonst den alten Wert stehen ließe.
+  Anwenderdaten (Artikel, Tags, Rezepte, Lagerortnamen) werden bewusst **nicht**
+  übersetzt, ebenso wenig der Changelog.
 - **Migrationen:** Nach Schema-Änderung `npm run db:generate`. SQLite erlaubt bei
   `ALTER TABLE ADD COLUMN` **keinen nicht-konstanten Default** (`unixepoch()`) —
   für nachgerüstete Zeitstempel-Spalten die generierte Migration von Hand auf

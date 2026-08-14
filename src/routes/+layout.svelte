@@ -5,6 +5,13 @@
 
 	let { children, data } = $props();
 
+	// lang am <html> nachziehen: transformPageChunk im Hook greift nur beim
+	// Server-Rendern. Nach einem Sprachwechsel ohne Neuladen stünde dort sonst
+	// weiter die alte Sprache — Screenreader und Browser-Übersetzung gingen fehl.
+	$effect(() => {
+		document.documentElement.lang = data.locale;
+	});
+
 	// Nötig, damit Android die Seite als installierbare PWA (WebAPK) erkennt —
 	// siehe Kommentar in static/service-worker.js für den Hintergrund.
 	onMount(() => {

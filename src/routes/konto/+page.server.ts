@@ -2,6 +2,8 @@ import { db } from '$lib/server/db';
 import { users } from '$lib/server/db/schema';
 import { hashPassword, verifyPassword } from '$lib/server/password';
 import { deleteUserSessions, SESSION_COOKIE, createSession } from '$lib/server/auth';
+import { clearLocaleCookie, setLocaleCookie } from '$lib/server/locale';
+import { isLocale, localeFromHeader, translator, DEFAULT_LOCALE } from '$lib/i18n';
 import { dev } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { eq } from 'drizzle-orm';
@@ -15,10 +17,13 @@ import type { Actions, PageServerLoad } from './$types';
 
 const releases = parseChangelog(changelogText);
 
-export const load: PageServerLoad = ({ locals }) => {
+export const load: PageServerLoad = ({ locals, request }) => {
 	// locals.user ist durch den Hook garantiert vorhanden
 	return {
 		account: locals.user,
+		// Für die Auswahl „Systemsprache (…)": zeigt, worauf der Browser
+		// derzeit hinausliefe — sonst wählt man blind
+		systemLocale: localeFromHeader(request.headers.get('accept-language')) ?? DEFAULT_LOCALE,
 		// Herkunft des laufenden Images (im Dockerfile aus Build-Args gesetzt) —
 		// zum Abgleich, ob der Server wirklich den erwarteten Stand fährt
 		version: { app: appVersion, commit: env.GIT_SHA || null, buildTime: env.BUILD_TIME || null },
@@ -27,6 +32,43 @@ export const load: PageServerLoad = ({ locals }) => {
 };
 
 export const actions: Actions = {
+	/**
+	 * Sprache umstellen. Leerer Wert = „Systemsprache folgen": dann muss auch
+	 * das Cookie weg, sonst überstimmt es die Systemsprache weiterhin.
+	 */
+	setLanguage: async ({ request, locals, cookies }) => {
+		const username = locals.user!.username;
+		const gewaehlt = String((await request.formData()).get('locale') ?? '');
+		// Meldung in der Sprache, die *danach* gilt — bei „Systemsprache" ist das
+		// nicht die bisherige, sondern die des Browsers (Benutzerwahl und Cookie
+		// fallen gleich weg)
+		const zielsprache = isLocale(gewaehlt)
+			? gewaehlt
+			: (localeFromHeader(request.headers.get('accept-language')) ?? DEFAULT_LOCALE);
+		const t = translator(zielsprache);
+
+		// Eigener Schlüssel statt `message`: die Passwort-Karte zeigt `message`
+		// als Fehler an, hier wäre eine Erfolgsmeldung sonst rot und am
+		// falschen Platz
+		if (gewaehlt !== '' && !isLocale(gewaehlt)) {
+			return fail(400, { languageMessage: t('account.language.invalid'), languageOk: false });
+		}
+
+		db.update(users)
+			.set({
+				locale: isLocale(gewaehlt) ? gewaehlt : null,
+				updatedAt: new Date(),
+				updatedBy: username
+			})
+			.where(eq(users.username, username))
+			.run();
+
+		if (isLocale(gewaehlt)) setLocaleCookie(cookies, gewaehlt);
+		else clearLocaleCookie(cookies);
+
+		return { languageMessage: t('account.language.saved'), languageOk: true };
+	},
+
 	changePassword: async ({ request, locals, cookies }) => {
 		const username = locals.user!.username;
 		const fd = await request.formData();

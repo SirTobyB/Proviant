@@ -1,6 +1,8 @@
 import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { SESSION_COOKIE, validateSession } from '$lib/server/auth';
+import { LOCALE_COOKIE } from '$lib/server/locale';
+import { resolveLocale } from '$lib/i18n';
 import { logError, logInfo } from '$lib/server/log';
 
 // Öffentlich erreichbare Pfade (ohne Login)
@@ -29,6 +31,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const token = event.cookies.get(SESSION_COOKIE);
 	event.locals.user = validateSession(token);
 
+	// Sprache serverseitig bestimmen, nicht im Browser: sonst rendert die Seite
+	// erst in der Standardsprache und springt danach um (sichtbares Flackern
+	// plus Hydration-Abweichung).
+	event.locals.locale = resolveLocale({
+		user: event.locals.user?.locale,
+		cookie: event.cookies.get(LOCALE_COOKIE),
+		acceptLanguage: event.request.headers.get('accept-language')
+	});
+
 	const path = event.url.pathname;
 	const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(p + '/'));
 
@@ -49,7 +60,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	const startedAt = Date.now();
-	const response = await resolve(event);
+	// lang im HTML mitziehen — Screenreader und die Übersetzungsvorschläge des
+	// Browsers richten sich danach; app.html trägt nur den Platzhalterwert.
+	const response = await resolve(event, {
+		transformPageChunk: ({ html }) => html.replace('<html lang="en">', `<html lang="${event.locals.locale}">`)
+	});
 
 	// Am Status statt am Fehlerobjekt hängen: So landet JEDE Fehlerantwort im
 	// Log — auch die per error() geworfenen, die handleError nie zu sehen

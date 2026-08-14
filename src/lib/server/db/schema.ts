@@ -23,6 +23,11 @@ export const users = sqliteTable('users', {
 	role: text('role', { enum: ['user', 'admin'] })
 		.notNull()
 		.default('user'),
+	/**
+	 * Oberflächensprache. `null` heißt ausdrücklich „der Systemsprache folgen"
+	 * (Accept-Language) und ist der Standard — nicht etwa Englisch.
+	 */
+	locale: text('locale', { enum: ['en', 'de', 'nl'] }),
 	...auditFull()
 });
 

@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { LOCALES, LOCALE_LABEL, translator } from '$lib/i18n';
 
 	let { data, form } = $props();
+
+	// Übersetzer aus der Sprache dieser Anfrage — nie aus einem globalen
+	// Zustand, siehe Kommentar in $lib/i18n/translate.ts
+	const t = $derived(translator(data.locale));
 
 	const roleLabel = $derived(data.account?.role === 'admin' ? 'Admin' : 'Benutzer');
 
@@ -49,6 +55,49 @@
 				<a href="/lagerorte" class="text-sm font-medium text-green-700 hover:underline">→ Lagerorte</a>
 			</div>
 		{/if}
+	</div>
+
+	<!-- Sprache -->
+	<div class="rounded-xl border border-gray-200 bg-white p-4">
+		<h2 class="text-sm font-semibold text-gray-700">{t('account.language.title')}</h2>
+		<p class="mt-1 text-xs text-gray-500">{t('account.language.description')}</p>
+
+		{#if form?.languageMessage}
+			<div class="mt-3 rounded-lg px-4 py-3 text-sm {form.languageOk ? 'bg-green-100 text-green-800' : 'bg-red-50 text-red-700'}">
+				{form.languageMessage}
+			</div>
+		{/if}
+
+		<form
+			method="POST"
+			action="?/setLanguage"
+			use:enhance={() => async ({ update }) => {
+				// reset: false haelt die Auswahl; invalidateAll laedt die Seite in
+				// der neuen Sprache neu, sonst bliebe die alte stehen
+				await update({ reset: false });
+				await invalidateAll();
+			}}
+			class="mt-3 flex flex-wrap items-end gap-2"
+		>
+			<div class="min-w-0 flex-1">
+				<label for="locale" class="sr-only">{t('account.language.title')}</label>
+				<select
+					id="locale"
+					name="locale"
+					class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
+				>
+					<option value="" selected={!data.account?.locale}>
+						{t('account.language.system', { name: LOCALE_LABEL[data.systemLocale] })}
+					</option>
+					{#each LOCALES as locale (locale)}
+						<option value={locale} selected={data.account?.locale === locale}>{LOCALE_LABEL[locale]}</option>
+					{/each}
+				</select>
+			</div>
+			<button type="submit" class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+				{t('account.language.save')}
+			</button>
+		</form>
 	</div>
 
 	<!-- Passwort ändern -->
