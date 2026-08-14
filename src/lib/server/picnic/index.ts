@@ -172,6 +172,15 @@ export async function getCartQuantities(): Promise<Map<string, number>> {
 }
 
 /**
+ * Decorators der Lieferung — dort meldet Picnic nicht gelieferte Positionen
+ * (`ARTICLE_DELIVERY_ISSUES`). Das Feld fehlt in den Typen der `picnic-api`,
+ * deshalb hier einmal zentral herausgereicht statt an jeder Fundstelle gecastet.
+ */
+function deliveryDecorators(detail: unknown): unknown {
+	return (detail as { decorators?: unknown } | null)?.decorators;
+}
+
+/**
  * Bereits bestellte, aber noch nicht gelieferte Mengen je Produkt-ID — zusammen
  * mit dem Warenkorb der Abgleich für die Bestellvorschläge.
  *
@@ -196,7 +205,12 @@ export async function getOpenOrderQuantities(): Promise<Map<string, number>> {
 		const orders = (detail.orders ?? []).filter(
 			(order) => (order as { status?: string }).status !== 'CANCELLED'
 		);
-		for (const item of aggregateChecklist(orders)) {
+		// Einzelne stornierte Positionen ebenso: `aggregateChecklist` zieht sie
+		// anhand der Lieferungs-Decorators ab. Ohne das gälte ein Artikel, den
+		// Picnic gar nicht liefert, weiter als „unterwegs" und würde nie wieder
+		// vorgeschlagen.
+		for (const item of aggregateChecklist(orders, deliveryDecorators(detail))) {
+			if (item.quantity < 1) continue;
 			quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
 		}
 	}
@@ -235,7 +249,7 @@ export async function getRecentDeliveries(limit = 10): Promise<DeliverySummary[]
 export async function getDeliveryChecklist(deliveryId: string): Promise<DeliveryChecklistItem[]> {
 	await ensureLoggedIn();
 	const detail = await getClient().delivery.getDelivery(deliveryId);
-	return aggregateChecklist(detail.orders);
+	return aggregateChecklist(detail.orders, deliveryDecorators(detail));
 }
 
 export type OrderedProduct = {

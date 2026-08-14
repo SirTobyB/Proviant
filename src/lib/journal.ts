@@ -5,9 +5,9 @@
 
 import type { Translate } from '$lib/i18n';
 
-export type MovementType = 'in' | 'out' | 'move' | 'correction';
+export type MovementType = 'in' | 'out' | 'move' | 'correction' | 'missing';
 
-const TYPES: MovementType[] = ['in', 'out', 'move', 'correction'];
+const TYPES: MovementType[] = ['in', 'out', 'move', 'correction', 'missing'];
 const SOURCES = ['scan', 'inventur', 'lieferung', 'artikelliste', 'charge'];
 
 /** Unbekannte Art (z.B. aus einer neueren Version) unverändert zeigen. */
@@ -24,17 +24,20 @@ export function movementSourceLabel(source: string | null, t: Translate): string
 }
 
 /**
- * Mengenangabe je Buchungsart: Zu-/Abgänge mit Vorzeichen, Umlagerungen ohne
- * (der Gesamtbestand ändert sich nicht), reine MHD-Korrekturen ohne Zahl.
+ * Mengenangabe je Buchungsart: Zu-/Abgänge mit Vorzeichen, Umlagerungen und
+ * Fehlbestände ohne (beide ändern den Gesamtbestand nicht), reine
+ * MHD-Korrekturen ohne Zahl.
  */
 export function movementAmountLabel(type: string, quantity: number, t: Translate): string {
-	if (type === 'move') return `${Math.abs(quantity)}×`;
+	if (type === 'move' || type === 'missing') return `${Math.abs(quantity)}×`;
 	if (quantity === 0) return t('journal.bestBeforeOnly');
 	return `${quantity > 0 ? '+' : '−'}${Math.abs(quantity)}`;
 }
 
 /** Farbklasse passend zur Wirkung auf den Bestand. */
 export function movementAmountClass(type: string, quantity: number): string {
-	if (type === 'move' || quantity === 0) return 'text-gray-500';
+	// Fehlbestand ändert nichts am Bestand, ist aber auch keine Routine —
+	// deshalb neutral eingefärbt wie die Umlagerung, nicht grün/rot
+	if (type === 'move' || type === 'missing' || quantity === 0) return 'text-gray-500';
 	return quantity > 0 ? 'text-green-700' : 'text-amber-700';
 }

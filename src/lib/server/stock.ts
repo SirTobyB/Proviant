@@ -21,10 +21,13 @@ export type MovementSource = 'scan' | 'inventur' | 'lieferung' | 'artikelliste' 
  * damit die Zeile lesbar bleibt, wenn der Artikel später gelöscht wird.
  */
 function recordMovement(movement: {
-	type: 'in' | 'out' | 'move' | 'correction';
+	type: 'in' | 'out' | 'move' | 'correction' | 'missing';
 	source: MovementSource;
 	articleId: number;
-	/** Wirkung auf den Gesamtbestand (+/−); bei Umlagerung die umgelagerte Menge */
+	/**
+	 * Wirkung auf den Gesamtbestand (+/−); bei Umlagerung die umgelagerte Menge,
+	 * bei `missing` die fehlende Menge (ohne Bestandswirkung)
+	 */
 	quantity: number;
 	locationId: number | null;
 	fromLocationId?: number | null;
@@ -52,7 +55,12 @@ function recordMovement(movement: {
 		.run();
 }
 
-/** Bucht Gebinde ein; gleiche Kombination aus Lagerort und MHD wird zusammengefasst. */
+/**
+ * Bucht Gebinde ein; gleiche Kombination aus Lagerort und MHD wird zusammengefasst.
+ * Liefert die ID der betroffenen Charge zurück — nur damit lässt sich eine
+ * Buchung später punktgenau zurücknehmen (siehe `bookOutEntry`); FEFO würde
+ * beim Rücknehmen sonst irgendeine andere Charge treffen.
+ */
 export function bookIn(
 	articleId: number,
 	locationId: number,
@@ -60,8 +68,8 @@ export function bookIn(
 	bestBefore: string | null,
 	user: string | null,
 	source: MovementSource
-): void {
-	if (quantity < 1) return;
+): number | null {
+	if (quantity < 1) return null;
 
 	const existing = db
 		.select()
@@ -77,18 +85,90 @@ export function bookIn(
 		)
 		.get();
 
+	let entryId: number | null;
 	if (existing) {
 		db.update(stockEntries)
 			.set({ quantity: existing.quantity + quantity, ...auditEdit(user) })
 			.where(eq(stockEntries.id, existing.id))
 			.run();
+		entryId = existing.id;
 	} else {
-		db.insert(stockEntries)
+		const inserted = db
+			.insert(stockEntries)
 			.values({ articleId, locationId, quantity, bestBefore, ...auditNew(user) })
-			.run();
+			.returning({ id: stockEntries.id })
+			.get();
+		entryId = inserted?.id ?? null;
 	}
 
 	recordMovement({ type: 'in', source, articleId, quantity, locationId, bestBefore, user });
+	return entryId;
+}
+
+/**
+ * Nimmt eine Buchung auf **genau der angegebenen Charge** zurück (Gegenstück zu
+ * `bookIn`). Bewusst ohne FEFO: Wer eine gerade getätigte Buchung korrigiert,
+ * meint diese eine Charge — FEFO würde stattdessen die Charge mit dem nächsten
+ * MHD anfassen und im Journal einen falschen Lagerplatz hinterlassen.
+ * Liefert die tatsächlich ausgebuchte Anzahl und den betroffenen Lagerort
+ * (Anzahl 0, wenn die Charge zwischenzeitlich verschwunden ist).
+ */
+export function bookOutEntry(
+	entryId: number,
+	quantity: number,
+	user: string | null,
+	source: MovementSource
+): { taken: number; locationId: number | null } {
+	if (quantity < 1) return { taken: 0, locationId: null };
+	const entry = db.select().from(stockEntries).where(eq(stockEntries.id, entryId)).get();
+	if (!entry) return { taken: 0, locationId: null };
+
+	const take = Math.min(entry.quantity, quantity);
+	if (take === entry.quantity) {
+		db.delete(stockEntries).where(eq(stockEntries.id, entry.id)).run();
+	} else {
+		db.update(stockEntries)
+			.set({ quantity: entry.quantity - take, ...auditEdit(user) })
+			.where(eq(stockEntries.id, entry.id))
+			.run();
+	}
+
+	recordMovement({
+		type: 'out',
+		source,
+		articleId: entry.articleId,
+		quantity: -take,
+		locationId: entry.locationId,
+		bestBefore: entry.bestBefore,
+		user
+	});
+	return { taken: take, locationId: entry.locationId };
+}
+
+/**
+ * Hält einen Fehlbestand fest: Position war bestellt, kam aber nicht an.
+ *
+ * Schreibt **nur** ins Journal — es entsteht ja gerade kein Bestand. Ohne diese
+ * Zeile wäre eine nicht gelieferte Position später nirgends nachweisbar: Das
+ * Journal zeigt nur, was gebucht wurde, und das ist hier definitionsgemäß
+ * nichts.
+ */
+export function recordMissing(
+	articleId: number,
+	quantity: number,
+	user: string | null,
+	source: MovementSource
+): void {
+	if (quantity < 1) return;
+	recordMovement({
+		type: 'missing',
+		source,
+		articleId,
+		quantity,
+		locationId: null,
+		bestBefore: null,
+		user
+	});
 }
 
 /**

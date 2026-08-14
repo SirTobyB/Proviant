@@ -8,6 +8,28 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Von Picnic stornierte Positionen werden erkannt.** Meldet Picnic, dass ein
+  Artikel nicht mitkommt (nicht vorrätig, Qualität, nicht verladen), zählt er
+  beim Lieferungs-Check nicht mehr zum Soll und steht mit Grund als „nicht
+  geliefert" in der Liste. Auf der Bestellseite gilt er nicht länger als
+  „unterwegs" und wird wieder zum Nachbestellen vorgeschlagen — vorher blieb er
+  bis zur nächsten Lieferung unsichtbar, obwohl er nie ankam.
+- **Abschluss der Lieferungsprüfung mit Fehlbestand.** Fehlt am Ende etwas,
+  lässt sich die Prüfung jetzt bewusst abschließen: Die fehlenden Gebinde
+  werden aufgelistet und nach Bestätigung als neue Buchungsart „Nicht
+  geliefert" ins Journal geschrieben (ohne Bestandswirkung). Vorher endete eine
+  unvollständige Lieferung ohne jeden Abschluss.
+
+### Behoben
+
+- **Die −-Taste beim Lieferungs-Check bucht wieder aus.** Sie korrigierte nur
+  den Zähler auf der Seite, während die mit + eingebuchte Menge im Lager stehen
+  blieb — die Seite zeigte „0 geprüft", der Bestand war trotzdem da.
+  Zurückgenommen wird genau die zuvor gebuchte Charge (nicht per FEFO
+  irgendeine andere), damit im Journal der richtige Lagerplatz steht.
+
 ## [2.0.0] - 2026-08-14
 
 Die App heißt ab dieser Fassung **Proviant**. Für bestehende Installationen ist

@@ -289,7 +289,24 @@ export const en = {
 	'delivery.addArticle': '+ Item',
 	'delivery.checkedOf': 'checked {checked}/{total}',
 	'delivery.hint':
-		'Scanning and the + button book into stock (missing items are created from Picnic automatically). The − button only corrects the counter and books nothing out — correct stock in the storage location or via the stocktake.',
+		'Scanning and the + button book into stock (missing items are created from Picnic automatically). The − button takes the last booking back and books it out again.',
+
+	// Von Picnic storniert
+	'delivery.cancelled': 'not delivered',
+	'delivery.cancelledNote': '{n}× cancelled by Picnic · {reason}',
+	'delivery.cancelReason.PRODUCT_NOT_SHIPPED': 'not shipped',
+	'delivery.cancelReason.PRODUCT_ABSENT': 'out of stock',
+	'delivery.cancelReason.PRODUCT_LOW_QUALITY': 'quality not good enough',
+	'delivery.cancelReason.unknown': 'no reason given',
+
+	// Abschluss mit Fehlbestand
+	'delivery.finishOpen': 'Finish check — {n} still open',
+	'delivery.missingExplain':
+		'These packs were ordered but did not arrive. Confirming records them in the journal as missing; no stock is booked.',
+	'delivery.missingConfirm': 'Confirm shortfall',
+	'delivery.doneWithMissing': 'Delivery checked — shortfall recorded',
+	'delivery.missingSummary_one': '{n} pack missing',
+	'delivery.missingSummary_other': '{n} packs missing',
 	'delivery.toast.created': '“{name}” created as an item',
 	'delivery.toast.importFailed': 'Import failed',
 	'delivery.toast.unknownBarcode': 'Unknown barcode {ean}',
@@ -303,6 +320,11 @@ export const en = {
 	'delivery.toast.bulkFailed': 'Bulk confirmation failed',
 	'delivery.toast.bookedOne': '“{name}” booked in 1× ({location})',
 	'delivery.toast.createdSuffix': ' · item newly created',
+	'delivery.toast.unbooked': '“{name}” booked out again ({location})',
+	'delivery.toast.unbookedCounterOnly': '“{name}”: counter corrected, nothing was booked out',
+	'delivery.toast.unbookFailed': 'Could not take the booking back',
+	'delivery.toast.missingRecorded': 'Shortfall recorded — {packs} noted as missing',
+	'delivery.toast.missingFailed': 'Could not record the shortfall',
 
 	'journal.title': 'Stock journal',
 	'journal.subtitle': 'Every change to stock with time, user and location',
@@ -321,6 +343,7 @@ export const en = {
 	'journal.type.out': 'Removal',
 	'journal.type.move': 'Relocation',
 	'journal.type.correction': 'Correction',
+	'journal.type.missing': 'Not delivered',
 	'journal.source.scan': 'Scanner',
 	'journal.source.inventur': 'Stocktake',
 	'journal.source.lieferung': 'Delivery',

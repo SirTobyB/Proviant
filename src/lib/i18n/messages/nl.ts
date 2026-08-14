@@ -281,7 +281,24 @@ export const nl: Messages = {
 	'delivery.addArticle': '+ Artikel',
 	'delivery.checkedOf': 'gecontroleerd {checked}/{total}',
 	'delivery.hint':
-		'Scannen en de +-knop boeken in de voorraad (ontbrekende artikelen worden daarbij automatisch uit Picnic aangemaakt). De −-knop corrigeert alleen de teller en boekt niets uit — corrigeer de voorraad via de voorraadlocatie of de inventarisatie.',
+		'Scannen en de +-knop boeken in de voorraad (ontbrekende artikelen worden daarbij automatisch uit Picnic aangemaakt). De −-knop draait de laatste boeking terug en boekt die weer uit.',
+
+	// Von Picnic storniert
+	'delivery.cancelled': 'niet geleverd',
+	'delivery.cancelledNote': '{n}× door Picnic geannuleerd · {reason}',
+	'delivery.cancelReason.PRODUCT_NOT_SHIPPED': 'niet meegeleverd',
+	'delivery.cancelReason.PRODUCT_ABSENT': 'niet op voorraad',
+	'delivery.cancelReason.PRODUCT_LOW_QUALITY': 'kwaliteit onvoldoende',
+	'delivery.cancelReason.unknown': 'geen reden opgegeven',
+
+	// Abschluss mit Fehlbestand
+	'delivery.finishOpen': 'Controle afsluiten — {n} nog open',
+	'delivery.missingExplain':
+		'Deze verpakkingen waren besteld maar zijn niet aangekomen. Bij bevestigen worden ze als ontbrekend in het journaal vastgelegd; er wordt geen voorraad geboekt.',
+	'delivery.missingConfirm': 'Tekort bevestigen',
+	'delivery.doneWithMissing': 'Levering gecontroleerd — tekort vastgelegd',
+	'delivery.missingSummary_one': '{n} verpakking ontbreekt',
+	'delivery.missingSummary_other': '{n} verpakkingen ontbreken',
 	'delivery.toast.created': '„{name}" als artikel aangemaakt',
 	'delivery.toast.importFailed': 'Importeren mislukt',
 	'delivery.toast.unknownBarcode': 'Onbekende barcode {ean}',
@@ -295,6 +312,11 @@ export const nl: Messages = {
 	'delivery.toast.bulkFailed': 'Bulkbevestiging mislukt',
 	'delivery.toast.bookedOne': '„{name}" 1× ingeboekt ({location})',
 	'delivery.toast.createdSuffix': ' · artikel nieuw aangemaakt',
+	'delivery.toast.unbooked': '„{name}" weer uitgeboekt ({location})',
+	'delivery.toast.unbookedCounterOnly': '„{name}": teller gecorrigeerd, er is niets uitgeboekt',
+	'delivery.toast.unbookFailed': 'Boeking kon niet worden teruggedraaid',
+	'delivery.toast.missingRecorded': 'Tekort vastgelegd — {packs} als ontbrekend genoteerd',
+	'delivery.toast.missingFailed': 'Tekort kon niet worden vastgelegd',
 
 	'journal.title': 'Boekingsjournaal',
 	'journal.subtitle': 'Elke voorraadwijziging met tijdstip, gebruiker en locatie',
@@ -313,6 +335,7 @@ export const nl: Messages = {
 	'journal.type.out': 'Afboeking',
 	'journal.type.move': 'Verplaatsing',
 	'journal.type.correction': 'Correctie',
+	'journal.type.missing': 'Niet geleverd',
 	'journal.source.scan': 'Scanner',
 	'journal.source.inventur': 'Inventarisatie',
 	'journal.source.lieferung': 'Levering',

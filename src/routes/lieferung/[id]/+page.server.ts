@@ -4,7 +4,7 @@ import { articles } from '$lib/server/db/schema';
 import { activeLocation, activeLocations } from '$lib/server/locations';
 import { getConnectionState, getDeliveryChecklist } from '$lib/server/picnic';
 import { importArticleFromPicnic } from '$lib/server/articleImport';
-import { bookIn } from '$lib/server/stock';
+import { bookIn, bookOutEntry, recordMissing } from '$lib/server/stock';
 import { eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -89,8 +89,16 @@ export const actions: Actions = {
 				? bestBeforeRaw
 				: null;
 
-		bookIn(article.id, locationId, quantity, bestBefore, locals.user?.username ?? null, 'lieferung');
-		return { booked: true, articleId, quantity };
+		const entryId = bookIn(
+			article.id,
+			locationId,
+			quantity,
+			bestBefore,
+			locals.user?.username ?? null,
+			'lieferung'
+		);
+		// entryId zurückgeben: nur damit kann "−" genau diese Buchung zurücknehmen
+		return { booked: true, articleId, quantity, entryId };
 	},
 
 	// Sichtprüfung: mehrere offene Positionen auf einmal einbuchen.
@@ -211,8 +219,69 @@ export const actions: Actions = {
 		const location = activeLocation(locationId);
 		if (!location) return fail(400, { message: t('msg.locationNotFound') });
 
-		bookIn(articleId, locationId, 1, null, user, 'lieferung');
-		return { bookedOne: productId, created, locationName: location.name };
+		const entryId = bookIn(articleId, locationId, 1, null, user, 'lieferung');
+		return { bookedOne: productId, created, locationName: location.name, entryId };
+	},
+
+	// Gegenstück zu bookOne/book ("−"-Taste): nimmt genau die zuletzt auf dieser
+	// Seite erzeugte Buchung zurück. Bewusst über die Chargen-ID statt über FEFO —
+	// sonst träfe die Rücknahme irgendeine ältere Charge desselben Artikels und
+	// das Journal wiese einen Lagerplatz aus, an dem nie etwas passiert ist.
+	unbookOne: async ({ request, locals }) => {
+		const t = translator(locals.locale);
+		const formData = await request.formData();
+		const entryId = Number(formData.get('entryId'));
+		if (!Number.isInteger(entryId)) return fail(400, { message: t('msg.invalidQuantity') });
+
+		const { taken, locationId } = bookOutEntry(
+			entryId,
+			1,
+			locals.user?.username ?? null,
+			'lieferung'
+		);
+		// Charge zwischenzeitlich anderweitig verbraucht: kein Fehler, aber auch
+		// keine Erfolgsmeldung — der Zähler wird trotzdem korrigiert
+		const location = locationId != null ? activeLocation(locationId) : null;
+		return { unbooked: true, taken, locationName: location?.name ?? '' };
+	},
+
+	// Abschluss der Prüfung mit Fehlbestand: hält fest, was bestellt war, aber
+	// nicht ankam. Schreibt ausschließlich ins Journal — es entsteht kein Bestand.
+	confirmMissing: async ({ request, locals }) => {
+		const t = translator(locals.locale);
+		const formData = await request.formData();
+		let requested: { productId: string; quantity: number }[] = [];
+		try {
+			const raw = JSON.parse(String(formData.get('items') ?? '[]'));
+			if (Array.isArray(raw)) requested = raw;
+		} catch {
+			return fail(400, { message: t('msg.invalidLineList') });
+		}
+
+		const linked = db
+			.select({ id: articles.id, picnicId: articles.picnicId })
+			.from(articles)
+			.all();
+		const byPicnicId = new Map(linked.filter((a) => a.picnicId).map((a) => [a.picnicId!, a]));
+
+		const user = locals.user?.username ?? null;
+		let recorded = 0;
+		// Positionen ohne Artikel im Stamm werden übersprungen statt angelegt: Ein
+		// Artikel, der nie geliefert wurde, soll nicht durch die Fehlmeldung
+		// entstehen.
+		const unlinked: string[] = [];
+		for (const req of requested) {
+			const qty = Number(req.quantity);
+			if (!Number.isInteger(qty) || qty < 1) continue;
+			const article = byPicnicId.get(String(req.productId));
+			if (!article) {
+				unlinked.push(String(req.productId));
+				continue;
+			}
+			recordMissing(article.id, qty, user, 'lieferung');
+			recorded += qty;
+		}
+		return { missingRecorded: true, recorded, unlinked };
 	},
 
 	// Nicht verknüpfte Lieferposition direkt als Artikel importieren

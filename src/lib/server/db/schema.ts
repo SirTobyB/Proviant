@@ -246,8 +246,11 @@ export const stockMovements = sqliteTable('stock_movements', {
 		.default(sql`(unixepoch())`),
 	/** Benutzername als Text (kein FK) — wie bei den Audit-Feldern */
 	bookedBy: text('booked_by'),
-	/** in = Zugang, out = Abgang, move = Umlagerung, correction = Chargen-Korrektur */
-	type: text('type', { enum: ['in', 'out', 'move', 'correction'] }).notNull(),
+	/**
+	 * in = Zugang, out = Abgang, move = Umlagerung, correction = Chargen-Korrektur,
+	 * missing = bestellt, aber nicht geliefert (ohne Bestandswirkung)
+	 */
+	type: text('type', { enum: ['in', 'out', 'move', 'correction', 'missing'] }).notNull(),
 	/** Woher die Buchung kam: scan | inventur | lieferung | artikelliste | charge */
 	source: text('source'),
 	/**

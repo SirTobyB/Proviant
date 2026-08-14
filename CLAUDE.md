@@ -104,6 +104,13 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   `updateStockEntryFromForm`, `moveStockEntryFromForm`) nimmt dafür einen
   `source` (`scan` | `inventur` | `lieferung` | `artikelliste` | `charge`) —
   ohne den wäre im Journal nicht erkennbar, woher eine Buchung kam.
+  Die Buchungsart `missing` (bestellt, aber nicht geliefert) schreibt
+  **ausschließlich** ins Journal — Bestand entsteht dabei keiner, sonst wäre
+  ein Fehlbestand nirgends nachweisbar. Rücknahmen einer gerade getätigten
+  Buchung laufen über `bookOutEntry` (Charge per ID) statt über `bookOut`:
+  FEFO träfe sonst irgendeine andere Charge und das Journal wiese einen
+  Lagerplatz aus, an dem nie etwas passiert ist. Deshalb gibt `bookIn` die
+  Chargen-ID zurück.
   `bookOut` schreibt **je verbrauchter Charge eine Zeile**, weil FEFO über
   mehrere Lagerorte laufen kann und „welcher Lagerplatz?" sonst nicht ehrlich
   zu beantworten wäre. Der Artikelname liegt als Schnappschuss in der Zeile
@@ -172,6 +179,19 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     kommen erst per `getDelivery(id)`. Offene Lieferungen deshalb per
     Ausschluss bestimmen (nicht `COMPLETED`/`CANCELLED`) und je Lieferung
     einzeln nachladen; auch Teilbestellungen können `CANCELLED` sein.
+  - **Storno einzelner Positionen steht an der Lieferung, nicht an der
+    Position:** `delivery.decorators` enthält einen `ARTICLE_DELIVERY_ISSUES`-
+    Decorator (`issues[] = { article_id, quantity, reason.type, resolution.type,
+    price }`, Gründe u.a. `PRODUCT_NOT_SHIPPED`, `PRODUCT_ABSENT`,
+    `PRODUCT_LOW_QUALITY`). Die Bestellposition selbst sieht dagegen völlig
+    unauffällig aus — voller `QUANTITY`-Decorator, voller Preis. Wer nur
+    `orders[]` liest, hält eine nie gelieferte Position für erwartet (genau das
+    war der Fall: Soll-Liste verlangte sie, und die Bestellseite zählte sie als
+    „unterwegs", wodurch der Nachbestell-Vorschlag ausblieb). Das Feld fehlt in
+    den Typen der `picnic-api` (dort steht nur ein anders geformtes
+    `ARTICLE_DELIVERY_FAILURES`) — deshalb `deliveryIssues()` in
+    `picnic/checklist.ts` **defensiv** halten: im Zweifel nichts melden, sonst
+    verschwindet eine bestellte Position fälschlich aus der Prüfung.
   - **Unbekannte Produkt-IDs quittiert Picnic ohne Fehler** — es landet
     nichts im Warenkorb, die App meldete trotzdem Erfolg. Nach dem Befüllen
     deshalb gegenprüfen (siehe `notInCart` auf der Bestellseite). Dasselbe

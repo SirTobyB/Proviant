@@ -280,7 +280,24 @@ export const de: Messages = {
 	'delivery.addArticle': '+ Artikel',
 	'delivery.checkedOf': 'geprüft {checked}/{total}',
 	'delivery.hint':
-		'Scannen und die +-Taste buchen ins Lager ein (fehlende Artikel werden dabei automatisch aus Picnic angelegt). Die −-Taste korrigiert nur den Zähler, bucht aber nichts aus — Bestandskorrekturen im Lager oder über die Inventur vornehmen.',
+		'Scannen und die +-Taste buchen ins Lager ein (fehlende Artikel werden dabei automatisch aus Picnic angelegt). Die −-Taste nimmt die letzte Buchung zurück und bucht sie wieder aus.',
+
+	// Von Picnic storniert
+	'delivery.cancelled': 'nicht geliefert',
+	'delivery.cancelledNote': '{n}× von Picnic storniert · {reason}',
+	'delivery.cancelReason.PRODUCT_NOT_SHIPPED': 'nicht mitgeliefert',
+	'delivery.cancelReason.PRODUCT_ABSENT': 'nicht vorrätig',
+	'delivery.cancelReason.PRODUCT_LOW_QUALITY': 'Qualität nicht ausreichend',
+	'delivery.cancelReason.unknown': 'ohne Angabe',
+
+	// Abschluss mit Fehlbestand
+	'delivery.finishOpen': 'Prüfung abschließen — {n} noch offen',
+	'delivery.missingExplain':
+		'Diese Gebinde waren bestellt, kamen aber nicht an. Beim Bestätigen werden sie als Fehlbestand ins Journal geschrieben; es wird kein Bestand gebucht.',
+	'delivery.missingConfirm': 'Fehlbestand bestätigen',
+	'delivery.doneWithMissing': 'Lieferung geprüft — Fehlbestand vermerkt',
+	'delivery.missingSummary_one': '{n} Gebinde fehlt',
+	'delivery.missingSummary_other': '{n} Gebinde fehlen',
 	'delivery.toast.created': '„{name}" als Artikel angelegt',
 	'delivery.toast.importFailed': 'Import fehlgeschlagen',
 	'delivery.toast.unknownBarcode': 'Unbekannter Barcode {ean}',
@@ -294,6 +311,11 @@ export const de: Messages = {
 	'delivery.toast.bulkFailed': 'Sammelbestätigung fehlgeschlagen',
 	'delivery.toast.bookedOne': '„{name}" 1× eingebucht ({location})',
 	'delivery.toast.createdSuffix': ' · Artikel neu angelegt',
+	'delivery.toast.unbooked': '„{name}" wieder ausgebucht ({location})',
+	'delivery.toast.unbookedCounterOnly': '„{name}": Zähler korrigiert, es wurde nichts ausgebucht',
+	'delivery.toast.unbookFailed': 'Buchung konnte nicht zurückgenommen werden',
+	'delivery.toast.missingRecorded': 'Fehlbestand vermerkt — {packs} als fehlend erfasst',
+	'delivery.toast.missingFailed': 'Fehlbestand konnte nicht erfasst werden',
 
 	'journal.title': 'Buchungsjournal',
 	'journal.subtitle': 'Jede Bestandsveränderung mit Zeitpunkt, Benutzer und Lagerort',
@@ -312,6 +334,7 @@ export const de: Messages = {
 	'journal.type.out': 'Abgang',
 	'journal.type.move': 'Umlagerung',
 	'journal.type.correction': 'Korrektur',
+	'journal.type.missing': 'Nicht geliefert',
 	'journal.source.scan': 'Scanner',
 	'journal.source.inventur': 'Inventur',
 	'journal.source.lieferung': 'Lieferung',

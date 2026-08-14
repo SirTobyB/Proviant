@@ -43,6 +43,24 @@
 		Object.fromEntries(data.items.map((i) => [i.productId, 0]))
 	);
 
+	// Chargen, die diese Seite selbst eingebucht hat — je Produkt als Stapel.
+	// Nur damit lässt sich "−" ehrlich beantworten: Es nimmt die jeweils letzte
+	// eigene Buchung zurück, statt per FEFO eine beliebige Charge zu treffen.
+	let bookedEntries = $state<Record<string, number[]>>({});
+
+	function rememberEntry(productId: string, entryId: unknown) {
+		if (typeof entryId !== 'number') return;
+		(bookedEntries[productId] ??= []).push(entryId);
+	}
+
+	/** Grund einer Picnic-Stornierung; unbekannte Codes nicht erfinden. */
+	function cancelReasonText(reason: string | null): string {
+		if (reason === 'PRODUCT_NOT_SHIPPED') return t('delivery.cancelReason.PRODUCT_NOT_SHIPPED');
+		if (reason === 'PRODUCT_ABSENT') return t('delivery.cancelReason.PRODUCT_ABSENT');
+		if (reason === 'PRODUCT_LOW_QUALITY') return t('delivery.cancelReason.PRODUCT_LOW_QUALITY');
+		return t('delivery.cancelReason.unknown');
+	}
+
 	// Scan-Bestätigung: matched item wartet auf Einbuchen
 	type Pending = { item: Item; locationId: string; bestBefore: string };
 	let pending = $state<Pending | null>(null);
@@ -58,9 +76,25 @@
 	let bulkLocation = $state(data.locations[0] ? String(data.locations[0].id) : '');
 	const openCount = $derived(data.items.filter((i) => (checked[i.productId] ?? 0) < i.quantity).length);
 
+	// Soll = bestellt abzüglich der von Picnic stornierten Gebinde: Was gar nicht
+	// erst geliefert wird, darf die Prüfung nicht offen halten.
 	const totalExpected = $derived(data.items.reduce((sum, i) => sum + i.quantity, 0));
 	const totalChecked = $derived(Object.values(checked).reduce((sum, n) => sum + n, 0));
-	const allDone = $derived(totalExpected > 0 && data.items.every((i) => (checked[i.productId] ?? 0) >= i.quantity));
+	const allDone = $derived(
+		data.items.length > 0 && data.items.every((i) => (checked[i.productId] ?? 0) >= i.quantity)
+	);
+
+	// Abschluss mit Fehlbestand: was bestellt war, aber nicht angekommen ist
+	let showMissing = $state(false);
+	let missingConfirmed = $state(false);
+	let recordingMissing = $state(false);
+	const missingItems = $derived(
+		data.items
+			.map((i) => ({ item: i, quantity: i.quantity - (checked[i.productId] ?? 0) }))
+			.filter((m) => m.quantity > 0)
+	);
+	const totalMissing = $derived(missingItems.reduce((sum, m) => sum + m.quantity, 0));
+	const cancelledItems = $derived(data.items.filter((i) => i.cancelledQuantity > 0));
 
 	function showToast(message: string, kind: 'ok' | 'warn' = 'ok') {
 		toast = message;
@@ -118,6 +152,7 @@
 		const result = deserialize(await response.text());
 		if (result.type === 'success') {
 			checked[item.productId] = (checked[item.productId] ?? 0) + 1;
+			rememberEntry(item.productId, (result.data as { entryId?: number }).entryId);
 			showToast(t('delivery.toast.booked', { name: item.name, checked: checked[item.productId], total: item.quantity }));
 			resetScanner();
 		} else {
@@ -161,10 +196,65 @@
 		}
 	}
 
-	// "−": nur den Zähler korrigieren (bucht NICHT aus)
-	function bump(item: Item, delta: number) {
-		const next = Math.max(0, Math.min(item.quantity, (checked[item.productId] ?? 0) + delta));
-		checked[item.productId] = next;
+	// "−": nimmt die letzte eigene Buchung dieser Position zurück und bucht sie
+	// wieder aus. Nur den Zähler zu senken wäre die gefährlichere Variante: Der
+	// Bestand bliebe stehen, obwohl die Seite „0 geprüft" anzeigt.
+	let unbookingProduct = $state<string | null>(null);
+	async function unbook(item: Item) {
+		if (unbookingProduct || (checked[item.productId] ?? 0) === 0) return;
+		const stack = bookedEntries[item.productId] ?? [];
+		const entryId = stack.at(-1);
+
+		// Kein eigener Eintrag (z.B. Zähler kam aus der Sammelbestätigung vor einem
+		// Neuladen): dann nur den Zähler korrigieren und das auch so sagen
+		if (entryId === undefined) {
+			checked[item.productId] = Math.max(0, (checked[item.productId] ?? 0) - 1);
+			showToast(t('delivery.toast.unbookedCounterOnly', { name: item.name }), 'warn');
+			return;
+		}
+
+		unbookingProduct = item.productId;
+		const body = new FormData();
+		body.set('entryId', String(entryId));
+		const response = await fetch('?/unbookOne', { method: 'POST', body });
+		const result = deserialize(await response.text());
+		unbookingProduct = null;
+		if (result.type === 'success') {
+			stack.pop();
+			checked[item.productId] = Math.max(0, (checked[item.productId] ?? 0) - 1);
+			const data_ = result.data as { taken: number; locationName: string };
+			showToast(
+				data_.taken > 0
+					? t('delivery.toast.unbooked', { name: item.name, location: data_.locationName })
+					: t('delivery.toast.unbookedCounterOnly', { name: item.name }),
+				data_.taken > 0 ? 'ok' : 'warn'
+			);
+			await invalidateAll();
+		} else {
+			showToast(t('delivery.toast.unbookFailed'), 'warn');
+		}
+	}
+
+	// Abschluss der Prüfung mit Fehlbestand: schreibt je fehlender Position eine
+	// Journalzeile (Bestand entsteht dabei bewusst keiner)
+	async function confirmMissing() {
+		recordingMissing = true;
+		const body = new FormData();
+		body.set(
+			'items',
+			JSON.stringify(missingItems.map((m) => ({ productId: m.item.productId, quantity: m.quantity })))
+		);
+		const response = await fetch('?/confirmMissing', { method: 'POST', body });
+		const result = deserialize(await response.text());
+		recordingMissing = false;
+		if (result.type === 'success') {
+			const recorded = (result.data as { recorded: number }).recorded;
+			missingConfirmed = true;
+			showMissing = false;
+			showToast(t('delivery.toast.missingRecorded', { packs: t('common.packs', { n: recorded }) }));
+		} else {
+			showToast(t('delivery.toast.missingFailed'), 'warn');
+		}
 	}
 
 	// "+": bucht 1 Gebinde wirklich ein (Standard-Lagerort des Artikels, sonst
@@ -184,7 +274,8 @@
 		bookingProduct = null;
 		if (result.type === 'success') {
 			checked[item.productId] = (checked[item.productId] ?? 0) + 1;
-			const data_ = result.data as { created: boolean; locationName: string };
+			const data_ = result.data as { created: boolean; locationName: string; entryId?: number };
+			rememberEntry(item.productId, data_.entryId);
 			const created = data_.created ? t('delivery.toast.createdSuffix') : '';
 			showToast(t('delivery.toast.bookedOne', { name: item.name, location: data_.locationName }) + created);
 			await invalidateAll();
@@ -216,9 +307,24 @@
 		<div class="h-full rounded-full bg-green-600 transition-all" style={`width: ${totalExpected ? (totalChecked / totalExpected) * 100 : 0}%`}></div>
 	</div>
 
+	<!-- Von Picnic storniert: gehört nicht ins Soll, muss aber erklärt werden -->
+	{#if cancelledItems.length > 0}
+		<div class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+			{#each cancelledItems as item (item.productId)}
+				<div>
+					<span class="font-medium">{item.name}</span> ·
+					{t('delivery.cancelledNote', {
+						n: item.cancelledQuantity,
+						reason: cancelReasonText(item.cancelReason)
+					})}
+				</div>
+			{/each}
+		</div>
+	{/if}
+
 	<!-- Sichtprüfung: alles auf einmal bestätigen -->
-	{#if !allDone}
-		{#if !showBulk}
+	{#if !allDone && !missingConfirmed}
+		{#if !showBulk && !showMissing}
 			<button
 				type="button"
 				onclick={() => (showBulk = true)}
@@ -226,6 +332,40 @@
 			>
 				{t('delivery.bulkOpen', { n: openCount })}
 			</button>
+			<!-- Abschluss trotz Fehlbestand: ohne das bliebe die Prüfung ewig offen,
+			     wenn Picnic etwas schuldig geblieben ist -->
+			<button
+				type="button"
+				onclick={() => (showMissing = true)}
+				class="mt-2 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+			>
+				{t('delivery.finishOpen', { n: totalMissing })}
+			</button>
+		{:else if showMissing}
+			<div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+				<p class="text-sm text-amber-900">{t('delivery.missingExplain')}</p>
+				<ul class="mt-3 space-y-1 text-sm text-amber-900">
+					{#each missingItems as missing (missing.item.productId)}
+						<li class="flex items-baseline justify-between gap-2">
+							<span class="min-w-0 truncate">{missing.item.name}</span>
+							<span class="shrink-0 font-semibold">{missing.quantity}×</span>
+						</li>
+					{/each}
+				</ul>
+				<div class="mt-3 flex gap-2">
+					<button
+						type="button"
+						onclick={confirmMissing}
+						disabled={recordingMissing}
+						class="flex-1 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+					>
+						{t('delivery.missingConfirm')}
+					</button>
+					<button type="button" onclick={() => (showMissing = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+						{t('form.cancel')}
+					</button>
+				</div>
+			</div>
 		{:else}
 			<div class="mt-3 rounded-xl border border-gray-200 bg-white p-4">
 				<p class="text-sm text-gray-700">
@@ -311,11 +451,17 @@
 				</button>
 			</div>
 		</div>
-	{:else if allDone}
-		<div class="rounded-xl border border-green-200 bg-green-50 p-6 text-center">
-			<div class="text-3xl">✅</div>
-			<p class="mt-2 font-semibold text-green-800">{t('delivery.done')}</p>
-			<a href="/" class="mt-3 inline-block rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">{t('delivery.toStock')}</a>
+	{:else if allDone || missingConfirmed}
+		{@const withMissing = missingConfirmed && !allDone}
+		<div class="rounded-xl border p-6 text-center {withMissing ? 'border-amber-200 bg-amber-50' : 'border-green-200 bg-green-50'}">
+			<div class="text-3xl">{withMissing ? '📋' : '✅'}</div>
+			<p class="mt-2 font-semibold {withMissing ? 'text-amber-800' : 'text-green-800'}">
+				{withMissing ? t('delivery.doneWithMissing') : t('delivery.done')}
+			</p>
+			{#if withMissing}
+				<p class="mt-1 text-sm text-amber-700">{t('delivery.missingSummary', { n: totalMissing })}</p>
+			{/if}
+			<a href="/" class="mt-3 inline-block rounded-lg px-4 py-2 text-sm font-semibold text-white {withMissing ? 'bg-amber-600 hover:bg-amber-700' : 'bg-green-600 hover:bg-green-700'}">{t('delivery.toStock')}</a>
 		</div>
 	{:else}
 		{#key scannerKey}
@@ -339,7 +485,12 @@
 					{/if}
 					<div class="min-w-0 flex-1">
 						<div class="truncate text-sm font-medium hover:underline {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
-						<div class="text-xs text-gray-500">{item.unitQuantity}</div>
+						<div class="text-xs text-gray-500">
+							{item.unitQuantity}
+							{#if item.cancelledQuantity > 0}
+								· <span class="text-amber-600">{t('delivery.cancelled')}</span>
+							{/if}
+						</div>
 					</div>
 				</a>
 			{:else}
@@ -352,6 +503,9 @@
 					<div class="truncate text-sm font-medium {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
 					<div class="text-xs text-gray-500">
 						{item.unitQuantity}
+						{#if item.cancelledQuantity > 0}
+							· <span class="text-amber-600">{t('delivery.cancelled')}</span>
+						{/if}
 						· <span class="text-amber-600">{t('delivery.notLinked')}</span>
 						· <button
 								type="button"
@@ -363,7 +517,7 @@
 				</div>
 			{/if}
 			<div class="flex shrink-0 items-center gap-1.5">
-				<button type="button" onclick={() => bump(item, -1)} disabled={(checked[item.productId] ?? 0) === 0} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">−</button>
+				<button type="button" onclick={() => unbook(item)} disabled={(checked[item.productId] ?? 0) === 0 || unbookingProduct !== null} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">−</button>
 				<span class="w-10 text-center text-sm font-semibold {done ? 'text-green-700' : 'text-gray-700'}">{checked[item.productId] ?? 0}/{item.quantity}</span>
 				<button type="button" onclick={() => bookAndCheck(item)} disabled={done || bookingProduct !== null} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">+</button>
 			</div>
