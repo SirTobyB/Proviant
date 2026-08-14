@@ -452,6 +452,8 @@ export const de: Messages = {
 	'msg.locationMoved': '„{name}" verschoben',
 	'msg.credentialsRequired': 'Benutzername und Passwort erforderlich',
 	'msg.credentialsWrong': 'Benutzername oder Passwort falsch',
+	'msg.loginLocked_one': 'Zu viele Fehlversuche. Bitte in {n} Minute erneut versuchen.',
+	'msg.loginLocked_other': 'Zu viele Fehlversuche. Bitte in {n} Minuten erneut versuchen.',
 	'msg.userNotFound': 'Benutzer nicht gefunden',
 	'msg.userExists': 'Benutzer „{name}" existiert bereits',
 	'msg.usernameRules': 'Benutzername: min. 3 Zeichen, nur Buchstaben/Zahlen/._-',

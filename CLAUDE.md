@@ -176,6 +176,16 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     nichts im Warenkorb, die App meldete trotzdem Erfolg. Nach dem Befüllen
     deshalb gegenprüfen (siehe `notInCart` auf der Bestellseite). Dasselbe
     Produkt existiert im Katalog teils unter mehreren IDs.
+- **Anmeldung:** Fehlversuche zählt `login_attempts` **je eingegebenem
+  Benutzernamen**, auch bei unbekannten — deshalb hat die Tabelle bewusst
+  *keinen* Fremdschlüssel auf `users`: sonst wäre am Verhalten ablesbar, welche
+  Namen existieren. Aus demselben Grund rechnet `authenticate` auch bei
+  unbekanntem Namen einen Wegwerf-Hash durch (sonst verriete die Antwortzeit
+  das Konto). Die Sperrregeln (Schwelle, Verdopplung, Deckel, Verfallsfenster)
+  liegen als reines Modul in `lib/loginThrottle.ts` **mit Test**; gesperrt wird
+  **nur auf Zeit**, eine dauerhafte Sperre wäre ein Weg, Familienmitglieder
+  auszusperren. Die Prüfung gehört **vor** den Passwortvergleich, sonst ist sie
+  nur eine Meldung und keine Bremse.
 - **Bilder:** Der Dateityp wird in `server/images.ts` **aus dem Inhalt**
   bestimmt (Signatur der ersten Bytes), nie aus `File.type` oder einem
   `Content-Type` — beides kommt vom Absender und ist frei wählbar, das `accept`

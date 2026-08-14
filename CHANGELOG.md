@@ -22,6 +22,17 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ### Sicherheit
 
+- **Schutz gegen Durchprobieren von Passwörtern.** Nach fünf Fehlversuchen wird
+  die Anmeldung für den betroffenen Benutzernamen gesperrt — zunächst eine
+  Minute, mit jedem weiteren Fehlversuch doppelt so lang, höchstens eine
+  Viertelstunde. Eine erfolgreiche Anmeldung setzt die Zählung zurück, ebenso
+  eine Stunde ohne weiteren Versuch; ein Vertipper bleibt also folgenlos. Die
+  Sperre gilt bewusst nur auf Zeit: Eine dauerhafte ließe sich missbrauchen, um
+  Familienmitglieder auszusperren.
+- **Anmeldung verrät nicht mehr, welche Benutzernamen es gibt.** Bei einem
+  unbekannten Namen kam die Antwort bisher sofort, bei einem bekannten erst nach
+  der Passwortprüfung — an diesem Zeitunterschied ließen sich vorhandene Konten
+  ablesen. Beide Fälle brauchen jetzt gleich lang.
 - **Bilder werden am Inhalt geprüft, nicht an der Angabe des Absenders.** Bisher
   entschied der vom Browser mitgeschickte Dateityp darüber, wie eine hochgeladene
   Datei abgelegt wird — der ist frei wählbar, und SVG war erlaubt. Damit ließ

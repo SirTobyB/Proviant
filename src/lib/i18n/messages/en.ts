@@ -461,6 +461,8 @@ export const en = {
 	'msg.locationMoved': '“{name}” moved',
 	'msg.credentialsRequired': 'Username and password required',
 	'msg.credentialsWrong': 'Wrong username or password',
+	'msg.loginLocked_one': 'Too many failed attempts. Please try again in {n} minute.',
+	'msg.loginLocked_other': 'Too many failed attempts. Please try again in {n} minutes.',
 	'msg.userNotFound': 'User not found',
 	'msg.userExists': 'User “{name}” already exists',
 	'msg.usernameRules': 'Username: at least 3 characters, only letters/digits/._-',

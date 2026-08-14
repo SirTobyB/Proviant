@@ -40,6 +40,23 @@ export const sessions = sqliteTable('sessions', {
 	expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull()
 });
 
+/**
+ * Fehlgeschlagene Anmeldeversuche je Benutzername (technisch, ohne Audit —
+ * wie `sessions`).
+ *
+ * Bewusst **ohne Fremdschlüssel auf `users`**: Erfasst wird jeder eingegebene
+ * Benutzername, auch ein nicht existierender. Andernfalls ließe sich am
+ * Verhalten ablesen, welche Namen es gibt — und wer einen Namen errät, könnte
+ * ihn ungebremst durchprobieren.
+ */
+export const loginAttempts = sqliteTable('login_attempts', {
+	username: text('username').primaryKey(),
+	failedCount: integer('failed_count').notNull().default(0),
+	/** Gesetzt, sobald gesperrt; `null` heißt „nicht gesperrt". */
+	lockedUntil: integer('locked_until', { mode: 'timestamp' }),
+	lastFailedAt: integer('last_failed_at', { mode: 'timestamp' }).notNull()
+});
+
 /** Lagerorte (Küchenschrank, Kühlschrank, Gefrierschrank, Vorratsregal) */
 export const storageLocations = sqliteTable('storage_locations', {
 	id: integer('id').primaryKey({ autoIncrement: true }),

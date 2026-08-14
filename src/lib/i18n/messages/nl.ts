@@ -453,6 +453,8 @@ export const nl: Messages = {
 	'msg.locationMoved': '„{name}" verplaatst',
 	'msg.credentialsRequired': 'Gebruikersnaam en wachtwoord vereist',
 	'msg.credentialsWrong': 'Gebruikersnaam of wachtwoord onjuist',
+	'msg.loginLocked_one': 'Te veel mislukte pogingen. Probeer het over {n} minuut opnieuw.',
+	'msg.loginLocked_other': 'Te veel mislukte pogingen. Probeer het over {n} minuten opnieuw.',
 	'msg.userNotFound': 'Gebruiker niet gevonden',
 	'msg.userExists': 'Gebruiker „{name}" bestaat al',
 	'msg.usernameRules': 'Gebruikersnaam: minstens 3 tekens, alleen letters/cijfers/._-',
