@@ -47,7 +47,7 @@
 	const hasAnyEntry = $derived(data.days.some((d) => d.entry != null));
 </script>
 
-<svelte:head><title>{t('plan.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('plan.title')} – Proviant</title></svelte:head>
 
 <div class="flex items-center gap-2">
 	<a href="/rezepte" class="text-sm text-gray-500 hover:text-gray-700">← {t('recipes.back')}</a>

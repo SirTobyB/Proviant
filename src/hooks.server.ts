@@ -10,7 +10,7 @@ const PUBLIC_PATHS = ['/login'];
 
 // Einmal beim Start: macht im Container-Log sichtbar, wann die App hochkam und
 // welcher Stand läuft — ein stiller Neustart fällt damit sofort auf.
-logInfo('LebensmittelKumpel gestartet', {
+logInfo('Proviant gestartet', {
 	commit: env.GIT_SHA?.slice(0, 7) || 'unbekannt',
 	build: env.BUILD_TIME || 'lokal'
 });

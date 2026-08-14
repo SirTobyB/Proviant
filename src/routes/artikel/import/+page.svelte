@@ -48,7 +48,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('itemImport.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('itemImport.title')} – Proviant</title></svelte:head>
 
 <div class="flex items-center gap-2">
 	<a href="/artikel" class="text-sm text-gray-500 hover:text-gray-700">← {t('itemImport.back')}</a>

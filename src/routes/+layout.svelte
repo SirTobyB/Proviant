@@ -80,7 +80,7 @@
 		<aside class="hidden w-56 shrink-0 flex-col border-r border-gray-200 bg-white md:flex">
 			<div class="flex items-center gap-2 px-4 py-5">
 				<img src="/icon.svg" alt="" class="h-8 w-8" />
-				<span class="text-lg font-bold">LebensmittelKumpel</span>
+				<span class="text-lg font-bold">Proviant</span>
 			</div>
 			<nav class="flex flex-1 flex-col gap-1 px-2">
 				{#each navItems as item (item.href)}
@@ -170,7 +170,7 @@
 			<header class="flex items-center justify-between gap-2 border-b border-gray-200 bg-white px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] md:hidden">
 				<div class="flex items-center gap-2">
 					<img src="/icon.svg" alt="" class="h-7 w-7" />
-					<span class="text-base font-bold">LebensmittelKumpel</span>
+					<span class="text-base font-bold">Proviant</span>
 				</div>
 				<a href="/konto" class="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm text-gray-600 hover:bg-gray-100" aria-label={t('nav.account')}>
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6">

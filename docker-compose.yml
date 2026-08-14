@@ -1,7 +1,7 @@
 services:
-  lebensmittelkumpel:
+  proviant:
     build: .
-    container_name: lebensmittelkumpel
+    container_name: proviant
     restart: unless-stopped
     ports:
       - "3000:3000"

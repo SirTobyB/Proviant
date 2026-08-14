@@ -1,6 +1,6 @@
 [English](README.md) · [Deutsch](README.de.md) · **Nederlands**
 
-# LebensmittelKumpel
+# Proviant
 
 Zelfgehoste webapp voor het beheren van de boodschappen van een gezin:
 voorraadbeheer voor kelder en keuken, bestelsuggesties en leveringscontrole via
@@ -182,7 +182,7 @@ tijdstempel, pad, gebruiker en duur; bij onverwachte uitzonderingen bovendien
 met stacktrace en een korte fout-ID die ook op de foutpagina staat. Blijft het
 log stil bij een storing, dan lag het niet aan de app. Images worden via GitHub
 Actions voor amd64 en arm64 naar GHCR gepubliceerd:
-`ghcr.io/sirtobyb/lebensmittelkumpel:latest`. `docker-compose.prod.yml` bevat
+`ghcr.io/sirtobyb/proviant:latest`. `docker-compose.prod.yml` bevat
 Traefik-labels (extern netwerk `proxy`, websecure, certresolver
 `tls_resolver`).
 
@@ -215,7 +215,7 @@ bestelsuggesties, leveringscontrole en het receptenmandje niet.
 ## Meedoen
 
 Foutmeldingen en verbetervoorstellen zijn welkom als
-[issue](https://github.com/SirTobyB/LebensmittelKumpel/issues). Draai vóór een
+[issue](https://github.com/SirTobyB/Proviant/issues). Draai vóór een
 pull request `npm run check`, `npm test` en `npm run build`. Commentaar en
 commitberichten zijn in het Duits; de conventies van het project staan in
 [CLAUDE.md](CLAUDE.md).

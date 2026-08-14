@@ -48,6 +48,13 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ### Geändert
 
+- **Die App heißt jetzt „Proviant".** Der bisherige Name war nur auf Deutsch
+  verständlich, während die Oberfläche englisch voreingestellt ist; „Proviant"
+  steht so im Deutschen wie im Niederländischen und ist für Englischsprachige
+  erschließbar. Betroffen sind Oberfläche, Homescreen-Symbol, Repository und
+  Image-Pfad (`ghcr.io/sirtobyb/proviant`). Der Dateiname der Datenbank im
+  Volume bleibt bewusst unverändert — sonst legte die App beim nächsten Start
+  eine leere Datenbank an.
 - Die fünf **vorgegebenen Lagerorte** heißen bei einer Neuinstallation jetzt
   englisch (Kitchen cupboard, Fridge, Freezer, Pantry shelf, Drinks cellar) —
   passend zur Standardsprache. Bestehende Installationen bleiben unberührt,
@@ -115,7 +122,7 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.2.0...HEAD
-[1.2.0]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/SirTobyB/LebensmittelKumpel/releases/tag/v1.0.0
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/SirTobyB/Proviant/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/SirTobyB/Proviant/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/SirTobyB/Proviant/releases/tag/v1.0.0

@@ -18,7 +18,7 @@ RUN npm run build \
 FROM node:22-alpine
 
 # Verknüpft das GHCR-Package mit dem GitHub-Repository
-LABEL org.opencontainers.image.source="https://github.com/SirTobyB/LebensmittelKumpel"
+LABEL org.opencontainers.image.source="https://github.com/SirTobyB/Proviant"
 
 WORKDIR /app
 
@@ -39,6 +39,10 @@ ENV GIT_SHA=$GIT_SHA
 ENV BUILD_TIME=$BUILD_TIME
 
 ENV NODE_ENV=production
+# Der Dateiname trägt bewusst weiterhin den alten Namen der App: Er zeigt auf
+# eine bestehende Datei im Volume. Umbenennen hieße, dass die App beim nächsten
+# Start eine leere Datenbank anlegt und der gesamte Vorrat verschwunden wäre —
+# ohne Fehlermeldung, weil ein fehlendes SQLite-File einfach erzeugt wird.
 ENV DATABASE_URL=/data/lebensmittelkumpel.db
 ENV DATA_DIR=/data
 ENV PORT=3000

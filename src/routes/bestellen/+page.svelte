@@ -62,7 +62,7 @@
 
 </script>
 
-<svelte:head><title>{t('order.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('order.title')} – Proviant</title></svelte:head>
 
 <h1 class="text-2xl font-bold">{t('order.title')}</h1>
 <p class="mt-1 text-sm text-gray-500">{t('order.subtitle')}</p>

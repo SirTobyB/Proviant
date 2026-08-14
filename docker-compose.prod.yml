@@ -14,9 +14,9 @@
 # verbinden (Login + SMS-2FA). Der Auth-Key wird im Volume ./data abgelegt
 # und übersteht Neustarts — die 2FA fällt danach nur noch selten an.
 services:
-  lebensmittel-kumpel:
-    image: ghcr.io/sirtobyb/lebensmittelkumpel:latest
-    container_name: lebensmittel-kumpel
+  proviant:
+    image: ghcr.io/sirtobyb/proviant:latest
+    container_name: proviant
     restart: unless-stopped
     # Direkter Port nicht nötig, da Traefik den Traffic reinreicht.
     # Für lokales Debugging kannst du die Zeilen wieder einkommentieren.
@@ -28,7 +28,7 @@ services:
     environment:
       # Öffentliche URL der App — adapter-node braucht sie für den
       # CSRF-Schutz der Formulare. MUSS zur Host-Regel unten passen.
-      ORIGIN: "https://lebensmittel.example.de" # <-- anpassen
+      ORIGIN: "https://proviant.example.de" # <-- anpassen
       # Picnic-Zugangsdaten. Werte immer in doppelte Anführungszeichen setzen —
       # in YAML startet ein unquotiertes # einen Kommentar (dein Passwort enthält
       # eins). In "..." bleibt das # erhalten.
@@ -43,10 +43,10 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.lebensmittel.rule=Host(`lebensmittel.example.de`)" # <-- anpassen
-      - "traefik.http.routers.lebensmittel.entrypoints=websecure"
-      - "traefik.http.routers.lebensmittel.tls.certresolver=tls_resolver"
-      - "traefik.http.services.lebensmittel.loadbalancer.server.port=3000"
+      - "traefik.http.routers.proviant.rule=Host(`proviant.example.de`)" # <-- anpassen
+      - "traefik.http.routers.proviant.entrypoints=websecure"
+      - "traefik.http.routers.proviant.tls.certresolver=tls_resolver"
+      - "traefik.http.services.proviant.loadbalancer.server.port=3000"
 
 networks:
   proxy:

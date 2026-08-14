@@ -21,7 +21,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('recipes.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('recipes.title')} – Proviant</title></svelte:head>
 
 <div class="flex flex-wrap items-center justify-between gap-3">
 	<div>

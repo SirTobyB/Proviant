@@ -82,7 +82,7 @@
 
 </script>
 
-<svelte:head><title>{t('scan.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('scan.title')} – Proviant</title></svelte:head>
 
 <h1 class="text-2xl font-bold">{t('scan.title')}</h1>
 <p class="mt-1 text-sm text-gray-500">{t('scan.subtitle')}</p>

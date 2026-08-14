@@ -17,7 +17,7 @@
 	let openMode = $state<'view' | 'edit' | 'move'>('view');
 </script>
 
-<svelte:head><title>{data.article.name} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{data.article.name} – Proviant</title></svelte:head>
 
 <h1 class="text-2xl font-bold">{t('item.edit.title')}</h1>
 

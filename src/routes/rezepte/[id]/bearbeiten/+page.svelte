@@ -24,7 +24,7 @@
 	};
 </script>
 
-<svelte:head><title>{data.recipe.name} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{data.recipe.name} – Proviant</title></svelte:head>
 
 <div class="flex items-center gap-2">
 	<a href={`/rezepte/${data.recipe.id}`} class="text-sm text-gray-500 hover:text-gray-700">← {t('recipe.back')}</a>

@@ -7,7 +7,7 @@
 	const t = $derived(translator(data.locale));
 </script>
 
-<svelte:head><title>{t('item.new.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('item.new.title')} – Proviant</title></svelte:head>
 
 <h1 class="text-2xl font-bold">{t('item.new.title')}</h1>
 

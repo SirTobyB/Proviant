@@ -1,9 +1,9 @@
 {
 	"id": "/",
-	"name": "LebensmittelKumpel",
-	"short_name": "LmKumpel",
-	"description": "Lagerverwaltung, Bestellvorschläge und Rezepte für den Familienvorrat",
-	"lang": "de",
+	"name": "Proviant",
+	"short_name": "Proviant",
+	"description": "Stock, order suggestions and recipes for the family pantry",
+	"lang": "en",
 	"start_url": "/",
 	"scope": "/",
 	"display": "standalone",

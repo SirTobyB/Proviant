@@ -19,7 +19,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('recipeImport.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('recipeImport.title')} – Proviant</title></svelte:head>
 
 <div class="flex items-center gap-2">
 	<a href="/rezepte" class="text-sm text-gray-500 hover:text-gray-700">← {t('recipes.back')}</a>

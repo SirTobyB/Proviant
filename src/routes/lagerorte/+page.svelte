@@ -15,7 +15,7 @@
 	const inactive = $derived(data.locations.filter((l) => !l.active));
 </script>
 
-<svelte:head><title>{t('locations.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('locations.title')} – Proviant</title></svelte:head>
 
 <div class="flex flex-wrap items-start justify-between gap-3">
 	<div>

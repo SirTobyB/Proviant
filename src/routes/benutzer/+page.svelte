@@ -16,7 +16,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('users.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('users.title')} – Proviant</title></svelte:head>
 
 <div class="flex items-center justify-between gap-3">
 	<div>

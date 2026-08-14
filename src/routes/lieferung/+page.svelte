@@ -24,7 +24,7 @@
 	);
 </script>
 
-<svelte:head><title>{t('deliveries.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('deliveries.title')} – Proviant</title></svelte:head>
 
 <h1 class="text-2xl font-bold">{t('deliveries.title')}</h1>
 <p class="mt-1 text-sm text-gray-500">{t('deliveries.subtitle')}</p>

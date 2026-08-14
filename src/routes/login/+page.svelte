@@ -7,13 +7,13 @@
 	const t = $derived(translator(data.locale));
 </script>
 
-<svelte:head><title>{t('login.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('login.title')} – Proviant</title></svelte:head>
 
 <div class="flex min-h-dvh items-center justify-center bg-gray-50 p-4">
 	<div class="w-full max-w-sm">
 		<div class="mb-6 flex flex-col items-center gap-2">
 			<img src="/icon.svg" alt="" class="h-12 w-12" />
-			<h1 class="text-xl font-bold">LebensmittelKumpel</h1>
+			<h1 class="text-xl font-bold">Proviant</h1>
 		</div>
 
 		<form method="POST" class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">

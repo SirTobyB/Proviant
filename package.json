@@ -1,10 +1,10 @@
 {
-	"name": "lebensmittelkumpel",
-	"description": "Selbstgehostete Familien-Webapp zur Lebensmittelverwaltung mit Picnic-Anbindung",
+	"name": "proviant",
+	"description": "Self-hosted family web app for pantry management with Picnic integration",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/SirTobyB/LebensmittelKumpel.git"
+		"url": "git+https://github.com/SirTobyB/Proviant.git"
 	},
 	"private": true,
 	"version": "1.2.0",

@@ -30,7 +30,7 @@
 		tagFilterHref('/inventur', tag, { query: data.query, activeTag: data.tagFilter });
 </script>
 
-<svelte:head><title>{t('stocktake.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('stocktake.title')} – Proviant</title></svelte:head>
 
 <h1 class="text-2xl font-bold">{t('stocktake.title')}</h1>
 <p class="mt-1 text-sm text-gray-500">

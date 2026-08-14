@@ -36,7 +36,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('account.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('account.title')} – Proviant</title></svelte:head>
 
 <h1 class="text-2xl font-bold">{t('account.title')}</h1>
 

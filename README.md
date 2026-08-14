@@ -1,6 +1,6 @@
 **English** · [Deutsch](README.de.md) · [Nederlands](README.nl.md)
 
-# LebensmittelKumpel
+# Proviant
 
 Self-hosted web app for managing a family's groceries: stock control for the
 pantry and the cellar, order suggestions and delivery check-in via the Picnic
@@ -171,7 +171,7 @@ timestamp, path, user and duration; unexpected exceptions additionally with a
 stack trace and a short error ID that also appears on the error page. If the
 log stays quiet during a failure, the app was not the cause. Images are
 published to GHCR for amd64 and arm64 via GitHub Actions:
-`ghcr.io/sirtobyb/lebensmittelkumpel:latest`. `docker-compose.prod.yml` carries
+`ghcr.io/sirtobyb/proviant:latest`. `docker-compose.prod.yml` carries
 Traefik labels (external network `proxy`, websecure, cert resolver
 `tls_resolver`).
 
@@ -204,7 +204,7 @@ and the recipe basket do not work.
 ## Contributing
 
 Bug reports and suggestions are welcome as an
-[issue](https://github.com/SirTobyB/LebensmittelKumpel/issues). Before opening
+[issue](https://github.com/SirTobyB/Proviant/issues). Before opening
 a pull request, please run `npm run check`, `npm test` and `npm run build`.
 Comments and commit messages are in German; the project conventions live in
 [CLAUDE.md](CLAUDE.md).

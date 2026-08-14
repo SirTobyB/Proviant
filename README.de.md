@@ -1,6 +1,6 @@
 [English](README.md) · **Deutsch** · [Nederlands](README.nl.md)
 
-# LebensmittelKumpel
+# Proviant
 
 Selbstgehostete Webapp zur Lebensmittelverwaltung der Familie: Lagerverwaltung
 für Vorrat in Keller und Küche, Bestellvorschläge und Lieferungs-Check über den
@@ -175,7 +175,7 @@ Benutzer und Dauer protokolliert; bei unerwarteten Ausnahmen zusätzlich mit
 Stacktrace und einer kurzen Fehler-ID, die auch auf der Fehlerseite erscheint.
 Bleibt das Log bei einem Fehler still, lag es nicht an der App. Images werden
 per GitHub Actions für amd64 und arm64 nach GHCR veröffentlicht:
-`ghcr.io/sirtobyb/lebensmittelkumpel:latest`. `docker-compose.prod.yml` enthält
+`ghcr.io/sirtobyb/proviant:latest`. `docker-compose.prod.yml` enthält
 Traefik-Labels (externes Netzwerk `proxy`, websecure, Certresolver `tls_resolver`).
 
 ### Erste Picnic-Verbindung
@@ -207,7 +207,7 @@ Check und Rezept-Warenkorb nicht.
 ## Mitmachen
 
 Fehlerberichte und Verbesserungsvorschläge gerne als
-[Issue](https://github.com/SirTobyB/LebensmittelKumpel/issues). Vor einem Pull
+[Issue](https://github.com/SirTobyB/Proviant/issues). Vor einem Pull
 Request bitte `npm run check`, `npm test` und `npm run build` laufen lassen.
 Kommentare und Commit-Nachrichten sind deutsch; die Konventionen des Projekts
 stehen in [CLAUDE.md](CLAUDE.md).

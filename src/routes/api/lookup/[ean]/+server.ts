@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ params, fetch }) => {
 
 	const response = await fetch(
 		`https://world.openfoodfacts.org/api/v2/product/${ean}.json?fields=product_name,product_name_de,brands,quantity,image_front_url`,
-		{ headers: { 'User-Agent': 'LebensmittelKumpel/1.0 (selfhosted family app)' } }
+		{ headers: { 'User-Agent': 'Proviant/1.0 (selfhosted family app)' } }
 	);
 	if (!response.ok) return json({ found: false });
 

@@ -14,7 +14,7 @@
 	let openMode = $state<'view' | 'edit' | 'move'>('view');
 </script>
 
-<svelte:head><title>{data.location.name} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{data.location.name} – Proviant</title></svelte:head>
 
 <div class="flex items-center gap-2">
 	<a href="/" class="text-sm text-gray-500 hover:text-gray-700">← {t('stockLocation.back')}</a>

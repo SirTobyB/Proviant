@@ -199,7 +199,7 @@
 	}
 </script>
 
-<svelte:head><title>{t('delivery.title')} – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('delivery.title')} – Proviant</title></svelte:head>
 
 <div class="flex items-center gap-2">
 	<a href="/lieferung" class="text-sm text-gray-500 hover:text-gray-700">← {t('delivery.back')}</a>
