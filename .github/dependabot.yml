@@ -53,8 +53,26 @@ updates:
     # die Datenbank an, der Build öffnet sie nicht, die Typen kommen aus dem
     # eigenständig versionierten @types/better-sqlite3, und der Runner läuft auf
     # glibc statt musl. Ein grüner Haken sagt hier nichts.
+    #
+    # @types/node beschreibt die API der Laufzeit und gehört deshalb an die
+    # Node-Linie gekoppelt: Der Container fährt node:22-alpine, die CI prüft mit
+    # Node 22. Typen für eine neuere Node-Major beschreiben Funktionen, die es
+    # zur Laufzeit nicht gibt — `npm run check` würde Code durchwinken, der im
+    # Betrieb stolpert, denn der Typecheck prüft die Typen und führt nichts aus.
+    # Auch hier sagt ein grüner Haken also nichts.
+    #
+    # Die drei Ausnahmen hängen zusammen: Basis-Image (docker, weiter unten),
+    # better-sqlite3 und @types/node werden bei einem Node-Wechsel **gemeinsam**
+    # angehoben, nie einzeln.
+    #
+    # Bewusst *nicht* ausgenommen ist typescript: svelte-check deklariert
+    # derzeit `^5 || ^6`, ein TS-7-PR scheitert deshalb schon an `npm ci` — das
+    # fängt die CI zuverlässig ab. Sobald die Werkzeugkette nachzieht, wird
+    # derselbe PR von allein grün; eine Ignore-Regel würde genau das verstecken.
     ignore:
       - dependency-name: better-sqlite3
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
     commit-message:
       prefix: Aktualisiere
