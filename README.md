@@ -1,193 +1,210 @@
+**English** · [Deutsch](README.de.md) · [Nederlands](README.nl.md)
+
 # LebensmittelKumpel
 
-Selbstgehostete Webapp zur Lebensmittelverwaltung der Familie: Lagerverwaltung
-für Vorrat in Keller und Küche, Bestellvorschläge und Lieferungs-Check über den
-Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
-(PWA, hell & dunkel je nach Systemeinstellung), mit Desktop-Ansicht.
+Self-hosted web app for managing a family's groceries: stock control for the
+pantry and the cellar, order suggestions and delivery check-in via the Picnic
+delivery service, plus the family recipe collection. Built for phones (PWA,
+light & dark following the system setting), with a desktop layout.
 
-> **Für wen ist das?** Für Haushalte, die ihren Vorrat selbst verwalten wollen,
-> ohne ihn einem fremden Dienst anzuvertrauen — alles läuft auf dem eigenen
-> Server, die Daten liegen in einer SQLite-Datei. Die Picnic-Funktionen setzen
-> ein Konto beim Lieferdienst [Picnic](https://picnic.app) voraus (Deutschland,
-> Niederlande, Frankreich); ohne Picnic-Konto funktioniert alles andere — Lager,
-> Inventur, Artikelstamm, Rezepte, Wochenplan, Journal — unverändert. Die
-> Anbindung nutzt die inoffizielle Bibliothek
-> [picnic-api](https://github.com/MRVDH/picnic-api); Picnic bietet keine
-> offizielle Schnittstelle an, Änderungen dort können die Funktion jederzeit
-> brechen. Bestellt wird bewusst nie automatisch.
+> **Who is this for?** Households that want to manage their own supplies
+> without handing them to somebody else's service — everything runs on your own
+> server and the data lives in a single SQLite file. The Picnic features
+> require an account with the delivery service [Picnic](https://picnic.app)
+> (Germany, Netherlands, France); without one, everything else — stock,
+> stocktake, item catalogue, recipes, meal plan, journal — works unchanged. The
+> integration uses the unofficial library
+> [picnic-api](https://github.com/MRVDH/picnic-api); Picnic offers no official
+> API, so changes on their side can break these features at any time. Orders
+> are never placed automatically, by design.
 
-## Funktionen
+## Screenshots
 
-- **Anmeldung & Benutzer** — Login mit Benutzername + Passwort (scrypt-Hashing),
-  Rollen Benutzer/Admin. Nur Admins verwalten Benutzer; jeder kann sein eigenes
-  Passwort ändern. Alle Datensätze tragen anlegenden/ändernden Benutzer und
-  Zeitstempel (Audit). Die Konto-Seite zeigt unter **Version** die
-  App-Version, Build-Zeitpunkt und Commit der laufenden Instanz — praktisch,
-  um zu prüfen, ob der Server wirklich den erwarteten Stand fährt — und
-  darunter den **Changelog** der Versionen.
-- **Lagerverwaltung** — Bestände in frei pflegbaren Lagerorten (ab Werk
-  Küchenschrank, Kühlschrank, Gefrierschrank, Vorratsregal, Getränkekeller),
-  geführt als Chargen mit eigenem MHD. Ein-/Ausbuchen per Barcode-Scan (FEFO beim Ausbuchen), MHD-Ampel und
-  „Läuft bald ab"-Ansicht. Schnelle +/−-Korrektur mit frei wählbarer Menge
-  direkt in der Artikelliste, in der Lagerort-Ansicht je Charge mit einem
-  Klick (0 löscht die Charge); Chargen lassen sich bearbeiten und zwischen
-  Lagerorten umlagern.
-- **Lagerorte** (Admin) — anlegen, umbenennen und in der Reihenfolge
-  verschieben. Gelöscht wird nie, sondern **stillgelegt**: ein stillgelegter
-  Lagerort erscheint nirgends mehr zur Auswahl, seine Bestandshistorie und die
-  Journalzeilen bleiben aber lesbar. Stilllegen setzt voraus, dass der Lagerort
-  leer ist; der Standard-Lagerort betroffener Artikel wird dabei entfernt.
-- **Buchungsjournal** — jede Bestandsveränderung wird festgehalten: Zeitpunkt,
-  Benutzer, Artikel, Menge und Lagerort, dazu die Herkunft der Buchung
-  (Scanner, Inventur, Lieferung, Artikelliste, Charge). Zu- und Abgänge,
-  Umlagerungen (mit Von-/Nach-Lagerort) und Chargen-Korrekturen inklusive
-  MHD-Änderungen; ein Abgang über mehrere Chargen erscheint je Charge mit
-  ihrem Lagerort. Filterbar nach Artikel, Lagerort, Benutzer und Buchungsart.
-  Gelöschte Artikel bleiben mit ihrem Namen lesbar.
-- **Inventur** — kompakte Übersicht aller vorhandenen Bestände mit
-  Lagerort-Aufschlüsselung. Gezählten Gesamtbestand eintragen, die Differenz
-  wird automatisch gebucht (Mehrbestand in den Standard-Lagerort, Minderbestand
-  FEFO ausgebucht). Filterbar nach Suche und Artikel-Tags.
-- **Artikelstamm** — Name, Bild, Gebindegröße mit Maßeinheit, EAN, optionale
-  Picnic-Artikel-ID (Suche oder Direkteingabe), Mindestbestand,
-  Standard-Lagerort und frei vergebbare Tags (mit Filter in Artikelliste und
-  Inventur). Neuanlage per Barcode-Scan, Vorbefüllung über Open Food Facts und
-  Picnic-Produktsuche. Die Artikelseite zeigt alle Chargen des Artikels über
-  alle Lagerorte, direkt bearbeit- und umlagerbar. **Import aus Bestellungen:**
-  übernimmt Produkte aus den letzten Picnic-Lieferungen samt Bild,
-  Gebindegröße und Verknüpfung (einzeln beim Auspacken oder gesammelt
-  unter *Artikel → Picnic-Import*; EAN liefert Picnic nicht).
-- **Bestellvorschläge** — Artikel unter Mindestbestand landen auf der
-  Vorschlagsliste und wandern nach Bestätigung in den Picnic-Warenkorb
-  ([picnic-api](https://github.com/MRVDH/picnic-api), inoffiziell). Bestellt
-  wird bewusst nie automatisch — der Checkout bleibt in der Picnic-App.
-  Abgeglichen wird mit dem **Warenkorb und noch nicht gelieferten
-  Bestellungen**, jeweils mengengenau: Was schon vorgemerkt oder unterwegs
-  ist, wird nur noch als Fehlmenge vorgeschlagen (oder gar nicht mehr).
-  Alle Vorschläge lassen sich mit einem Klick an- und abwählen.
-- **Lieferungs-Check** — Beim Auspacken einer Picnic-Lieferung: Positionen per
-  Barcode scannen (matcht über die Picnic-ID) und direkt in den Ziel-Lagerort
-  einbuchen, per +-Taste einzeln bestätigen oder nach Sichtprüfung alle
-  offenen Positionen auf einmal. Noch unbekannte Produkte werden dabei
-  automatisch als Artikel angelegt (samt Bild und Gebindegröße). Zeigt
-  Produktbilder aus Picnic.
-- **Rezepte** — warme Mahlzeiten und Kuchen, Zutaten verknüpft mit dem
-  Artikelstamm oder als Freitext, freie Tags. Eine Zutat kann mehrere
-  Alternativartikel akzeptieren (z.B. verschiedene Eier-Sorten) — der Bestand
-  aller Alternativen wird zusammengezählt. Kochbarkeits-Check gegen den
-  Bestand („Was kann ich heute kochen?"), Portionsskalierung und „Fehlende
-  Zutaten in den Picnic-Warenkorb" (aufgerundet auf Gebindegrößen). Zufälliger
-  Rezeptvorschlag mit 2-Wochen-Sperre für kürzlich Gekochtes, optional nach
-  Tags. **Import aus Picnic:** übernimmt Rezepte der Picnic-Rezeptseite mit
-  Portionen, Zutaten, Schritten und Tipp (*Rezepte → Picnic-Import*).
-- **Wochenplan** — Gerichte für die nächsten 7 Tage planen: Tage auswählen und
-  Vorschläge würfeln (ohne Rezept-Wiederholung in der Woche), Tage manuell
-  belegen, Portionen anpassen — und die fehlenden Zutaten **aller** geplanten
-  Tage in einem Rutsch in den Picnic-Warenkorb legen. Der gemeinsame Vorrat
-  wird dabei über die ganze Woche verrechnet (kein Doppelzählen, keine
-  unnötigen Mehrfachbestellungen desselben Artikels).
+<table>
+  <tr>
+    <td width="25%"><img src="doc/screenshots/lager_v1.2.0.png" alt="Stock overview in the dark theme" width="100%"></td>
+    <td width="25%"><img src="doc/screenshots/lager_hell_v1.2.0.png" alt="The same view in the light theme" width="100%"></td>
+    <td width="25%"><img src="doc/screenshots/rezepte_v1.2.0.png" alt="Recipe list with cookability badge" width="100%"></td>
+    <td width="25%"><img src="doc/screenshots/bestellen_picnic_v1.2.0.png" alt="Order suggestions for the Picnic basket" width="100%"></td>
+  </tr>
+  <tr>
+    <td>Stock with best-before warning</td>
+    <td>Light theme</td>
+    <td>Recipes, "cookable" flagged</td>
+    <td>Order suggestions</td>
+  </tr>
+</table>
 
-## Versionierung
+## Features
 
-Die App folgt [Semantic Versioning](https://semver.org/lang/de/). Änderungen
-werden in [CHANGELOG.md](CHANGELOG.md) nach dem Muster von
-[Keep a Changelog](https://keepachangelog.com/de/1.1.0/) gepflegt; derselbe
-Inhalt erscheint in der App auf der Konto-Seite.
+- **Login & users** — username + password (scrypt hashing), roles user/admin.
+  Only admins manage users; everyone can change their own password. Every
+  record carries the creating/modifying user and timestamps (audit). The
+  account page shows the app version, build time and commit of the running
+  instance under **Version** — handy for checking whether the server really
+  runs the build you expect — and the **changelog** below it.
+- **Stock management** — stock held in freely editable storage locations
+  (kitchen cupboard, fridge, freezer, pantry shelf and drinks cellar out of the
+  box), tracked as batches with their own best-before date. Book in and out by
+  barcode scan (FEFO when booking out), best-before traffic light and an
+  "expiring soon" view. Quick +/− correction with a freely chosen amount right
+  in the item list, and per batch with a single tap in the location view (0
+  removes the batch); batches can be edited and moved between locations.
+- **Storage locations** (admin) — create, rename and reorder them. Nothing is
+  ever deleted, only **retired**: a retired location disappears from every
+  picker, while its stock history and journal entries stay readable. Retiring
+  requires the location to be empty, and clears it as the default location of
+  any affected items.
+- **Stock journal** — every change to stock is recorded: time, user, item,
+  quantity and location, plus where the booking came from (scanner, stocktake,
+  delivery, item list, batch). Additions and removals, relocations (with source
+  and target location) and batch corrections including best-before changes; a
+  removal spanning several batches appears once per batch with its location.
+  Filterable by item, location, user and booking type. Deleted items remain
+  readable by name.
+- **Stocktake** — a compact overview of everything in stock, broken down by
+  location. Enter the counted total and the difference is booked automatically
+  (surplus into the default location, shortfall booked out FEFO). Filterable by
+  search and item tags.
+- **Item catalogue** — name, picture, pack size with unit, EAN, optional Picnic
+  product ID (via search or entered directly), minimum stock, default location
+  and free-form tags (with filters in the item list and stocktake). Create
+  items by barcode scan, pre-filled from Open Food Facts and the Picnic product
+  search. The item page lists all batches across every location, editable and
+  movable in place. **Import from orders:** pulls products out of recent Picnic
+  deliveries including picture, pack size and the link (one by one while
+  unpacking, or in bulk under *Items → Picnic import*; Picnic does not supply
+  EANs).
+- **Order suggestions** — items below their minimum stock appear on the
+  suggestion list and, once confirmed, move into the Picnic basket
+  ([picnic-api](https://github.com/MRVDH/picnic-api), unofficial). Orders are
+  never placed automatically — checkout stays in the Picnic app. Suggestions
+  are reconciled against the **basket and orders not yet delivered**, down to
+  the quantity: whatever is already reserved or on its way is only suggested as
+  the remaining shortfall (or not at all). All suggestions can be selected and
+  deselected with one click.
+- **Delivery check-in** — while unpacking a Picnic delivery: scan items by
+  barcode (matched via the Picnic ID) and book them straight into the target
+  location, confirm them individually with the + button, or confirm all
+  remaining lines at once after a visual check. Products not yet known are
+  created as items automatically (with picture and pack size). Shows the
+  product images from Picnic.
+- **Recipes** — hot meals and cakes, ingredients linked to the item catalogue
+  or as free text, free-form tags. One ingredient can accept several
+  alternative items (say, different kinds of eggs) — the stock of all
+  alternatives is added up. Cookability check against your stock ("what can I
+  cook today?"), portion scaling and "missing ingredients into the Picnic
+  basket" (rounded up to pack sizes). Random recipe suggestion with a two-week
+  cooldown for anything cooked recently, optionally filtered by tag. **Import
+  from Picnic:** pulls recipes off the Picnic recipe pages including portions,
+  ingredients, steps and tip (*Recipes → Picnic import*).
+- **Weekly meal plan** — plan meals for the next 7 days: pick the days and roll
+  suggestions (no recipe twice in one week), fill days manually, adjust
+  portions — and put the missing ingredients for **all** planned days into the
+  Picnic basket in one go. Shared stock is accounted for across the whole week
+  (no double counting, no needless repeat orders of the same item).
+
+## Versioning
+
+The app follows [Semantic Versioning](https://semver.org). Changes are kept in
+[CHANGELOG.md](CHANGELOG.md) following [Keep a
+Changelog](https://keepachangelog.com/en/1.1.0/); the same content is rendered
+in the app on the account page.
 
 ## Stack
 
 SvelteKit (adapter-node) · TypeScript · SQLite (better-sqlite3 + Drizzle ORM) ·
 Tailwind CSS · PWA · Docker (amd64 + arm64)
 
-Optimiert für schmale Smartphones (iPhone 13 mini, Galaxy A34): Safe-Areas
-für Notch/Home-Indicator, 16px-Eingabefelder gegen den iOS-Auto-Zoom,
-Homescreen-Icon für iOS und Android. Das Dark Theme folgt automatisch der
-Systemeinstellung des Geräts. Ein erkannter Barcode quittiert mit kurzem
-Signalton (per Web Audio erzeugt) und Vibration — Letztere ignoriert iOS,
-deshalb der Ton. Steht das iPhone auf lautlos, kann iOS auch den Ton
-unterdrücken.
+Tuned for narrow phones (iPhone 13 mini, Galaxy A34): safe areas for notch and
+home indicator, 16px inputs to stop iOS auto-zoom, home screen icons for iOS
+and Android. The dark theme follows the device setting automatically. A
+recognised barcode is acknowledged with a short beep (generated via Web Audio)
+and vibration — iOS ignores the latter, hence the sound. With the iPhone on
+silent, iOS may suppress the sound as well.
 
-## Entwicklung
+## Development
 
-Voraussetzung: **Node.js ≥ 22.12** (Vite 8).
+Requires **Node.js ≥ 22.12** (Vite 8).
 
 ```sh
-cp .env.example .env      # Werte anpassen (siehe unten)
+cp .env.example .env      # adjust the values (see below)
 npm install
 npm run dev
 ```
 
-Die SQLite-Datenbank (`local.db`) wird beim ersten Start automatisch angelegt
-und migriert. Fehlt ein Benutzer, wird aus `ADMIN_USERNAME`/`ADMIN_PASSWORD` ein
-Admin angelegt — ohne diese Variablen kommt man nicht in die App.
+The SQLite database (`local.db`) is created and migrated on first start. If no
+user exists, an admin is created from `ADMIN_USERNAME`/`ADMIN_PASSWORD` —
+without those variables there is no way into the app.
 
-Nützliche Skripte:
+Useful scripts:
 
-| Befehl               | Zweck                                               |
+| Command              | Purpose                                             |
 | -------------------- | --------------------------------------------------- |
-| `npm run dev`        | Dev-Server (Port 5173)                              |
-| `npm run build`      | Produktions-Build (adapter-node)                    |
-| `npm run check`      | Typecheck (`svelte-check`)                          |
-| `npm test`           | Tests der Logik-Module (Vitest)                     |
-| `npm run db:generate`| Migration aus dem Schema erzeugen (nach Schema-Änderung) |
+| `npm run dev`        | Dev server (port 5173)                              |
+| `npm run build`      | Production build (adapter-node)                     |
+| `npm run check`      | Type check (`svelte-check`)                         |
+| `npm test`           | Tests of the logic modules (Vitest)                 |
+| `npm run db:generate`| Generate a migration from the schema (after schema changes) |
 
-## Betrieb mit Docker
+## Running with Docker
 
 ```sh
-docker compose up -d                              # lokal bauen
-# oder produktiv das fertige GHCR-Image:
+docker compose up -d                              # build locally
+# or pull the ready-made GHCR image for production:
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-Die App läuft auf Port 3000; alle persistenten Daten (Datenbank, Bilder,
-Picnic-Auth-Key) liegen im Volume `./data`. Migrationen und der Lagerort-/Admin-
-Seed laufen beim Containerstart automatisch.
+The app listens on port 3000; all persistent data (database, images, Picnic
+auth key) lives in the `./data` volume. Migrations and the storage location /
+admin seed run automatically on container start.
 
-Ins Container-Log (z.B. in Portainer sichtbar) schreibt die App beim Start eine
-Zeile mit Commit und Build-Zeitpunkt — ein unbemerkter Neustart fällt dadurch
-sofort auf. Jede Fehlerantwort ab Status 500 wird mit Zeitstempel, Pfad,
-Benutzer und Dauer protokolliert; bei unerwarteten Ausnahmen zusätzlich mit
-Stacktrace und einer kurzen Fehler-ID, die auch auf der Fehlerseite erscheint.
-Bleibt das Log bei einem Fehler still, lag es nicht an der App. Images werden per GitHub Actions
-für amd64 und arm64 nach GHCR veröffentlicht:
-`ghcr.io/sirtobyb/lebensmittelkumpel:latest`. `docker-compose.prod.yml` enthält
-Traefik-Labels (externes Netzwerk `proxy`, websecure, Certresolver `tls_resolver`).
+On start-up the app writes a line with commit and build time to the container
+log (visible in Portainer, for instance) — an unnoticed restart stands out
+immediately. Every error response of status 500 or above is logged with
+timestamp, path, user and duration; unexpected exceptions additionally with a
+stack trace and a short error ID that also appears on the error page. If the
+log stays quiet during a failure, the app was not the cause. Images are
+published to GHCR for amd64 and arm64 via GitHub Actions:
+`ghcr.io/sirtobyb/lebensmittelkumpel:latest`. `docker-compose.prod.yml` carries
+Traefik labels (external network `proxy`, websecure, cert resolver
+`tls_resolver`).
 
-### Erste Picnic-Verbindung
+### Connecting to Picnic the first time
 
-Beim ersten Öffnen von **Bestellen** einmal mit Picnic verbinden (Login + SMS-2FA).
-Der Auth-Key wird im Volume abgelegt und übersteht Neustarts; danach fällt 2FA
-nur noch selten an. Ohne Verbindung funktionieren Bestellvorschläge, Lieferungs-
-Check und Rezept-Warenkorb nicht.
+The first time you open **Order**, connect to Picnic once (login + SMS 2FA).
+The auth key is stored in the volume and survives restarts; 2FA is rarely
+needed afterwards. Without a connection, order suggestions, delivery check-in
+and the recipe basket do not work.
 
-### Umgebungsvariablen
+### Environment variables
 
-| Variable          | Beschreibung                                            | Default (Container)           |
-| ----------------- | ------------------------------------------------------- | ----------------------------- |
-| `DATABASE_URL`    | Pfad zur SQLite-Datei                                   | `/data/lebensmittelkumpel.db` |
-| `DATA_DIR`        | Verzeichnis für Bilder und Picnic-Auth-Key             | `/data`                       |
-| `ORIGIN`          | Öffentliche URL der App (CSRF-Schutz von adapter-node) | —                             |
-| `ADMIN_USERNAME`  | Erster Admin (nur beim Erststart ohne Benutzer)        | —                             |
-| `ADMIN_PASSWORD`  | Passwort des ersten Admins                             | —                             |
-| `ADMIN_EMAIL`     | E-Mail des ersten Admins (optional)                    | —                             |
-| `PICNIC_USERNAME` | Picnic-Zugangsdaten für Warenkorb, Lieferungen, Suche  | —                             |
+| Variable          | Description                                            | Default (container)           |
+| ----------------- | ------------------------------------------------------ | ----------------------------- |
+| `DATABASE_URL`    | Path to the SQLite file                                | `/data/lebensmittelkumpel.db` |
+| `DATA_DIR`        | Directory for images and the Picnic auth key           | `/data`                       |
+| `ORIGIN`          | Public URL of the app (adapter-node CSRF protection)   | —                             |
+| `ADMIN_USERNAME`  | First admin (only on first start with no users)        | —                             |
+| `ADMIN_PASSWORD`  | Password of the first admin                            | —                             |
+| `ADMIN_EMAIL`     | Email of the first admin (optional)                    | —                             |
+| `PICNIC_USERNAME` | Picnic credentials for basket, deliveries, search      | —                             |
 | `PICNIC_PASSWORD` |                                                        | —                             |
-| `BODY_SIZE_LIMIT` | Max. Request-Größe (Foto-Uploads!)                     | `15M`                         |
-| `GIT_SHA` · `BUILD_TIME` | Werden beim CI-Build als Build-Args ins Image gesetzt und auf der Konto-Seite unter **Version** angezeigt — so lässt sich prüfen, ob der Server den erwarteten Stand fährt. Lokal ungesetzt → „lokaler Build". | — |
+| `BODY_SIZE_LIMIT` | Max request size (photo uploads!)                      | `15M`                         |
+| `GIT_SHA` · `BUILD_TIME` | Set as build args during the CI build and shown on the account page under **Version** — that is how you check whether the server runs the build you expect. Unset locally → "local build". | — |
 
-> **Passwörter mit Sonderzeichen** (`#`, `$` …) in `.env` und in der
-> `docker-compose*.yml` immer in Anführungszeichen setzen — ein unquotiertes `#`
-> wird sonst als Kommentar abgeschnitten.
+> **Passwords containing special characters** (`#`, `$` …) must be quoted in
+> `.env` and in `docker-compose*.yml` — an unquoted `#` is otherwise cut off as
+> a comment.
 
-## Mitmachen
+## Contributing
 
-Fehlerberichte und Verbesserungsvorschläge gerne als
-[Issue](https://github.com/SirTobyB/LebensmittelKumpel/issues). Vor einem Pull
-Request bitte `npm run check`, `npm test` und `npm run build` laufen lassen.
-Oberfläche, Kommentare und Commit-Nachrichten sind deutsch; die Konventionen
-des Projekts stehen in [CLAUDE.md](CLAUDE.md).
+Bug reports and suggestions are welcome as an
+[issue](https://github.com/SirTobyB/LebensmittelKumpel/issues). Before opening
+a pull request, please run `npm run check`, `npm test` and `npm run build`.
+Comments and commit messages are in German; the project conventions live in
+[CLAUDE.md](CLAUDE.md).
 
-## Lizenz
+## License
 
-[MIT](LICENSE) — Nutzung, Änderung und Weitergabe frei, ohne Gewährleistung.
-Die verwendeten Icons stammen von [Heroicons](https://heroicons.com) (MIT).
+[MIT](LICENSE) — free to use, modify and redistribute, without warranty. The
+icons come from [Heroicons](https://heroicons.com) (MIT).
