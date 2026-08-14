@@ -2,6 +2,7 @@
  * Hilfsfunktionen rund um das Mindesthaltbarkeitsdatum (MHD).
  * MHD wird als ISO-Datum (YYYY-MM-DD) gespeichert.
  */
+import { BCP47, type Locale, type Translate } from '$lib/i18n';
 
 export type MhdStatus = 'expired' | 'critical' | 'soon' | 'ok' | 'none';
 
@@ -27,22 +28,32 @@ export function mhdStatus(bestBefore: string | null, today = new Date()): MhdSta
 	return 'ok';
 }
 
-/** Kurztext zur Restlaufzeit, z.B. „abgelaufen", „heute", „in 5 Tagen". */
-export function mhdLabel(bestBefore: string | null, today = new Date()): string {
+/**
+ * Kurztext zur Restlaufzeit, z.B. „abgelaufen (3 Tage)", „läuft heute ab".
+ *
+ * Die Übersetzerfunktion kommt von außen, statt sie hier zu beschaffen: So
+ * bleibt das Modul rein (kein globaler Sprachzustand, siehe i18n/translate.ts)
+ * und im Test lässt sich jede Sprache einzeln durchspielen.
+ */
+export function mhdLabel(bestBefore: string | null, t: Translate, today = new Date()): string {
 	const days = daysUntil(bestBefore, today);
-	if (days === null) return 'kein MHD';
-	if (days < 0) return days === -1 ? 'seit gestern abgelaufen' : `abgelaufen (${-days} Tage)`;
-	if (days === 0) return 'läuft heute ab';
-	if (days === 1) return 'läuft morgen ab';
-	return `in ${days} Tagen`;
+	if (days === null) return t('mhd.none');
+	if (days < 0) return days === -1 ? t('mhd.expiredYesterday') : t('mhd.expired', { n: -days });
+	if (days === 0) return t('mhd.today');
+	if (days === 1) return t('mhd.tomorrow');
+	return t('mhd.inDays', { n: days });
 }
 
-/** Datumsanzeige im deutschen Format (TT.MM.JJJJ). */
-export function formatDate(bestBefore: string | null): string {
+/** Datumsanzeige in der Schreibweise der Sprache (de: TT.MM.JJJJ, en-GB: DD/MM/YYYY). */
+export function formatDate(bestBefore: string | null, locale: Locale): string {
 	if (!bestBefore) return '';
 	const date = new Date(bestBefore + 'T00:00:00');
 	if (Number.isNaN(date.getTime())) return bestBefore;
-	return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+	return date.toLocaleDateString(BCP47[locale], {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric'
+	});
 }
 
 /** Tailwind-Klassen für die Ampel-Badge je Status. */

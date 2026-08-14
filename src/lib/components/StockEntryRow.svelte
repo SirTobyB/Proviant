@@ -11,6 +11,13 @@
 	import { enhance } from '$app/forms';
 	import { keepValues } from '$lib/forms';
 	import { formatDate, mhdLabel, mhdStatus, MHD_BADGE_CLASSES } from '$lib/mhd';
+	import { page } from '$app/state';
+	import { translator } from '$lib/i18n';
+
+	// Sprache aus den Layout-Daten statt per Prop durch jede Seite gereicht;
+	// page ist kontextgebunden und damit auch beim SSR pro Anfrage korrekt
+	const locale = $derived(page.data.locale);
+	const t = $derived(translator(locale));
 
 	type Entry = { id: number; quantity: number; bestBefore: string | null };
 	type Mode = 'view' | 'edit' | 'move';
@@ -97,13 +104,13 @@
 			</div>
 			<span class="min-w-0 flex-1 text-sm text-gray-600">
 				{#if entry.bestBefore}
-					MHD {formatDate(entry.bestBefore)}
+					{t('mhd.label', { date: formatDate(entry.bestBefore, locale) })}
 				{:else}
-					<span class="text-gray-400">kein MHD</span>
+					<span class="text-gray-400">{t('mhd.none')}</span>
 				{/if}
 			</span>
 			<span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium {MHD_BADGE_CLASSES[status]}">
-				{mhdLabel(entry.bestBefore)}
+				{mhdLabel(entry.bestBefore, t)}
 			</span>
 			<div class="flex shrink-0 items-center gap-3">
 				<button type="button" onclick={openMove} class="text-sm text-gray-500 underline hover:text-gray-700">Umlagern</button>

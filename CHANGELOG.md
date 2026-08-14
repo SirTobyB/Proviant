@@ -13,8 +13,18 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 - **Sprachwahl** auf der Konto-Seite: Englisch, Deutsch oder Niederländisch,
   je Benutzer gespeichert und auf allen Geräten wirksam. Voreingestellt ist
   „Systemsprache" — dann folgt die App der Spracheinstellung des Browsers,
-  ansonsten gilt Englisch. Das Gerüst dafür steht; die Oberfläche selbst wird
-  Seite für Seite übersetzt und ist vorerst weiterhin deutsch.
+  ansonsten gilt Englisch. Übersetzt sind bereits die **Navigation**, die
+  **Lagerseite** und alle **MHD-Angaben** (auch in der Chargenzeile der
+  Lagerort- und Artikelseite); Datum und Zahlen folgen der Sprache
+  (en-GB: 14/08/2026). Die übrigen Seiten werden nach und nach nachgezogen
+  und sind vorerst weiterhin deutsch.
+
+### Geändert
+
+- Die fünf **vorgegebenen Lagerorte** heißen bei einer Neuinstallation jetzt
+  englisch (Kitchen cupboard, Fridge, Freezer, Pantry shelf, Drinks cellar) —
+  passend zur Standardsprache. Bestehende Installationen bleiben unberührt,
+  und umbenennen lässt sich jeder Lagerort ohnehin unter „Lagerorte".
 
 ## [1.2.0] - 2026-08-14
 

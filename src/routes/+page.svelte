@@ -1,16 +1,22 @@
 <script lang="ts">
 	import { mhdStatus, mhdLabel, formatDate, MHD_BADGE_CLASSES } from '$lib/mhd';
+	import { translator } from '$lib/i18n';
 
 	let { data } = $props();
+
+	const t = $derived(translator(data.locale));
 </script>
 
-<svelte:head><title>Lager – LebensmittelKumpel</title></svelte:head>
+<svelte:head><title>{t('stock.title')} – LebensmittelKumpel</title></svelte:head>
 
 <div class="flex flex-wrap items-start justify-between gap-3">
 	<div>
-		<h1 class="text-2xl font-bold">Lager</h1>
+		<h1 class="text-2xl font-bold">{t('stock.title')}</h1>
 		<p class="mt-1 text-sm text-gray-500">
-			{data.stockCount} Gebinde im Bestand · {data.articleCount} Artikel im Stamm
+			{t('stock.summary', {
+				packs: t('common.packs', { n: data.stockCount }),
+				items: t('stock.items', { n: data.articleCount })
+			})}
 		</p>
 	</div>
 	<!-- Auf dem Handy nicht über die Fußzeile erreichbar, deshalb hier;
@@ -20,20 +26,20 @@
 			href="/lieferung"
 			class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
 		>
-			🚚 Lieferung
+			🚚 {t('stock.deliveryShort')}
 		</a>
 		<a
 			href="/journal"
 			class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
 		>
-			📖 Journal
+			📖 {t('stock.journalShort')}
 		</a>
 	</div>
 </div>
 
 {#if data.expiring.length > 0}
 	<section class="mt-6 max-w-2xl">
-		<h2 class="text-sm font-semibold text-gray-700">Läuft bald ab</h2>
+		<h2 class="text-sm font-semibold text-gray-700">{t('stock.expiringSoon')}</h2>
 		<ul class="mt-2 divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
 			{#each data.expiring as entry (entry.id)}
 				{@const status = mhdStatus(entry.bestBefore)}
@@ -47,10 +53,14 @@
 					</a>
 					<div class="min-w-0 flex-1">
 						<a href={`/artikel/${entry.articleId}`} class="block truncate font-medium hover:underline">{entry.articleName}</a>
-						<div class="text-xs text-gray-500">{entry.quantity}× · {entry.locationName} · MHD {formatDate(entry.bestBefore)}</div>
+						<div class="text-xs text-gray-500">
+							{entry.quantity}× · {entry.locationName} · {t('mhd.label', {
+								date: formatDate(entry.bestBefore, data.locale)
+							})}
+						</div>
 					</div>
 					<span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium {MHD_BADGE_CLASSES[status]}">
-						{mhdLabel(entry.bestBefore)}
+						{mhdLabel(entry.bestBefore, t)}
 					</span>
 				</li>
 			{/each}
@@ -58,7 +68,7 @@
 	</section>
 {/if}
 
-<h2 class="mt-8 text-sm font-semibold text-gray-700">Lagerorte</h2>
+<h2 class="mt-8 text-sm font-semibold text-gray-700">{t('stock.locations')}</h2>
 <div class="mt-2 grid grid-cols-2 gap-3 md:max-w-2xl">
 	{#each data.locations as location (location.id)}
 		<a
@@ -67,7 +77,7 @@
 		>
 			<div class="font-semibold">{location.name}</div>
 			<div class="mt-1 text-sm {location.quantity === 0 ? 'text-gray-400' : 'text-gray-600'}">
-				{location.quantity === 0 ? 'Keine Bestände' : `${location.quantity} Gebinde`}
+				{location.quantity === 0 ? t('stock.empty') : t('common.packs', { n: location.quantity })}
 			</div>
 		</a>
 	{/each}

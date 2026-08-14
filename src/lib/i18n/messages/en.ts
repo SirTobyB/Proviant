@@ -12,6 +12,36 @@
  *   Suffix, die Auswahl trifft `Intl.PluralRules` (siehe translate.ts).
  */
 export const en = {
+	'nav.stock': 'Stock',
+	'nav.stocktake': 'Stocktake',
+	'nav.items': 'Items',
+	'nav.recipes': 'Recipes',
+	'nav.order': 'Order',
+	'nav.scan': 'Scan',
+	'nav.delivery': 'Check delivery',
+	'nav.journal': 'Journal',
+	'nav.users': 'Users',
+	'nav.locations': 'Storage locations',
+	'nav.account': 'Account',
+
+	'stock.title': 'Stock',
+	'stock.summary': '{packs} in stock · {items} in the catalogue',
+	'stock.items_one': '{n} item',
+	'stock.items_other': '{n} items',
+	'stock.expiringSoon': 'Expiring soon',
+	'stock.locations': 'Storage locations',
+	'stock.empty': 'Nothing in stock',
+	'stock.deliveryShort': 'Delivery',
+	'stock.journalShort': 'Journal',
+
+	'mhd.none': 'no best-before date',
+	'mhd.expired': 'expired ({n} days ago)',
+	'mhd.expiredYesterday': 'expired yesterday',
+	'mhd.today': 'expires today',
+	'mhd.tomorrow': 'expires tomorrow',
+	'mhd.inDays': 'in {n} days',
+	'mhd.label': 'best before {date}',
+
 	'account.language.title': 'Language',
 	'account.language.description': 'Applies to this account on every device.',
 	'account.language.system': 'System language ({name})',

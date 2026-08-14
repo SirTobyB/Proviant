@@ -6,8 +6,11 @@
 		movementTypeLabel
 	} from '$lib/journal';
 	import { formatDate } from '$lib/mhd';
+	import { translator } from '$lib/i18n';
 
 	let { data } = $props();
+
+	const t = $derived(translator(data.locale));
 
 	/**
 	 * Zeitzone bewusst fest: sonst formatiert der Server (im Container UTC)
@@ -138,7 +141,7 @@
 							<span>{movement.locationName}</span>
 						{/if}
 						{#if movement.bestBefore}
-							<span>MHD {formatDate(movement.bestBefore)}</span>
+							<span>{t('mhd.label', { date: formatDate(movement.bestBefore, data.locale) })}</span>
 						{/if}
 						{#if movement.source}
 							<span class="rounded bg-gray-100 px-1.5 py-0.5">{movementSourceLabel(movement.source)}</span>

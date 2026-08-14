@@ -45,11 +45,15 @@ function seedAdmin(db: Db): void {
  * Lagerorte sind seit v1.2 umbenennbar, ein Abgleich über den Namen würde
  * einen umbenannten Ort bei jedem Start unter seinem alten Namen zurückholen.
  * Weitere Lagerorte legt man in der App unter /lagerorte an.
+ *
+ * Die Namen sind englisch, weil Englisch die Standardsprache der App ist.
+ * Sie sind **Daten, keine Oberfläche** und werden deshalb nicht übersetzt —
+ * wer sie auf Deutsch möchte, benennt sie unter /lagerorte einmalig um.
  */
 function seedStorageLocations(db: Db): void {
 	const [count] = db.select({ n: sql<number>`count(*)` }).from(schema.storageLocations).all();
 	if (count.n > 0) return;
-	const locations = ['Küchenschrank', 'Kühlschrank', 'Gefrierschrank', 'Vorratsregal', 'Getränkekeller'];
+	const locations = ['Kitchen cupboard', 'Fridge', 'Freezer', 'Pantry shelf', 'Drinks cellar'];
 	db.insert(schema.storageLocations)
 		.values(locations.map((name, i) => ({ name, sortOrder: i, createdBy: 'system', updatedBy: 'system' })))
 		.run();
