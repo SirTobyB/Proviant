@@ -41,9 +41,9 @@
 		"vitest": "^4.1.10"
 	},
 	"dependencies": {
-		"barcode-detector": "^3.2.0",
+		"barcode-detector": "^3.2.1",
 		"better-sqlite3": "^12.10.0",
 		"picnic-api": "^4.6.0",
-		"zxing-wasm": "3.1.0"
+		"zxing-wasm": "3.1.1"
 	}
 }
