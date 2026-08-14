@@ -6,6 +6,16 @@ on:
     tags: ['v*']
   workflow_dispatch:
 
+# Immer nur ein Build gleichzeitig: Push auf main und Push des Version-Tags
+# loesen zwei Runs im Sekundenabstand aus, die sich denselben gha-Cache und
+# ueberlappende GHCR-Tags teilen — beide blieben dabei haengen (zuletzt bis
+# ins 6-Stunden-Timeout). Der zweite wartet jetzt und trifft danach einen
+# warmen Cache. Bewusst ohne cancel-in-progress: main und Tag veroeffentlichen
+# unterschiedliche Tags (latest bzw. die Version), es wird also keiner unnoetig.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest

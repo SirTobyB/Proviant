@@ -187,7 +187,11 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   Workflow reicht `GIT_SHA`/`BUILD_TIME` als Build-Args ins Image; die
   Konto-Seite zeigt beides unter **Version** an. Bei „läuft mein Fix schon?"
   **immer zuerst dort nachsehen** — das war schon mehrfach die Ursache
-  vermeintlicher Bugs.
+  vermeintlicher Bugs. Ein einzelner Build dauert 3–6 Minuten; **parallele
+  Runs blieben hängen** (gemeinsamer `type=gha`-Cache, überlappende
+  GHCR-Tags) — einmal bis ins 6-Stunden-Timeout. Der Workflow serialisiert
+  sich deshalb per `concurrency`-Gruppe; Branch und Version-Tag dürfen
+  weiterhin zusammen gepusht werden, der zweite Run wartet dann einfach.
 - **Logging:** SvelteKit ruft `handleError` **nur bei unerwarteten
   Ausnahmen** — alles, was per `error()` geworfen wird, gilt als „erwartet"
   und ginge sonst spurlos raus (deshalb blieb ein 500er im Betrieb einmal
