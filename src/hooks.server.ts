@@ -66,6 +66,22 @@ export const handle: Handle = async ({ event, resolve }) => {
 		transformPageChunk: ({ html }) => html.replace('<html lang="en">', `<html lang="${event.locals.locale}">`)
 	});
 
+	// Schutzheader für jede Antwort. Die Content-Security-Policy selbst steht
+	// nicht hier, sondern in vite.config.ts (`kit.csp`) — nur so bekommen die
+	// von SvelteKit erzeugten Inline-Scripte ihren Nonce.
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	// Bei Klick auf einen fremden Link nur die Herkunft mitgeben, nie den Pfad:
+	// der trägt hier Artikel- und Rezept-IDs.
+	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+	// frame-ancestors in der CSP deckt dasselbe ab; das hier ist für Browser,
+	// die es nicht auswerten.
+	response.headers.set('X-Frame-Options', 'DENY');
+	// Nur wenn die Anfrage wirklich über TLS kam — sonst würde ein Zugriff über
+	// http:// im Heimnetz dauerhaft auf https:// festgenagelt.
+	if (event.url.protocol === 'https:') {
+		response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+	}
+
 	// Am Status statt am Fehlerobjekt hängen: So landet JEDE Fehlerantwort im
 	// Log — auch die per error() geworfenen, die handleError nie zu sehen
 	// bekommt (SvelteKit behandelt sie als „erwartet").

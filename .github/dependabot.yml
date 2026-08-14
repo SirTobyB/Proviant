@@ -1,0 +1,55 @@
+# Automatische Abhängigkeits-Updates.
+#
+# Die Gruppierung ist der eigentliche Kniff: ohne sie öffnet Dependabot für ein
+# SvelteKit-Projekt gut ein Dutzend einzelner Pull Requests pro Woche, die sich
+# gegenseitig blockieren, weil jeder für sich die package-lock.json anfasst.
+# Zusammengehörige Pakete (SvelteKit, Tailwind, Drizzle) müssen ohnehin
+# gemeinsam angehoben werden.
+#
+# Sicherheitsrelevante Updates kommen unabhängig von diesem Zeitplan sofort —
+# dafür müssen im Repository unter Settings → Code security die
+# „Dependabot alerts" und die „Dependabot security updates" aktiv sein.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    groups:
+      svelte:
+        patterns: ['svelte', 'svelte-check', '@sveltejs/*']
+      tailwind:
+        patterns: ['tailwindcss', '@tailwindcss/*']
+      drizzle:
+        patterns: ['drizzle-orm', 'drizzle-kit']
+      # barcode-detector und zxing-wasm müssen dieselbe Version tragen
+      # (src/lib/zxingVersion.test.ts wacht darüber) — also nie einzeln anheben.
+      barcode:
+        patterns: ['barcode-detector', 'zxing-wasm']
+      werkzeug:
+        dependency-type: development
+        update-types: ['minor', 'patch']
+    commit-message:
+      prefix: Aktualisiere
+
+  # Basis-Image des Containers (node:22-alpine im Dockerfile)
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: Aktualisiere
+
+  # Die in .github/workflows/docker.yml verwendeten Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    commit-message:
+      prefix: Aktualisiere

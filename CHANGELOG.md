@@ -20,6 +20,32 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   Daten — Artikel, Tags, Rezepte und Lagerortnamen bleiben, wie sie eingegeben
   wurden — sowie dieser Changelog.
 
+### Sicherheit
+
+- **Bilder werden am Inhalt geprüft, nicht an der Angabe des Absenders.** Bisher
+  entschied der vom Browser mitgeschickte Dateityp darüber, wie eine hochgeladene
+  Datei abgelegt wird — der ist frei wählbar, und SVG war erlaubt. Damit ließ
+  sich eine Datei mit `<script>` als Artikelbild hinterlegen, die beim direkten
+  Aufruf ihrer Adresse im Browser lief und dort im Namen der angemeldeten Person
+  handeln konnte. Erlaubt sind jetzt JPEG, PNG, GIF und WebP, erkannt an ihrer
+  Signatur; SVG gar nicht mehr. Bereits abgelegte SVG-Dateien werden nicht mehr
+  als Bild ausgeliefert.
+- **Die Bild-URL beim Artikelanlegen ist auf Open Food Facts beschränkt.** Das
+  Feld ging ungeprüft in einen Server-Aufruf. Wer es von Hand füllte, konnte den
+  Server Adressen im Heimnetz abfragen lassen, die von außen nicht erreichbar
+  sind, und an den Fehlermeldungen ablesen, was dort antwortet. Weiterleitungen
+  führen aus der erlaubten Quelle nicht mehr heraus.
+- **Schutzheader für jede Antwort**: Content-Security-Policy (mit Nonce für die
+  von SvelteKit erzeugten Scripte), `X-Content-Type-Options`, `Referrer-Policy`,
+  `X-Frame-Options` und — nur bei Zugriff über TLS — HSTS.
+- **Der Barcode-Scanner lädt seine WebAssembly-Datei aus dem eigenen Build.**
+  Voreingestellt holt `zxing-wasm` sie zur Laufzeit von `fastly.jsdelivr.net`:
+  die App führte damit Code aus einer fremden Quelle aus, jeder Scan meldete die
+  IP-Adresse dorthin, und ohne Internetzugang blieb der Scanner überall dort
+  stehen, wo es keinen eingebauten BarcodeDetector gibt (iPhone).
+- Abhängigkeiten mit bekannten Schwachstellen aktualisiert (`@sveltejs/kit`,
+  `postcss`, `nanoid`).
+
 ### Geändert
 
 - Die fünf **vorgegebenen Lagerorte** heißen bei einer Neuinstallation jetzt

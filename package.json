@@ -43,6 +43,7 @@
 	"dependencies": {
 		"barcode-detector": "^3.2.0",
 		"better-sqlite3": "^12.10.0",
-		"picnic-api": "^4.6.0"
+		"picnic-api": "^4.6.0",
+		"zxing-wasm": "3.1.0"
 	}
 }
