@@ -90,8 +90,8 @@
 					<span class="min-w-0 flex-1">
 						<span class="block truncate font-medium">{article.name}</span>
 						<span class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
-							{#if packageSize(article.amount, article.unit)}
-								<span>{packageSize(article.amount, article.unit)}</span>
+							{#if packageSize(article.amount, article.unit, data.locale, t)}
+								<span>{packageSize(article.amount, article.unit, data.locale, t)}</span>
 							{/if}
 							{#if article.ean}
 								<span class="rounded bg-gray-100 px-1.5 py-0.5">EAN</span>

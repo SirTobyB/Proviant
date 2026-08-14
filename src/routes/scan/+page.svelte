@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { keepValues } from '$lib/forms';
+	import { translator } from '$lib/i18n';
 	import { packageSize } from '$lib/format';
 	import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
 
 	let { data, form } = $props();
+
+	// Vorerst nur für die Zahlformate; die Texte dieser Seite folgen später
+	const t = $derived(translator(data.locale));
 
 	type LookupResult = {
 		found: boolean;
@@ -134,7 +138,7 @@
 				<div class="min-w-0">
 					<a href={`/artikel/${article.id}`} class="block truncate font-semibold hover:underline">{article.name}</a>
 					<div class="text-sm text-gray-500">
-						{packageSize(article.amount, article.unit)}
+						{packageSize(article.amount, article.unit, data.locale, t)}
 						· Bestand: {result.totalStock ?? 0}×
 					</div>
 					{#if result.stock && result.stock.length > 0}

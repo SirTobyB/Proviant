@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { formatPrice } from '$lib/format';
+	import { formatPrice, UNITS, unitLabel } from '$lib/format';
+	import { page } from '$app/state';
+	import { translator } from '$lib/i18n';
 	import { enhance } from '$app/forms';
 	import TagInput from '$lib/components/TagInput.svelte';
 
@@ -41,7 +43,10 @@
 		action?: string;
 	} = $props();
 
-	const units = ['g', 'kg', 'ml', 'l', 'Stück'];
+	// Sprache aus den Layout-Daten; page ist kontextgebunden und damit auch beim SSR
+	// pro Anfrage korrekt (kein globaler Sprachzustand)
+	const locale = $derived(page.data.locale);
+	const t = $derived(translator(locale));
 
 	// Bewusst nur die Initialwerte — bei Artikelwechsel wird die Komponente per {#key} neu erzeugt
 	// svelte-ignore state_referenced_locally
@@ -116,14 +121,14 @@
 			const response = await fetch(`/api/picnic/search?q=${encodeURIComponent(query)}`);
 			const data = await response.json();
 			if (!response.ok) {
-				picnicError = data.error ?? 'Picnic-Suche fehlgeschlagen';
+				picnicError = data.error ?? t('form.picnicSearchFailed');
 				picnicState = 'error';
 				return;
 			}
 			picnicResults = normalizePicnicResults(data.results ?? []);
 			picnicState = picnicResults.length === 0 ? 'empty' : 'idle';
 		} catch {
-			picnicError = 'Picnic-Suche fehlgeschlagen';
+			picnicError = t('form.picnicSearchFailed');
 			picnicState = 'error';
 		}
 	}
@@ -192,7 +197,7 @@
 
 	<!-- EAN + Lookup -->
 	<div>
-		<label for="ean" class="block text-sm font-medium text-gray-700">EAN / Barcode</label>
+		<label for="ean" class="block text-sm font-medium text-gray-700">{t('form.ean')}</label>
 		<div class="mt-1 flex gap-2">
 			<input
 				id="ean"
@@ -200,7 +205,7 @@
 				type="text"
 				inputmode="numeric"
 				bind:value={ean}
-				placeholder="z.B. 4311501043271"
+				placeholder={t('form.eanPlaceholder')}
 				class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 			/>
 			<button
@@ -209,19 +214,19 @@
 				disabled={!ean || lookupState === 'loading'}
 				class="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
 			>
-				{lookupState === 'loading' ? 'Suche …' : 'Nachschlagen'}
+				{lookupState === 'loading' ? t('form.searching') : t('form.lookup')}
 			</button>
 		</div>
 		{#if lookupState === 'notfound'}
-			<p class="mt-1 text-sm text-amber-600">In Open Food Facts nicht gefunden — bitte von Hand ausfüllen.</p>
+			<p class="mt-1 text-sm text-amber-600">{t('form.lookupNotFound')}</p>
 		{:else if lookupState === 'error'}
-			<p class="mt-1 text-sm text-red-600">Lookup fehlgeschlagen.</p>
+			<p class="mt-1 text-sm text-red-600">{t('form.lookupFailed')}</p>
 		{/if}
 	</div>
 
 	<!-- Name -->
 	<div>
-		<label for="name" class="block text-sm font-medium text-gray-700">Name *</label>
+		<label for="name" class="block text-sm font-medium text-gray-700">{t('form.name')}</label>
 		<input
 			id="name"
 			name="name"
@@ -235,19 +240,19 @@
 	<!-- Menge + Einheit -->
 	<div class="grid grid-cols-2 gap-3">
 		<div>
-			<label for="amount" class="block text-sm font-medium text-gray-700">Gebindegröße</label>
+			<label for="amount" class="block text-sm font-medium text-gray-700">{t('form.packageSize')}</label>
 			<input
 				id="amount"
 				name="amount"
 				type="text"
 				inputmode="decimal"
 				bind:value={amount}
-				placeholder="z.B. 500"
+				placeholder={t('form.packageSizePlaceholder')}
 				class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 			/>
 		</div>
 		<div>
-			<label for="unit" class="block text-sm font-medium text-gray-700">Einheit</label>
+			<label for="unit" class="block text-sm font-medium text-gray-700">{t('form.unit')}</label>
 			<select
 				id="unit"
 				name="unit"
@@ -255,8 +260,8 @@
 				class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 			>
 				<option value="">—</option>
-				{#each units as u (u)}
-					<option value={u}>{u}</option>
+				{#each UNITS as u (u)}
+					<option value={u}>{unitLabel(u, t)}</option>
 				{/each}
 			</select>
 		</div>
@@ -265,7 +270,7 @@
 	<!-- Mindestbestand + Standard-Lagerort -->
 	<div class="grid grid-cols-2 gap-3">
 		<div>
-			<label for="minStock" class="block text-sm font-medium text-gray-700">Mindestbestand</label>
+			<label for="minStock" class="block text-sm font-medium text-gray-700">{t('form.minStock')}</label>
 			<input
 				id="minStock"
 				name="minStock"
@@ -274,10 +279,10 @@
 				bind:value={minStock}
 				class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 			/>
-			<p class="mt-1 text-xs text-gray-500">0 = kein Bestellvorschlag</p>
+			<p class="mt-1 text-xs text-gray-500">{t('form.minStockHint')}</p>
 		</div>
 		<div>
-			<label for="defaultLocationId" class="block text-sm font-medium text-gray-700">Standard-Lagerort</label>
+			<label for="defaultLocationId" class="block text-sm font-medium text-gray-700">{t('form.defaultLocation')}</label>
 			<select
 				id="defaultLocationId"
 				name="defaultLocationId"
@@ -294,22 +299,22 @@
 
 	<!-- Tags -->
 	<div>
-		<span class="block text-sm font-medium text-gray-700">Tags</span>
-		<TagInput bind:tags={articleTagList} {allTags} placeholder="Tag eingeben (z.B. Getränke, Tiefkühl) und Enter" />
+		<span class="block text-sm font-medium text-gray-700">{t('form.tags')}</span>
+		<TagInput bind:tags={articleTagList} {allTags} placeholder={t('form.tagsPlaceholder')} />
 	</div>
 
 	<!-- Picnic-Verknüpfung -->
 	<fieldset class="rounded-xl border border-gray-200 bg-white p-4">
-		<legend class="px-1 text-sm font-medium text-gray-700">Picnic-Verknüpfung</legend>
+		<legend class="px-1 text-sm font-medium text-gray-700">{t('form.picnicLink')}</legend>
 		{#if picnicId}
 			<div class="flex items-center justify-between gap-2">
-				<span class="text-sm text-green-700">✓ Verknüpft (ID {picnicId})</span>
+				<span class="text-sm text-green-700">{t('form.picnicLinked', { id: picnicId })}</span>
 				<button
 					type="button"
 					onclick={() => (picnicId = '')}
 					class="text-sm text-gray-500 underline hover:text-gray-700"
 				>
-					Entfernen
+					{t('form.picnicRemove')}
 				</button>
 			</div>
 		{:else}
@@ -317,7 +322,7 @@
 				<input
 					type="text"
 					bind:value={picnicQuery}
-					placeholder={name || 'Suchbegriff'}
+					placeholder={name || t('form.picnicSearchPlaceholder')}
 					class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 				/>
 				<button
@@ -326,13 +331,13 @@
 					disabled={picnicState === 'loading' || (!picnicQuery && !name)}
 					class="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
 				>
-					{picnicState === 'loading' ? 'Suche …' : 'In Picnic suchen'}
+					{picnicState === 'loading' ? t('form.searching') : t('form.picnicSearch')}
 				</button>
 			</div>
 			{#if picnicState === 'error'}
 				<p class="mt-2 text-sm text-red-600">{picnicError}</p>
 			{:else if picnicState === 'empty'}
-				<p class="mt-2 text-sm text-amber-600">Keine Treffer.</p>
+				<p class="mt-2 text-sm text-amber-600">{t('form.picnicNoResults')}</p>
 			{/if}
 			{#if picnicResults.length > 0}
 				<ul class="mt-3 divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200">
@@ -353,7 +358,7 @@
 									<span class="block truncate text-sm font-medium">{result.name}</span>
 									<span class="block text-xs text-gray-500">{result.unitQuantity}</span>
 								</span>
-								<span class="shrink-0 text-sm text-gray-700">{formatPrice(result.price)}</span>
+								<span class="shrink-0 text-sm text-gray-700">{formatPrice(result.price, locale)}</span>
 							</button>
 						</li>
 					{/each}
@@ -364,7 +369,7 @@
 				<input
 					type="text"
 					bind:value={directPicnicId}
-					placeholder="Oder Picnic-ID direkt (z.B. s1027848)"
+					placeholder={t('form.picnicIdPlaceholder')}
 					class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 				/>
 				<button
@@ -373,7 +378,7 @@
 					disabled={!directPicnicId.trim()}
 					class="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
 				>
-					Übernehmen
+					{t('form.picnicIdApply')}
 				</button>
 			</div>
 		{/if}
@@ -382,21 +387,21 @@
 
 	<!-- Bild -->
 	<div>
-		<span class="block text-sm font-medium text-gray-700">Bild</span>
+		<span class="block text-sm font-medium text-gray-700">{t('form.image')}</span>
 		<div class="mt-1 flex items-center gap-4">
 			{#if previewSrc}
-				<img src={previewSrc} alt="Vorschau" class="h-20 w-20 rounded-lg border border-gray-200 bg-white object-contain" />
+				<img src={previewSrc} alt={t('form.imagePreview')} class="h-20 w-20 rounded-lg border border-gray-200 bg-white object-contain" />
 			{:else}
 				<div class="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-gray-300 text-xs text-gray-400">
-					Kein Bild
+					{t('form.imageNone')}
 				</div>
 			{/if}
 			<label class="cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-				Foto wählen
+				{t('form.imageChoose')}
 				<input type="file" name="image" accept="image/*" capture="environment" class="hidden" onchange={onFileSelected} />
 			</label>
 		</div>
-		<p class="mt-1 text-xs text-gray-500">Wird sonst automatisch aus Open Food Facts oder Picnic übernommen.</p>
+		<p class="mt-1 text-xs text-gray-500">{t('form.imageHint')}</p>
 		<input type="hidden" name="imageUrl" value={imageUrl} />
 		<input type="hidden" name="picnicImageId" value={picnicImageId} />
 	</div>
@@ -407,13 +412,13 @@
 			disabled={submitting}
 			class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
 		>
-			{submitting ? 'Speichern …' : submitLabel}
+			{submitting ? t('form.saving') : submitLabel}
 		</button>
 		<a
 			href="/artikel"
 			class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
 		>
-			Abbrechen
+			{t('form.cancel')}
 		</a>
 	</div>
 </form>

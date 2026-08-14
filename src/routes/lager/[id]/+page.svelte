@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { packageSize } from '$lib/format';
+	import { translator } from '$lib/i18n';
 	import StockEntryRow from '$lib/components/StockEntryRow.svelte';
 	import { sumQuantity } from '$lib/stock';
 
 	let { data, form } = $props();
+
+	// Vorerst nur für die Zahlformate; die Texte dieser Seite folgen später
+	const t = $derived(translator(data.locale));
 
 	// Aufgeklappte Charge — immer höchstens eine in der ganzen Liste
 	let openEntryId = $state<number | null>(null);
@@ -42,8 +46,8 @@
 					</a>
 					<a href={`/artikel/${article.articleId}`} class="min-w-0 flex-1">
 						<span class="block truncate font-semibold hover:underline">{article.articleName}</span>
-						{#if packageSize(article.amount, article.unit)}
-							<span class="text-xs text-gray-500">{packageSize(article.amount, article.unit)}</span>
+						{#if packageSize(article.amount, article.unit, data.locale, t)}
+							<span class="text-xs text-gray-500">{packageSize(article.amount, article.unit, data.locale, t)}</span>
 						{/if}
 					</a>
 					<span class="shrink-0 text-sm font-semibold text-gray-700">{sumQuantity(article.entries)}×</span>

@@ -1,9 +1,13 @@
 <script lang="ts">
 	import { keepValues } from '$lib/forms';
+	import { translator } from '$lib/i18n';
 	import { packageSize } from '$lib/format';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
+
+	// Vorerst nur für die Zahlformate; die Texte dieser Seite folgen später
+	const t = $derived(translator(data.locale));
 
 	// Auswahl und Mengen pro Vorschlag (Fehlmenge vorbelegt)
 	const defaultSelected = () =>
@@ -189,7 +193,7 @@
 					<div class="min-w-0 flex-1">
 						<a href={`/artikel/${item.id}`} class="block truncate font-medium hover:underline">{item.name}</a>
 						<div class="text-xs text-gray-500">
-							{packageSize(item.amount, item.unit)} · Bestand {item.stock}/{item.minStock}
+							{packageSize(item.amount, item.unit, data.locale, t)} · Bestand {item.stock}/{item.minStock}
 							{#if item.inCartQty > 0}
 								· {item.inCartQty} im Warenkorb
 							{/if}

@@ -88,8 +88,8 @@
 				<div class="min-w-0 flex-1">
 					<a href={`/artikel/${article.id}`} class="block truncate text-sm font-medium hover:underline">{article.name}</a>
 					<div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
-						{#if packageSize(article.amount, article.unit)}
-							<span>{packageSize(article.amount, article.unit)}</span>
+						{#if packageSize(article.amount, article.unit, data.locale, t)}
+							<span>{packageSize(article.amount, article.unit, data.locale, t)}</span>
 						{/if}
 						<span>{article.locations.join(', ')}</span>
 						{#each article.tags.slice(0, 3) as tag (tag)}

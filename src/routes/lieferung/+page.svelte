@@ -48,7 +48,7 @@
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-lg">🚚</div>
 					<div class="min-w-0 flex-1">
 						<div class="font-medium">{formatDate(delivery.deliveryStart)}</div>
-						<div class="text-xs text-gray-500">{formatPrice(delivery.totalPrice)}</div>
+						<div class="text-xs text-gray-500">{formatPrice(delivery.totalPrice, data.locale)}</div>
 					</div>
 					<span
 						class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium {delivery.status === 'CURRENT'

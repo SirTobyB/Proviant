@@ -4,10 +4,15 @@
 	 * Rendert das versteckte `name="tags"`-Feld (JSON-Array) selbst — die
 	 * umgebende Form muss es nur serverseitig parsen (parseTags-Muster).
 	 */
+	import { page } from '$app/state';
+	import { translator } from '$lib/i18n';
+
+	const t = $derived(translator(page.data.locale));
+
 	let {
 		tags = $bindable(),
 		allTags = [],
-		placeholder = 'Tag eingeben und Enter'
+		placeholder = undefined
 	}: {
 		tags: string[];
 		allTags?: string[];
@@ -48,7 +53,7 @@
 		{#each tags as tag (tag)}
 			<span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-sm text-green-700">
 				{tag}
-				<button type="button" onclick={() => removeTag(tag)} class="text-green-500 hover:text-green-700" aria-label="Tag entfernen">×</button>
+				<button type="button" onclick={() => removeTag(tag)} class="text-green-500 hover:text-green-700" aria-label={t('tags.remove')}>×</button>
 			</span>
 		{/each}
 	</div>
@@ -58,7 +63,7 @@
 		type="text"
 		bind:value={tagInput}
 		onkeydown={onTagKeydown}
-		{placeholder}
+		placeholder={placeholder ?? t('tags.placeholder')}
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	/>
 	{#if tagSuggestions.length > 0}
