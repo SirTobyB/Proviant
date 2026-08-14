@@ -8,6 +8,8 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [1.2.0] - 2026-08-14
+
 ### Hinzugefügt
 
 - **Lagerorte als Stammdaten** unter „Lagerorte" (nur Admin): anlegen,
@@ -68,6 +70,7 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.1.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/SirTobyB/LebensmittelKumpel/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/SirTobyB/LebensmittelKumpel/releases/tag/v1.0.0
