@@ -40,6 +40,12 @@ export const storageLocations = sqliteTable('storage_locations', {
 	id: integer('id').primaryKey({ autoIncrement: true }),
 	name: text('name').notNull().unique(),
 	sortOrder: integer('sort_order').notNull().default(0),
+	/**
+	 * Inaktive Lagerorte verhalten sich für den Anwender wie gelöscht: sie
+	 * erscheinen nirgends mehr zur Auswahl. Gelöscht wird bewusst nie, weil
+	 * stock_entries und stock_movements auf sie verweisen.
+	 */
+	active: integer('active', { mode: 'boolean' }).notNull().default(true),
 	...auditFull()
 });
 

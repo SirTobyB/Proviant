@@ -1,5 +1,6 @@
 import { db } from '$lib/server/db';
-import { articles, storageLocations } from '$lib/server/db/schema';
+import { articles } from '$lib/server/db/schema';
+import { activeLocation, activeLocations } from '$lib/server/locations';
 import { getConnectionState, getDeliveryChecklist } from '$lib/server/picnic';
 import { importArticleFromPicnic } from '$lib/server/articleImport';
 import { bookIn } from '$lib/server/stock';
@@ -46,9 +47,19 @@ export const load: PageServerLoad = async ({ params }) => {
 	return {
 		deliveryId: params.id,
 		items,
-		locations: db.select().from(storageLocations).orderBy(storageLocations.sortOrder).all()
+		locations: activeLocations()
 	};
 };
+
+/**
+ * Ziel einer Lieferungs-Buchung: der Standard-Lagerort des Artikels, sonst der
+ * auf der Seite gewählte Ziel-Lagerort — beide nur, solange sie aktiv sind.
+ * Ein stillgelegter Lagerort ist wie gelöscht und darf nichts mehr aufnehmen.
+ */
+function deliveryLocationId(defaultLocationId: number | null, fallbackId: number | null): number | null {
+	if (defaultLocationId != null && activeLocation(defaultLocationId)) return defaultLocationId;
+	return fallbackId != null && activeLocation(fallbackId) ? fallbackId : null;
+}
 
 export const actions: Actions = {
 	// Bucht ein einzelnes gescanntes Gebinde beim Auspacken ein
@@ -62,7 +73,7 @@ export const actions: Actions = {
 			? db.select().from(articles).where(eq(articles.id, articleId)).get()
 			: undefined;
 		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
-		if (!Number.isInteger(locationId) || locationId < 1) {
+		if (!Number.isInteger(locationId) || !activeLocation(locationId)) {
 			return fail(400, { message: 'Bitte einen Ziel-Lagerort wählen' });
 		}
 		if (!Number.isInteger(quantity) || quantity < 1) {
@@ -152,7 +163,7 @@ export const actions: Actions = {
 					articleName = reqName;
 					if (result.created) imported += 1;
 				}
-				const locationId = defaultLocationId ?? fallbackLocationId;
+				const locationId = deliveryLocationId(defaultLocationId, fallbackLocationId);
 				if (!locationId) {
 					noLocation.push(articleName);
 					continue;
@@ -190,9 +201,9 @@ export const actions: Actions = {
 		}
 
 		// Import liefert keine defaultLocationId — frisch angelegte Artikel haben keine
-		const locationId = existing?.defaultLocationId ?? fallbackLocationId;
+		const locationId = deliveryLocationId(existing?.defaultLocationId ?? null, fallbackLocationId);
 		if (!locationId) return fail(400, { message: 'Kein Lagerort verfügbar' });
-		const location = db.select().from(storageLocations).where(eq(storageLocations.id, locationId)).get();
+		const location = activeLocation(locationId);
 		if (!location) return fail(400, { message: 'Lagerort nicht gefunden' });
 
 		bookIn(articleId, locationId, 1, null, user, 'lieferung');

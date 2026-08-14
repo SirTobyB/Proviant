@@ -66,9 +66,15 @@ export const load: PageServerLoad = ({ url }) => {
 			.orderBy(sql`${stockMovements.articleName} collate nocase`)
 			.all()
 			.filter((a): a is { id: number; name: string } => a.id != null),
+		// Bewusst die im Journal vorkommenden Lagerorte statt der aktiven: sonst
+		// wäre die Historie eines stillgelegten Lagerorts nicht mehr filterbar
 		locationOptions: db
 			.select({ id: storageLocations.id, name: storageLocations.name })
 			.from(storageLocations)
+			.where(
+				sql`exists (select 1 from ${stockMovements} where ${stockMovements.locationId} = ${storageLocations.id}
+					or ${stockMovements.fromLocationId} = ${storageLocations.id})`
+			)
 			.orderBy(storageLocations.sortOrder)
 			.all(),
 		userOptions: db

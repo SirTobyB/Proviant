@@ -8,6 +8,18 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Lagerorte als Stammdaten** unter „Lagerorte" (nur Admin): anlegen,
+  umbenennen und in der Reihenfolge verschieben — bisher waren die fünf
+  Lagerorte fest im Code hinterlegt. Statt zu löschen werden Lagerorte
+  **stillgelegt**: sie verschwinden aus allen Auswahllisten und von der
+  Startseite, ihre Bestandshistorie und die Journalzeilen bleiben aber
+  lesbar. Stilllegen setzt einen leeren Lagerort voraus und entfernt den
+  Standard-Lagerort bei betroffenen Artikeln. Der Lagerort-Filter im
+  Buchungsjournal zeigt weiterhin auch stillgelegte Lagerorte, solange
+  Buchungen zu ihnen existieren.
+
 ## [1.1.0] - 2026-08-14
 
 ### Hinzugefügt

@@ -1,14 +1,13 @@
 import { db } from '$lib/server/db';
-import { articles, storageLocations } from '$lib/server/db/schema';
+import { articles } from '$lib/server/db/schema';
+import { activeLocation, activeLocations } from '$lib/server/locations';
 import { bookIn, bookOut } from '$lib/server/stock';
 import { eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	return {
-		locations: db.select().from(storageLocations).orderBy(storageLocations.sortOrder).all()
-	};
+	return { locations: activeLocations() };
 };
 
 function parseBooking(formData: FormData) {
@@ -30,8 +29,10 @@ export const actions: Actions = {
 		const parsed = parseBooking(formData);
 		if ('error' in parsed) return fail(400, { message: parsed.error });
 
+		// Gegen den Stammsatz prüfen: ein stillgelegter Lagerort darf auch aus
+		// einem veralteten Formular heraus kein Ziel mehr sein
 		const locationId = Number(formData.get('locationId'));
-		if (!Number.isInteger(locationId) || locationId < 1) {
+		if (!Number.isInteger(locationId) || !activeLocation(locationId)) {
 			return fail(400, { message: 'Bitte einen Lagerort wählen' });
 		}
 		const bestBeforeRaw = formData.get('bestBefore');

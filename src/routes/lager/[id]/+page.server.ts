@@ -1,7 +1,8 @@
 import { db } from '$lib/server/db';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
+import { activeLocationsExcept } from '$lib/server/locations';
 import { moveStockEntryFromForm, updateStockEntryFromForm } from '$lib/server/stock';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -54,12 +55,7 @@ export const load: PageServerLoad = ({ params }) => {
 	return {
 		location,
 		articles: [...byArticle.values()],
-		otherLocations: db
-			.select()
-			.from(storageLocations)
-			.where(sql`${storageLocations.id} != ${location.id}`)
-			.orderBy(storageLocations.sortOrder)
-			.all()
+		otherLocations: activeLocationsExcept(location.id)
 	};
 };
 

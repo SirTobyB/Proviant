@@ -1,5 +1,6 @@
 import { db } from '$lib/server/db';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
+import { activeLocations } from '$lib/server/locations';
 import { parseArticleForm } from '$lib/server/articleForm';
 import { allArticleTagNames, setArticleTags, tagsForArticle } from '$lib/server/articleTags';
 import { auditEdit } from '$lib/server/audit';
@@ -49,7 +50,7 @@ export const load: PageServerLoad = ({ params }) => {
 		article,
 		tags: tagsForArticle(article.id),
 		stock: [...byLocation.values()],
-		locations: db.select().from(storageLocations).orderBy(storageLocations.sortOrder).all(),
+		locations: activeLocations(),
 		allTags: allArticleTagNames()
 	};
 };

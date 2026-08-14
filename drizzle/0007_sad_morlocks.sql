@@ -1,0 +1,1 @@
+ALTER TABLE `storage_locations` ADD `active` integer DEFAULT true NOT NULL;

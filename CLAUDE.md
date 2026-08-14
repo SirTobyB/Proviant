@@ -38,7 +38,8 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   UI in `+page.svelte`. JSON-Endpunkte unter `src/routes/api/`.
 - **Serverseitige Module** in `src/lib/server/`:
   - `db/` – Drizzle-Setup und Schema. `db/index.ts` **wendet beim Start
-    Migrationen an** (`migrate`) und seedet Lagerorte + ersten Admin idempotent.
+    Migrationen an** (`migrate`) und seedet Lagerorte + ersten Admin (beides
+    nur, solange die jeweilige Tabelle leer ist — siehe Fallstrick unten).
   - `picnic/` – **isolierter Adapter** um die inoffizielle `picnic-api`. Der
     Rest der App importiert Picnic **nur von hier**. Reine, eigenständig
     testbare Untermodule (ohne SvelteKit-Import): `checklist.ts`
@@ -49,7 +50,8 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder. `log.ts` –
     Zeilen-Logging mit Zeitstempel (siehe Fallstrick unten).
   - `stock.ts` (Buchungen, FEFO, **Journal-Erfassung** — siehe Fallstrick
-    unten), `tags.ts` (Rezept-Tags), `articleTags.ts`
+    unten), `locations.ts` (Lagerort-Stammsatz inkl. Aktiv-Regel — siehe
+    Fallstrick unten), `tags.ts` (Rezept-Tags), `articleTags.ts`
     (Artikel-Tags — **eigener Tag-Pool**, bewusst getrennt von den
     Rezept-`tags`, inkl. Bulk-Map `tagsForArticles` gegen N+1 auf
     Listenseiten), `recipeData.ts`, `mealPlan.ts` (Wochenplan-Einkaufsliste:
@@ -105,9 +107,27 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   `DEFAULT 0 NOT NULL` + `UPDATE … = unixepoch()` (Backfill) umstellen (siehe
   `drizzle/0002_*.sql`). Das Schema behält `default(sql\`(unixepoch())\`)`; da der
   Snapshot dem Schema entspricht, entsteht keine Drift.
-- **Lagerorte / Admin** werden beim Start geseedet (idempotent). Ein neuer
-  Lagerort wird einfach der Liste in `db/index.ts` hinzugefügt und kommt beim
-  nächsten Start dazu — keine Migration nötig.
+- **Lagerorte** sind Stammdaten und werden unter `/lagerorte` gepflegt (nur
+  Admin). Der Seed in `db/index.ts` greift **nur bei leerer Tabelle** — ein
+  Abgleich über den Namen würde einen umbenannten Lagerort bei jedem Start
+  unter seinem alten Namen zurückholen. Neue Lagerorte gehören deshalb in die
+  App, nicht in die Seed-Liste. **Gelöscht wird nie**, sondern `active = 0`
+  gesetzt: `stock_entries` und `stock_movements` verweisen auf Lagerorte, die
+  Historie muss lesbar bleiben. Ein inaktiver Lagerort ist für den Anwender
+  wie gelöscht — damit das lückenlos gilt, holt sich **jede** Auswahlliste
+  ihre Lagerorte über `server/locations.ts` (`activeLocations`,
+  `activeLocationsExcept`) und **jede** Buchung ihr Ziel über
+  `activeLocation`/`bookingLocationId`; ausblenden allein genügt nicht, ein
+  veraltetes Formular darf serverseitig nicht durchkommen. Stilllegen setzt
+  einen leeren Lagerort voraus (sonst wäre Bestand unsichtbar, zählte aber in
+  den Summen weiter) und leert den Standard-Lagerort betroffener Artikel.
+  Einzige Ausnahme von der Ausblend-Regel ist der **Journal-Filter**: er
+  listet die im Journal vorkommenden Lagerorte, sonst wäre die Historie eines
+  stillgelegten Orts nicht mehr auffindbar. Ein Namens-Schnappschuss wie beim
+  Artikel entfällt bewusst — derselbe physische Ort soll auch rückwirkend
+  seinen aktuellen Namen zeigen.
+- **Erster Admin** wird beim Start aus `ADMIN_USERNAME`/`ADMIN_PASSWORD`
+  angelegt, solange kein Benutzer existiert.
 - **Picnic:** Nur Warenkorb befüllen, **nie automatisch bestellen** — der
   Checkout bleibt in der Picnic-App. Erststart braucht Login + SMS-2FA; der
   Auth-Key liegt in `DATA_DIR/picnic-auth-key` (übersteht Neustarts).

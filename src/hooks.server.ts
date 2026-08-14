@@ -37,8 +37,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		throw redirect(303, '/login');
 	}
 
-	// Userverwaltung ist Admins vorbehalten
-	if (path.startsWith('/benutzer') && event.locals.user?.role !== 'admin') {
+	// Stammdaten-Verwaltung (Benutzer, Lagerorte) ist Admins vorbehalten
+	const adminOnly = ['/benutzer', '/lagerorte'];
+	if (adminOnly.some((p) => path.startsWith(p)) && event.locals.user?.role !== 'admin') {
 		throw redirect(303, '/');
 	}
 

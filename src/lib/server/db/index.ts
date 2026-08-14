@@ -40,6 +40,21 @@ function seedAdmin(db: Db): void {
 	console.info(`[auth] Admin-Benutzer "${env.ADMIN_USERNAME}" angelegt.`);
 }
 
+/**
+ * Lagerorte für den allerersten Start. Bewusst **nur bei leerer Tabelle**:
+ * Lagerorte sind seit v1.2 umbenennbar, ein Abgleich über den Namen würde
+ * einen umbenannten Ort bei jedem Start unter seinem alten Namen zurückholen.
+ * Weitere Lagerorte legt man in der App unter /lagerorte an.
+ */
+function seedStorageLocations(db: Db): void {
+	const [count] = db.select({ n: sql<number>`count(*)` }).from(schema.storageLocations).all();
+	if (count.n > 0) return;
+	const locations = ['Küchenschrank', 'Kühlschrank', 'Gefrierschrank', 'Vorratsregal', 'Getränkekeller'];
+	db.insert(schema.storageLocations)
+		.values(locations.map((name, i) => ({ name, sortOrder: i, createdBy: 'system', updatedBy: 'system' })))
+		.run();
+}
+
 function createDb() {
 	if (!env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
 
@@ -52,13 +67,7 @@ function createDb() {
 	// Migrationen beim Start anwenden (Ordner ./drizzle liegt neben dem Build im Container)
 	migrate(db, { migrationsFolder: env.MIGRATIONS_DIR ?? './drizzle' });
 
-	// Feste Lagerorte einmalig anlegen (idempotent: neue kommen beim Start dazu)
-	const locations = ['Küchenschrank', 'Kühlschrank', 'Gefrierschrank', 'Vorratsregal', 'Getränkekeller'];
-	db.insert(schema.storageLocations)
-		.values(locations.map((name, i) => ({ name, sortOrder: i })))
-		.onConflictDoNothing()
-		.run();
-
+	seedStorageLocations(db);
 	seedAdmin(db);
 
 	return db;

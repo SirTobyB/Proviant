@@ -42,8 +42,12 @@
 			<div class="flex justify-between"><dt class="text-gray-500">E-Mail</dt><dd>{data.account?.email}</dd></div>
 			<div class="flex justify-between"><dt class="text-gray-500">Rolle</dt><dd>{roleLabel}</dd></div>
 		</dl>
+		<!-- Auf dem Handy der einzige Weg zur Verwaltung (Sidebar nur ab md) -->
 		{#if data.account?.role === 'admin'}
-			<a href="/benutzer" class="mt-3 inline-block text-sm font-medium text-green-700 hover:underline">→ Benutzerverwaltung</a>
+			<div class="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+				<a href="/benutzer" class="text-sm font-medium text-green-700 hover:underline">→ Benutzerverwaltung</a>
+				<a href="/lagerorte" class="text-sm font-medium text-green-700 hover:underline">→ Lagerorte</a>
+			</div>
 		{/if}
 	</div>
 

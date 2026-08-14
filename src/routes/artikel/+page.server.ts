@@ -1,6 +1,7 @@
 import { db } from '$lib/server/db';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
 import { allArticleTagNames, tagsForArticles } from '$lib/server/articleTags';
+import { bookingLocationId } from '$lib/server/locations';
 import { bookIn, bookOut } from '$lib/server/stock';
 import { eq, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
@@ -61,9 +62,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const article = getArticle(formData);
 		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
-		const locationId =
-			article.defaultLocationId ??
-			db.select({ id: storageLocations.id }).from(storageLocations).orderBy(storageLocations.sortOrder).get()?.id;
+		const locationId = bookingLocationId(article.defaultLocationId);
 		if (!locationId) return fail(400, { message: 'Kein Lagerort vorhanden' });
 		bookIn(article.id, locationId, parseQuantity(formData), null, locals.user?.username ?? null, 'artikelliste');
 		return { adjusted: article.id };

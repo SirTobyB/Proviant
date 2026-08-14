@@ -1,6 +1,7 @@
 import { db } from '$lib/server/db';
 import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
 import { allArticleTagNames, tagsForArticles } from '$lib/server/articleTags';
+import { bookingLocationId } from '$lib/server/locations';
 import { bookIn, bookOut } from '$lib/server/stock';
 import { eq, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
@@ -95,9 +96,7 @@ export const actions: Actions = {
 
 		if (delta > 0) {
 			// Zugang ohne MHD in den Standard-Lagerort (wie die Schnellkorrektur auf /artikel)
-			const locationId =
-				article.defaultLocationId ??
-				db.select({ id: storageLocations.id }).from(storageLocations).orderBy(storageLocations.sortOrder).get()?.id;
+			const locationId = bookingLocationId(article.defaultLocationId);
 			if (!locationId) return fail(400, { message: 'Kein Lagerort vorhanden' });
 			bookIn(article.id, locationId, delta, null, user, 'inventur');
 		} else if (delta < 0) {

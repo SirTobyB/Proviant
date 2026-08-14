@@ -7,8 +7,9 @@
  * sonst hat das Journal eine Lücke.
  */
 import { db } from '$lib/server/db';
-import { articles, stockEntries, stockMovements, storageLocations } from '$lib/server/db/schema';
+import { articles, stockEntries, stockMovements } from '$lib/server/db/schema';
 import { auditEdit, auditNew } from '$lib/server/audit';
+import { activeLocation } from '$lib/server/locations';
 import { and, eq, sql } from 'drizzle-orm';
 
 /** Woher eine Buchung ausgelöst wurde — im Journal sichtbar. */
@@ -277,11 +278,9 @@ export function moveStockEntryFromForm(
 	if (!Number.isInteger(targetLocationId) || targetLocationId === entry.locationId) {
 		return { ok: false, status: 400, message: 'Bitte einen anderen Ziel-Lagerort wählen' };
 	}
-	const target = db
-		.select()
-		.from(storageLocations)
-		.where(eq(storageLocations.id, targetLocationId))
-		.get();
+	// Nur aktive Ziele: ein stillgelegter Lagerort ist wie gelöscht und darf
+	// auch aus einem veralteten Formular heraus nichts mehr aufnehmen
+	const target = activeLocation(targetLocationId);
 	if (!target) return { ok: false, status: 400, message: 'Ziel-Lagerort nicht gefunden' };
 
 	moveStockEntry(entry.id, targetLocationId, user, 'charge');

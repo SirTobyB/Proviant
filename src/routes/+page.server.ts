@@ -13,6 +13,8 @@ export const load: PageServerLoad = () => {
 		})
 		.from(storageLocations)
 		.leftJoin(stockEntries, eq(stockEntries.locationId, storageLocations.id))
+		// Stillgelegte Lagerorte bekommen keine Kachel mehr (sie sind ohnehin leer)
+		.where(eq(storageLocations.active, true))
 		.groupBy(storageLocations.id)
 		.orderBy(storageLocations.sortOrder)
 		.all();

@@ -14,13 +14,18 @@ Picnic-Lieferdienst sowie Verwaltung der Familienrezepte. Smartphone-optimiert
   App-Version, Build-Zeitpunkt und Commit der laufenden Instanz — praktisch,
   um zu prüfen, ob der Server wirklich den erwarteten Stand fährt — und
   darunter den **Changelog** der Versionen.
-- **Lagerverwaltung** — Bestände in fünf Lagerorten (Küchenschrank, Kühlschrank,
-  Gefrierschrank, Vorratsregal, Getränkekeller), geführt als Chargen mit eigenem
-  MHD. Ein-/Ausbuchen per Barcode-Scan (FEFO beim Ausbuchen), MHD-Ampel und
+- **Lagerverwaltung** — Bestände in frei pflegbaren Lagerorten (ab Werk
+  Küchenschrank, Kühlschrank, Gefrierschrank, Vorratsregal, Getränkekeller),
+  geführt als Chargen mit eigenem MHD. Ein-/Ausbuchen per Barcode-Scan (FEFO beim Ausbuchen), MHD-Ampel und
   „Läuft bald ab"-Ansicht. Schnelle +/−-Korrektur mit frei wählbarer Menge
   direkt in der Artikelliste, in der Lagerort-Ansicht je Charge mit einem
   Klick (0 löscht die Charge); Chargen lassen sich bearbeiten und zwischen
   Lagerorten umlagern.
+- **Lagerorte** (Admin) — anlegen, umbenennen und in der Reihenfolge
+  verschieben. Gelöscht wird nie, sondern **stillgelegt**: ein stillgelegter
+  Lagerort erscheint nirgends mehr zur Auswahl, seine Bestandshistorie und die
+  Journalzeilen bleiben aber lesbar. Stilllegen setzt voraus, dass der Lagerort
+  leer ist; der Standard-Lagerort betroffener Artikel wird dabei entfernt.
 - **Buchungsjournal** — jede Bestandsveränderung wird festgehalten: Zeitpunkt,
   Benutzer, Artikel, Menge und Lagerort, dazu die Herkunft der Buchung
   (Scanner, Inventur, Lieferung, Artikelliste, Charge). Zu- und Abgänge,

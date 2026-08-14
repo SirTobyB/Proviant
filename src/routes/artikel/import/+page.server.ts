@@ -1,5 +1,6 @@
 import { db } from '$lib/server/db';
-import { articles, storageLocations } from '$lib/server/db/schema';
+import { articles } from '$lib/server/db/schema';
+import { activeLocations } from '$lib/server/locations';
 import {
 	getConnectionState,
 	listOrderedProducts,
@@ -13,7 +14,7 @@ const DELIVERY_LIMIT = 10;
 
 export const load: PageServerLoad = async () => {
 	const connection = getConnectionState();
-	const locations = db.select().from(storageLocations).orderBy(storageLocations.sortOrder).all();
+	const locations = activeLocations();
 	if (connection !== 'connected') {
 		return { connection, products: [] as OrderedProduct[], linkedIds: [] as string[], locations, error: null };
 	}

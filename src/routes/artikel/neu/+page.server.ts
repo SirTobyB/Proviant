@@ -1,5 +1,6 @@
 import { db } from '$lib/server/db';
-import { articles, storageLocations } from '$lib/server/db/schema';
+import { articles } from '$lib/server/db/schema';
+import { activeLocations } from '$lib/server/locations';
 import { parseArticleForm } from '$lib/server/articleForm';
 import { allArticleTagNames, setArticleTags } from '$lib/server/articleTags';
 import { auditNew } from '$lib/server/audit';
@@ -8,7 +9,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ url }) => {
 	return {
-		locations: db.select().from(storageLocations).orderBy(storageLocations.sortOrder).all(),
+		locations: activeLocations(),
 		allTags: allArticleTagNames(),
 		// Vorbefüllte EAN, z.B. vom Barcode-Scanner
 		ean: url.searchParams.get('ean') ?? ''
