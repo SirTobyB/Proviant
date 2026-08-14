@@ -75,7 +75,7 @@ export const actions: Actions = {
 				? bestBeforeRaw
 				: null;
 
-		bookIn(article.id, locationId, quantity, bestBefore, locals.user?.username ?? null);
+		bookIn(article.id, locationId, quantity, bestBefore, locals.user?.username ?? null, 'lieferung');
 		return { booked: true, articleId, quantity };
 	},
 
@@ -157,7 +157,7 @@ export const actions: Actions = {
 					noLocation.push(articleName);
 					continue;
 				}
-				bookIn(articleId, locationId, qty, null, user);
+				bookIn(articleId, locationId, qty, null, user, 'lieferung');
 				booked += qty;
 			} catch {
 				failed.push(reqName || String(req.productId));
@@ -195,7 +195,7 @@ export const actions: Actions = {
 		const location = db.select().from(storageLocations).where(eq(storageLocations.id, locationId)).get();
 		if (!location) return fail(400, { message: 'Lagerort nicht gefunden' });
 
-		bookIn(articleId, locationId, 1, null, user);
+		bookIn(articleId, locationId, 1, null, user, 'lieferung');
 		return { bookedOne: productId, created, locationName: location.name };
 	},
 

@@ -1,10 +1,54 @@
 /**
  * Lagerbuchungen auf Chargen-Basis.
+ *
+ * Hier laufen **alle** Schreibzugriffe auf `stock_entries` zusammen — deshalb
+ * schreibt auch das Buchungsjournal (`stock_movements`) ausschließlich von
+ * hier aus. Wer eine neue Buchungsart ergänzt, muss `recordMovement` mitrufen,
+ * sonst hat das Journal eine Lücke.
  */
 import { db } from '$lib/server/db';
-import { stockEntries, storageLocations } from '$lib/server/db/schema';
+import { articles, stockEntries, stockMovements, storageLocations } from '$lib/server/db/schema';
 import { auditEdit, auditNew } from '$lib/server/audit';
 import { and, eq, sql } from 'drizzle-orm';
+
+/** Woher eine Buchung ausgelöst wurde — im Journal sichtbar. */
+export type MovementSource = 'scan' | 'inventur' | 'lieferung' | 'artikelliste' | 'charge';
+
+/**
+ * Schreibt eine Journalzeile. Der Artikelname wird als Schnappschuss abgelegt,
+ * damit die Zeile lesbar bleibt, wenn der Artikel später gelöscht wird.
+ */
+function recordMovement(movement: {
+	type: 'in' | 'out' | 'move' | 'correction';
+	source: MovementSource;
+	articleId: number;
+	/** Wirkung auf den Gesamtbestand (+/−); bei Umlagerung die umgelagerte Menge */
+	quantity: number;
+	locationId: number | null;
+	fromLocationId?: number | null;
+	bestBefore: string | null;
+	user: string | null;
+}): void {
+	const article = db
+		.select({ name: articles.name })
+		.from(articles)
+		.where(eq(articles.id, movement.articleId))
+		.get();
+
+	db.insert(stockMovements)
+		.values({
+			bookedBy: movement.user,
+			type: movement.type,
+			source: movement.source,
+			articleId: movement.articleId,
+			articleName: article?.name ?? `Artikel ${movement.articleId}`,
+			quantity: movement.quantity,
+			locationId: movement.locationId,
+			fromLocationId: movement.fromLocationId ?? null,
+			bestBefore: movement.bestBefore
+		})
+		.run();
+}
 
 /** Bucht Gebinde ein; gleiche Kombination aus Lagerort und MHD wird zusammengefasst. */
 export function bookIn(
@@ -12,7 +56,8 @@ export function bookIn(
 	locationId: number,
 	quantity: number,
 	bestBefore: string | null,
-	user: string | null
+	user: string | null,
+	source: MovementSource
 ): void {
 	if (quantity < 1) return;
 
@@ -40,13 +85,20 @@ export function bookIn(
 			.values({ articleId, locationId, quantity, bestBefore, ...auditNew(user) })
 			.run();
 	}
+
+	recordMovement({ type: 'in', source, articleId, quantity, locationId, bestBefore, user });
 }
 
 /**
  * Bucht Gebinde aus: Chargen mit dem nächsten MHD zuerst (FEFO),
  * Chargen ohne MHD zuletzt. Liefert die tatsächlich ausgebuchte Anzahl.
  */
-export function bookOut(articleId: number, quantity: number, user: string | null): number {
+export function bookOut(
+	articleId: number,
+	quantity: number,
+	user: string | null,
+	source: MovementSource
+): number {
 	if (quantity < 1) return 0;
 
 	const entries = db
@@ -72,6 +124,17 @@ export function bookOut(articleId: number, quantity: number, user: string | null
 				.where(eq(stockEntries.id, entry.id))
 				.run();
 		}
+		// Je betroffener Charge eine Zeile: FEFO kann über mehrere Lagerorte
+		// laufen, nur so bleibt „welcher Lagerplatz?" beantwortbar
+		recordMovement({
+			type: 'out',
+			source,
+			articleId,
+			quantity: -take,
+			locationId: entry.locationId,
+			bestBefore: entry.bestBefore,
+			user
+		});
 		remaining -= take;
 	}
 	return quantity - remaining;
@@ -83,9 +146,15 @@ export function bookOut(articleId: number, quantity: number, user: string | null
  * bereits eine Charge mit gleichem Artikel und MHD, werden die Mengen
  * zusammengeführt statt einer zweiten Charge.
  */
-export function moveStockEntry(entryId: number, targetLocationId: number, user: string | null): boolean {
+export function moveStockEntry(
+	entryId: number,
+	targetLocationId: number,
+	user: string | null,
+	source: MovementSource
+): boolean {
 	const entry = db.select().from(stockEntries).where(eq(stockEntries.id, entryId)).get();
 	if (!entry) return false;
+	// Kein Ortswechsel = keine Buchung, also auch keine Journalzeile
 	if (entry.locationId === targetLocationId) return true;
 
 	const existing = db
@@ -114,6 +183,17 @@ export function moveStockEntry(entryId: number, targetLocationId: number, user: 
 			.where(eq(stockEntries.id, entry.id))
 			.run();
 	}
+
+	recordMovement({
+		type: 'move',
+		source,
+		articleId: entry.articleId,
+		quantity: entry.quantity,
+		locationId: targetLocationId,
+		fromLocationId: entry.locationId,
+		bestBefore: entry.bestBefore,
+		user
+	});
 	return true;
 }
 
@@ -167,6 +247,20 @@ export function updateStockEntryFromForm(
 			.where(eq(stockEntries.id, entry.id))
 			.run();
 	}
+
+	// Reine Bestätigung ohne Änderung erzeugt keine Journalzeile
+	const delta = quantity - entry.quantity;
+	if (delta !== 0 || bestBefore !== entry.bestBefore) {
+		recordMovement({
+			type: 'correction',
+			source: 'charge',
+			articleId: entry.articleId,
+			quantity: delta,
+			locationId: entry.locationId,
+			bestBefore,
+			user
+		});
+	}
 	return { ok: true };
 }
 
@@ -190,6 +284,6 @@ export function moveStockEntryFromForm(
 		.get();
 	if (!target) return { ok: false, status: 400, message: 'Ziel-Lagerort nicht gefunden' };
 
-	moveStockEntry(entry.id, targetLocationId, user);
+	moveStockEntry(entry.id, targetLocationId, user, 'charge');
 	return { ok: true, targetName: target.name };
 }

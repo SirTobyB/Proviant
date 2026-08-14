@@ -40,7 +40,7 @@ export const actions: Actions = {
 				? bestBeforeRaw
 				: null;
 
-		bookIn(parsed.article.id, locationId, parsed.quantity, bestBefore, locals.user?.username ?? null);
+		bookIn(parsed.article.id, locationId, parsed.quantity, bestBefore, locals.user?.username ?? null, 'scan');
 		return { booked: 'in' as const, articleName: parsed.article.name, quantity: parsed.quantity };
 	},
 
@@ -48,7 +48,7 @@ export const actions: Actions = {
 		const parsed = parseBooking(await request.formData());
 		if ('error' in parsed) return fail(400, { message: parsed.error });
 
-		const booked = bookOut(parsed.article.id, parsed.quantity, locals.user?.username ?? null);
+		const booked = bookOut(parsed.article.id, parsed.quantity, locals.user?.username ?? null, 'scan');
 		if (booked === 0) return fail(400, { message: 'Kein Bestand zum Ausbuchen vorhanden' });
 		return { booked: 'out' as const, articleName: parsed.article.name, quantity: booked };
 	}

@@ -43,6 +43,13 @@
       "when": 1784482257042,
       "tag": "0005_wakeful_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786688748755,
+      "tag": "0006_legal_nextwave",
+      "breakpoints": true
     }
   ]
 }

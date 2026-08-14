@@ -201,3 +201,44 @@ export const mealPlanEntries = sqliteTable('meal_plan_entries', {
 	servings: integer('servings').notNull(),
 	...auditFull()
 });
+
+/**
+ * Buchungsjournal: jede Bestandsveränderung als eigene Zeile. `stock_entries`
+ * hält nur den aktuellen Stand — ohne diese Tabelle wäre nicht nachvollziehbar,
+ * wer wann wie viel gebucht hat (eine ausgebuchte Charge verschwindet spurlos).
+ *
+ * Geschrieben wird ausschließlich aus `server/stock.ts`; dort laufen alle
+ * Schreibzugriffe auf `stock_entries` zusammen, damit bleibt das Journal
+ * lückenlos.
+ */
+export const stockMovements = sqliteTable('stock_movements', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	bookedAt: integer('booked_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	/** Benutzername als Text (kein FK) — wie bei den Audit-Feldern */
+	bookedBy: text('booked_by'),
+	/** in = Zugang, out = Abgang, move = Umlagerung, correction = Chargen-Korrektur */
+	type: text('type', { enum: ['in', 'out', 'move', 'correction'] }).notNull(),
+	/** Woher die Buchung kam: scan | inventur | lieferung | artikelliste | charge */
+	source: text('source'),
+	/**
+	 * Bewusst `set null` statt `cascade` wie bei stock_entries: Das Löschen eines
+	 * Artikels darf seine Historie nicht mitlöschen.
+	 */
+	articleId: integer('article_id').references(() => articles.id, { onDelete: 'set null' }),
+	/** Name zum Buchungszeitpunkt — hält die Zeile lesbar, auch ohne Artikel */
+	articleName: text('article_name').notNull(),
+	/**
+	 * Wirkung auf den Gesamtbestand in Gebinden: positiv = Zugang, negativ =
+	 * Abgang. Bei Umlagerung die umgelagerte Menge (Gesamtbestand unverändert),
+	 * bei reiner MHD-Änderung 0.
+	 */
+	quantity: integer('quantity').notNull(),
+	/** Betroffener Lagerort; bei Umlagerung das Ziel */
+	locationId: integer('location_id').references(() => storageLocations.id),
+	/** Nur bei Umlagerung: Herkunftsort */
+	fromLocationId: integer('from_location_id').references(() => storageLocations.id),
+	/** MHD der betroffenen Charge (ISO-Datum), falls vorhanden */
+	bestBefore: text('best_before')
+});

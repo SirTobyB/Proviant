@@ -104,6 +104,17 @@
 					</svg>
 					Lieferung prüfen
 				</a>
+				<a
+					href="/journal"
+					class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
+						{isActive('/journal') ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100'}"
+				>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+						<!-- Heroicons: queue-list -->
+						<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+					</svg>
+					Journal
+				</a>
 			</nav>
 
 			<!-- Konto-Bereich -->

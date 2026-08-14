@@ -99,9 +99,9 @@ export const actions: Actions = {
 				article.defaultLocationId ??
 				db.select({ id: storageLocations.id }).from(storageLocations).orderBy(storageLocations.sortOrder).get()?.id;
 			if (!locationId) return fail(400, { message: 'Kein Lagerort vorhanden' });
-			bookIn(article.id, locationId, delta, null, user);
+			bookIn(article.id, locationId, delta, null, user, 'inventur');
 		} else if (delta < 0) {
-			bookOut(article.id, -delta, user);
+			bookOut(article.id, -delta, user, 'inventur');
 		}
 
 		return { adjusted: article.id, newTotal };

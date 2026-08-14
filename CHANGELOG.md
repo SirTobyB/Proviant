@@ -8,6 +8,17 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Buchungsjournal** unter *Journal*: Jede Bestandsveränderung wird mit
+  Zeitpunkt, Benutzer, Artikel, Menge und Lagerort festgehalten — Zu- und
+  Abgänge, Umlagerungen (mit Von-/Nach-Lagerort) und Chargen-Korrekturen
+  inklusive MHD-Änderungen. Filterbar nach Artikel, Lagerort, Benutzer und
+  Buchungsart; die Herkunft (Scanner, Inventur, Lieferung, Artikelliste,
+  Charge) steht an jeder Zeile. Das Journal beginnt mit der Einführung —
+  frühere Buchungen lassen sich nicht rekonstruieren, da sie nie
+  gespeichert wurden.
+
 ## [1.0.0] - 2026-08-13
 
 Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.

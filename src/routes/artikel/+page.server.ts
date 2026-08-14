@@ -65,7 +65,7 @@ export const actions: Actions = {
 			article.defaultLocationId ??
 			db.select({ id: storageLocations.id }).from(storageLocations).orderBy(storageLocations.sortOrder).get()?.id;
 		if (!locationId) return fail(400, { message: 'Kein Lagerort vorhanden' });
-		bookIn(article.id, locationId, parseQuantity(formData), null, locals.user?.username ?? null);
+		bookIn(article.id, locationId, parseQuantity(formData), null, locals.user?.username ?? null, 'artikelliste');
 		return { adjusted: article.id };
 	},
 
@@ -74,7 +74,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const article = getArticle(formData);
 		if (!article) return fail(400, { message: 'Artikel nicht gefunden' });
-		bookOut(article.id, parseQuantity(formData), locals.user?.username ?? null);
+		bookOut(article.id, parseQuantity(formData), locals.user?.username ?? null, 'artikelliste');
 		return { adjusted: article.id };
 	}
 };

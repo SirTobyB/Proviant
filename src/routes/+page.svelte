@@ -6,19 +6,29 @@
 
 <svelte:head><title>Lager – LebensmittelKumpel</title></svelte:head>
 
-<div class="flex items-start justify-between gap-3">
+<div class="flex flex-wrap items-start justify-between gap-3">
 	<div>
 		<h1 class="text-2xl font-bold">Lager</h1>
 		<p class="mt-1 text-sm text-gray-500">
 			{data.stockCount} Gebinde im Bestand · {data.articleCount} Artikel im Stamm
 		</p>
 	</div>
-	<a
-		href="/lieferung"
-		class="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 md:hidden"
-	>
-		🚚 Lieferung
-	</a>
+	<!-- Auf dem Handy nicht über die Fußzeile erreichbar, deshalb hier;
+	     flex-wrap ohne shrink-0, sonst ragt die Gruppe bei 375px über den Rand -->
+	<div class="flex flex-wrap gap-2 md:hidden">
+		<a
+			href="/lieferung"
+			class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+		>
+			🚚 Lieferung
+		</a>
+		<a
+			href="/journal"
+			class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+		>
+			📖 Journal
+		</a>
+	</div>
 </div>
 
 {#if data.expiring.length > 0}
