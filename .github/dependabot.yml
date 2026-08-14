@@ -37,6 +37,25 @@ updates:
         dependency-type: production
         update-types: ['minor', 'patch']
         exclude-patterns: ['barcode-detector', 'zxing-wasm']
+    # Majors von better-sqlite3 bleiben Handarbeit — aus demselben Grund wie
+    # beim Basis-Image, nur schärfer: Die gesamte 13er-Linie liefert **keine**
+    # vorgebauten Binaries (v12.11.1: 138 Stück inkl. linuxmusl, v13.0.0 und
+    # v13.0.3: null). Das Image müsste den Treiber bei jedem Build aus dem
+    # Quelltext übersetzen, für arm64 unter QEMU-Emulation — dort ist dieses
+    # Projekt schon einmal bis ins 6-Stunden-Timeout gelaufen.
+    #
+    # Geprüft ist v13 im Übrigen unauffällig: Migrationen, Transaktionen,
+    # Fremdschlüssel und Upserts laufen mit drizzle-orm 0.45.2 durch. Es fehlen
+    # nur die Binaries. Sobald die 13er-Linie welche mitbringt, kann die Regel
+    # weg — ebenso, wenn eine Schwachstelle auftaucht, die nur v13 behebt.
+    #
+    # Achtung: Die CI kann diese Entscheidung nicht abnehmen. Kein Test fasst
+    # die Datenbank an, der Build öffnet sie nicht, die Typen kommen aus dem
+    # eigenständig versionierten @types/better-sqlite3, und der Runner läuft auf
+    # glibc statt musl. Ein grüner Haken sagt hier nichts.
+    ignore:
+      - dependency-name: better-sqlite3
+        update-types: ['version-update:semver-major']
     commit-message:
       prefix: Aktualisiere
 
