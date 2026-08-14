@@ -10,17 +10,15 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ### Hinzugefügt
 
-- **Sprachwahl** auf der Konto-Seite: Englisch, Deutsch oder Niederländisch,
-  je Benutzer gespeichert und auf allen Geräten wirksam. Voreingestellt ist
-  „Systemsprache" — dann folgt die App der Spracheinstellung des Browsers,
-  ansonsten gilt Englisch. Übersetzt sind bereits die **Navigation**, die
-  Seiten **Lager**, **Inventur**, **Artikel**, der **Artikelstamm** (Anlegen,
-  Bearbeiten, Tags, Picnic-Verknüpfung) und alle **Rezeptseiten**
-  (Liste, Rezept, Wochenplan, Vorschlag, Import) sowie alle **MHD-Angaben**
-  (auch in der Chargenzeile der Lagerort- und Artikelseite); Datum, Wochentage,
-  Zahlen und Preise folgen der Sprache
-  (en-GB: 14/08/2026). Die übrigen Seiten werden nach und nach nachgezogen
-  und sind vorerst weiterhin deutsch.
+- **Mehrsprachige Oberfläche: Englisch, Deutsch und Niederländisch.** Die
+  Sprache wird auf der Konto-Seite gewählt, je Benutzer gespeichert und gilt
+  auf allen Geräten. Voreingestellt ist „Systemsprache" — dann folgt die App
+  der Spracheinstellung des Browsers, ansonsten gilt Englisch. Übersetzt sind
+  **alle Seiten** samt Meldungen, Platzhaltern und Screenreader-Beschriftungen;
+  Datum, Wochentage, Zahlen, Preise und Ein-/Mehrzahl folgen der Sprache
+  (en-GB: 14/08/2026, 0.7 l, €1.69). Nicht übersetzt werden bewusst die eigenen
+  Daten — Artikel, Tags, Rezepte und Lagerortnamen bleiben, wie sie eingegeben
+  wurden — sowie dieser Changelog.
 
 ### Geändert
 
