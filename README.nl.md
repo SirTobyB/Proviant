@@ -71,8 +71,9 @@ Picnic-functies en een FAQ voor probleemoplossing.
 - **Boekingsjournaal** — elke voorraadwijziging wordt vastgelegd: tijdstip,
   gebruiker, artikel, aantal en locatie, plus waar de boeking vandaan kwam
   (scanner, inventarisatie, levering, artikellijst, partij). Bij- en
-  afboekingen, verplaatsingen (met bron- en doellocatie) en partijcorrecties
-  inclusief THT-wijzigingen; een afboeking over meerdere partijen verschijnt
+  afboekingen, verplaatsingen (met bron- en doellocatie), partijcorrecties
+  inclusief THT-wijzigingen en bestelde maar **niet geleverde** verpakkingen
+  (vastgelegd zonder de voorraad te raken); een afboeking over meerdere partijen verschijnt
   per partij met de bijbehorende locatie. Te filteren op artikel, locatie,
   gebruiker en boekingssoort. Verwijderde artikelen blijven op naam leesbaar.
 - **Inventarisatie** — een compact overzicht van de volledige voorraad,
@@ -96,13 +97,23 @@ Picnic-functies en een FAQ voor probleemoplossing.
   Suggesties worden afgestemd op het **mandje en nog niet geleverde
   bestellingen**, tot op het aantal nauwkeurig: wat al gereserveerd is of
   onderweg, wordt alleen nog als resterend tekort voorgesteld (of helemaal
-  niet meer). Alle suggesties zijn met één klik aan en uit te vinken.
+  niet meer). Door Picnic geannuleerde regels gelden daarbij niet als onderweg
+  en worden opnieuw voorgesteld, in plaats van tot de volgende levering
+  onzichtbaar te blijven. Alle suggesties zijn met één klik aan en uit te vinken.
 - **Leveringscontrole** — tijdens het uitpakken van een Picnic-levering: regels
   scannen met de barcode (gekoppeld via het Picnic-artikelnummer) en meteen op
   de doellocatie inboeken, per stuk bevestigen met de +-knop, of na visuele
-  controle alle openstaande regels in één keer. Nog onbekende producten worden
-  daarbij automatisch als artikel aangemaakt (inclusief afbeelding en
-  verpakkingsgrootte). Toont de productafbeeldingen van Picnic.
+  controle alle openstaande regels in één keer. De −-knop draait de laatste
+  boeking terug en boekt die weer uit — precies van de partij waar ze vandaan
+  kwam, zodat het journaal de juiste locatie blijft noemen. Nog onbekende
+  producten worden daarbij automatisch als artikel aangemaakt (inclusief
+  afbeelding en verpakkingsgrootte). Door Picnic **geannuleerde** regels (niet
+  op voorraad, kwaliteit, niet meegeladen) tellen niet meer mee als verwacht en
+  staan met reden als *niet geleverd* in de lijst. Ontbreekt er aan het eind
+  iets, dan kan de controle bewust worden afgesloten: de ontbrekende
+  verpakkingen worden opgesomd en als *niet geleverd* in het journaal
+  vastgelegd — er wordt daarvoor geen voorraad geboekt. Toont de
+  productafbeeldingen van Picnic.
 - **Recepten** — warme maaltijden en taarten, ingrediënten gekoppeld aan het
   artikelbeheer of als vrije tekst, vrij te kiezen tags. Eén ingrediënt kan
   meerdere alternatieve artikelen accepteren (bijvoorbeeld verschillende

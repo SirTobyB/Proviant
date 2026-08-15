@@ -67,7 +67,8 @@ a troubleshooting FAQ.
 - **Stock journal** — every change to stock is recorded: time, user, item,
   quantity and location, plus where the booking came from (scanner, stocktake,
   delivery, item list, batch). Additions and removals, relocations (with source
-  and target location) and batch corrections including best-before changes; a
+  and target location), batch corrections including best-before changes, and
+  packs ordered but **not delivered** (recorded without touching stock); a
   removal spanning several batches appears once per batch with its location.
   Filterable by item, location, user and booking type. Deleted items remain
   readable by name.
@@ -90,14 +91,22 @@ a troubleshooting FAQ.
   never placed automatically — checkout stays in the Picnic app. Suggestions
   are reconciled against the **basket and orders not yet delivered**, down to
   the quantity: whatever is already reserved or on its way is only suggested as
-  the remaining shortfall (or not at all). All suggestions can be selected and
+  the remaining shortfall (or not at all). Lines Picnic has cancelled do not
+  count as on their way, so they are suggested again instead of quietly
+  disappearing until the next delivery. All suggestions can be selected and
   deselected with one click.
 - **Delivery check-in** — while unpacking a Picnic delivery: scan items by
   barcode (matched via the Picnic ID) and book them straight into the target
   location, confirm them individually with the + button, or confirm all
-  remaining lines at once after a visual check. Products not yet known are
-  created as items automatically (with picture and pack size). Shows the
-  product images from Picnic.
+  remaining lines at once after a visual check. The − button takes the last
+  booking back and books it out again — off the very batch it came from, so the
+  journal keeps naming the right location. Products not yet known are created
+  as items automatically (with picture and pack size). Lines that Picnic
+  **cancelled** (out of stock, quality, not shipped) no longer count towards
+  what is expected and are shown as *not delivered* with the reason. If
+  something is missing at the end, the check can be closed deliberately: the
+  missing packs are listed and recorded in the journal as *not delivered* — no
+  stock is booked for them. Shows the product images from Picnic.
 - **Recipes** — hot meals and cakes, ingredients linked to the item catalogue
   or as free text, free-form tags. One ingredient can accept several
   alternative items (say, different kinds of eggs) — the stock of all

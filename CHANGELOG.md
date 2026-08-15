@@ -8,6 +8,11 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.1.0] - 2026-08-15
+
+Diese Fassung dreht sich um den Lieferungs-Check. Zu tun ist beim Aktualisieren
+nichts: keine Migration, keine neue Einstellung — `docker compose pull` genügt.
+
 ### Hinzugefügt
 
 - **Von Picnic stornierte Positionen werden erkannt.** Meldet Picnic, dass ein
@@ -165,7 +170,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.0.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/SirTobyB/Proviant/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/SirTobyB/Proviant/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/SirTobyB/Proviant/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/SirTobyB/Proviant/compare/v1.0.0...v1.1.0

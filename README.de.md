@@ -69,8 +69,9 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
 - **Buchungsjournal** — jede Bestandsveränderung wird festgehalten: Zeitpunkt,
   Benutzer, Artikel, Menge und Lagerort, dazu die Herkunft der Buchung
   (Scanner, Inventur, Lieferung, Artikelliste, Charge). Zu- und Abgänge,
-  Umlagerungen (mit Von-/Nach-Lagerort) und Chargen-Korrekturen inklusive
-  MHD-Änderungen; ein Abgang über mehrere Chargen erscheint je Charge mit
+  Umlagerungen (mit Von-/Nach-Lagerort), Chargen-Korrekturen inklusive
+  MHD-Änderungen und bestellte, aber **nicht gelieferte** Gebinde (ohne
+  Bestandswirkung festgehalten); ein Abgang über mehrere Chargen erscheint je Charge mit
   ihrem Lagerort. Filterbar nach Artikel, Lagerort, Benutzer und Buchungsart.
   Gelöschte Artikel bleiben mit ihrem Namen lesbar.
 - **Inventur** — kompakte Übersicht aller vorhandenen Bestände mit
@@ -92,14 +93,22 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   wird bewusst nie automatisch — der Checkout bleibt in der Picnic-App.
   Abgeglichen wird mit dem **Warenkorb und noch nicht gelieferten
   Bestellungen**, jeweils mengengenau: Was schon vorgemerkt oder unterwegs
-  ist, wird nur noch als Fehlmenge vorgeschlagen (oder gar nicht mehr).
+  ist, wird nur noch als Fehlmenge vorgeschlagen (oder gar nicht mehr). Von
+  Picnic stornierte Positionen gelten dabei nicht als unterwegs und werden
+  wieder vorgeschlagen, statt bis zur nächsten Lieferung unsichtbar zu bleiben.
   Alle Vorschläge lassen sich mit einem Klick an- und abwählen.
 - **Lieferungs-Check** — Beim Auspacken einer Picnic-Lieferung: Positionen per
   Barcode scannen (matcht über die Picnic-ID) und direkt in den Ziel-Lagerort
   einbuchen, per +-Taste einzeln bestätigen oder nach Sichtprüfung alle
-  offenen Positionen auf einmal. Noch unbekannte Produkte werden dabei
-  automatisch als Artikel angelegt (samt Bild und Gebindegröße). Zeigt
-  Produktbilder aus Picnic.
+  offenen Positionen auf einmal. Die −-Taste nimmt die letzte Buchung zurück
+  und bucht sie wieder aus — genau von der Charge, aus der sie kam, damit im
+  Journal der richtige Lagerort steht. Noch unbekannte Produkte werden dabei
+  automatisch als Artikel angelegt (samt Bild und Gebindegröße). Von Picnic
+  **stornierte** Positionen (nicht vorrätig, Qualität, nicht verladen) zählen
+  nicht mehr zum Soll und stehen mit Grund als *nicht geliefert* in der Liste.
+  Fehlt am Ende etwas, lässt sich die Prüfung bewusst abschließen: Die
+  fehlenden Gebinde werden aufgelistet und als *nicht geliefert* ins Journal
+  geschrieben — Bestand entsteht dafür keiner. Zeigt Produktbilder aus Picnic.
 - **Rezepte** — warme Mahlzeiten und Kuchen, Zutaten verknüpft mit dem
   Artikelstamm oder als Freitext, freie Tags. Eine Zutat kann mehrere
   Alternativartikel akzeptieren (z.B. verschiedene Eier-Sorten) — der Bestand
