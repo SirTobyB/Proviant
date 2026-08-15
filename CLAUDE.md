@@ -258,6 +258,15 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 - **Env:** Passwörter mit `#`/`$` in `.env` und `docker-compose*.yml` **quoten**
   (unquotiertes `#` wird als Kommentar abgeschnitten). Die App liest die `.env`
   im Projektstamm. Erster Admin via `ADMIN_USERNAME`/`ADMIN_PASSWORD`.
+- **`overrides` in `package.json`:** Der Eintrag für `@esbuild-kit/core-utils`
+  hebt dessen uraltes esbuild 0.18 auf ≥ 0.25 an (GHSA-67mh-4wv8-2f99, betrifft
+  nur `esbuild serve`). Die Kette kommt über `drizzle-kit` →
+  `@esbuild-kit/esm-loader` (deprecated, in `tsx` aufgegangen) und lässt sich
+  nicht durch ein Upgrade auflösen. Der Override ist bewusst **eng gefasst** —
+  ein globaler `"esbuild"`-Eintrag würde Vites eigenes, längst gepatchtes
+  esbuild mit **herunter**ziehen. Betroffen ist nur das Laden von
+  `drizzle.config.ts`, Verifikation deshalb per `npm run db:generate`.
+  Fällt der `@esbuild-kit`-Zweig aus dem Baum, kann der Override weg.
 - **Nicht committen:** `local.db*`, `/data`, `/images`, `picnic-auth-key`, `.env`
   (alle gitignored). Testdaten in der lokalen DB nach Verifikation wieder
   aufräumen.
