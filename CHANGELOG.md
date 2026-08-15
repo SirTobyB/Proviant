@@ -8,6 +8,15 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- **Ein neues Image entsteht nur noch beim Veröffentlichen einer Version.**
+  Bisher baute jeder Push auf `main` sofort ein neues `:latest` — auch bei
+  Zwischenständen, die gar nicht auf den Server sollten. Jetzt löst allein der
+  Push eines Versions-Tags (`v*`) den Build aus; `main` wird weiterhin auf
+  Typen, Tests und Build geprüft. Fürs Aktualisieren ändert sich nichts,
+  `docker compose pull` holt wie gehabt die neueste veröffentlichte Fassung.
+
 ## [2.1.0] - 2026-08-15
 
 Diese Fassung dreht sich um den Lieferungs-Check. Zu tun ist beim Aktualisieren

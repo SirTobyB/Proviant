@@ -184,9 +184,11 @@ timestamp, path, user and duration; unexpected exceptions additionally with a
 stack trace and a short error ID that also appears on the error page. If the
 log stays quiet during a failure, the app was not the cause. Images are
 published to GHCR for amd64 and arm64 via GitHub Actions:
-`ghcr.io/sirtobyb/proviant:latest`. `docker-compose.prod.yml` carries
-Traefik labels (external network `proxy`, websecure, cert resolver
-`tls_resolver`).
+`ghcr.io/sirtobyb/proviant:latest`. A release is a **version tag**, not a merge:
+pushing `v*` builds the image and moves `:latest`, while a push to `main` only
+runs the checks. So `docker compose pull` gives you the newest released version,
+not the current state of the branch. `docker-compose.prod.yml` carries Traefik
+labels (external network `proxy`, websecure, cert resolver `tls_resolver`).
 
 ### Connecting to Picnic the first time
 

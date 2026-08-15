@@ -1,17 +1,20 @@
 name: Docker-Image bauen und in GHCR veröffentlichen
 
+# Ein Release ist der Version-Tag, nicht der Merge: main baut bewusst *kein*
+# Image mehr. Sonst zog jeder Zwischenstand — auch ein halb fertiger — sofort
+# als :latest auf den Server, und ein Build dauert 3-6 Minuten, die bei reinen
+# Doku- oder Aufraeum-Commits niemand braucht. Geprueft wird main weiterhin,
+# das erledigt ci.yml.
 on:
   push:
-    branches: [main]
     tags: ['v*']
   workflow_dispatch:
 
-# Immer nur ein Build gleichzeitig: Push auf main und Push des Version-Tags
-# loesen zwei Runs im Sekundenabstand aus, die sich denselben gha-Cache und
-# ueberlappende GHCR-Tags teilen — beide blieben dabei haengen (zuletzt bis
-# ins 6-Stunden-Timeout). Der zweite wartet jetzt und trifft danach einen
-# warmen Cache. Bewusst ohne cancel-in-progress: main und Tag veroeffentlichen
-# unterschiedliche Tags (latest bzw. die Version), es wird also keiner unnoetig.
+# Immer nur ein Build gleichzeitig: zwei kurz hintereinander gepushte Tags
+# teilen sich denselben gha-Cache und ueberlappende GHCR-Tags — beide blieben
+# dabei haengen (zuletzt bis ins 6-Stunden-Timeout). Der zweite wartet jetzt
+# und trifft danach einen warmen Cache. Bewusst ohne cancel-in-progress: jeder
+# Lauf veroeffentlicht eine eigene Version, ein abgebrochener liesse sie fehlen.
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
@@ -46,13 +49,19 @@ jobs:
         id: buildtime
         run: echo "value=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
 
+      # latest=auto setzt :latest genau bei einem Version-Tag (und nicht bei
+      # einer Vorabversion wie v2.2.0-rc.1). Der frueher haendisch gesetzte
+      # raw-Eintrag hing an {{is_default_branch}} und liefe hier nie mehr an —
+      # docker-compose.prod.yml zieht aber :latest, das muss weiter erscheinen.
+      # Ein manueller workflow_dispatch bekommt so nur sein sha-Tag und
+      # ueberschreibt :latest nicht.
       - name: Tags und Labels bestimmen
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/sirtobyb/proviant
+          flavor: latest=auto
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=sha
 

@@ -299,16 +299,22 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   Stock, Scanning, Stocktake, Items, Recipes, Meal-plan, Ordering,
   Delivery-check, Journal, Storage-locations, Users, Account, FAQ, dazu
   `_Sidebar.md` für die Navigation — eine neue Seite gehört auch dort hinein.
-- **Deployment:** Push auf `main` baut per GitHub Actions das Multi-Arch-Image
-  nach GHCR. `docker-compose.prod.yml` (Traefik) fürs Ziehen des Images. Der
-  Workflow reicht `GIT_SHA`/`BUILD_TIME` als Build-Args ins Image; die
-  Konto-Seite zeigt beides unter **Version** an. Bei „läuft mein Fix schon?"
-  **immer zuerst dort nachsehen** — das war schon mehrfach die Ursache
-  vermeintlicher Bugs. Ein einzelner Build dauert 3–6 Minuten; **parallele
-  Runs blieben hängen** (gemeinsamer `type=gha`-Cache, überlappende
-  GHCR-Tags) — einmal bis ins 6-Stunden-Timeout. Der Workflow serialisiert
-  sich deshalb per `concurrency`-Gruppe; Branch und Version-Tag dürfen
-  weiterhin zusammen gepusht werden, der zweite Run wartet dann einfach.
+- **Deployment:** Das Multi-Arch-Image nach GHCR baut **allein der Push eines
+  Version-Tags** (`v*`) — ein Push auf `main` löst **keinen** Release mehr aus,
+  dort läuft nur `ci.yml`. Ein Release ist damit ein bewusster Schritt:
+  `package.json` + `CHANGELOG.md` auf die Version ziehen, committen, pushen,
+  dann `git tag v2.2.0 && git push origin v2.2.0`. Wer nach einem Merge auf den
+  Server schaut und den Fix vermisst, hat meist schlicht **nicht getaggt** —
+  das ist die neue Standard-Ursache für „läuft mein Fix schon?" (vorher: der
+  noch laufende Build). `:latest` entsteht per `flavor: latest=auto` am
+  Version-Tag, `docker-compose.prod.yml` zieht genau das; ein manueller
+  `workflow_dispatch` bekommt nur ein `sha-…`-Tag und fasst `:latest` nicht an.
+  Der Workflow reicht `GIT_SHA`/`BUILD_TIME` als Build-Args ins Image; die
+  Konto-Seite zeigt beides unter **Version** an — bei Zweifeln über den
+  laufenden Stand zuerst dort nachsehen. Ein einzelner Build dauert 3–6 Minuten;
+  **parallele Runs blieben hängen** (gemeinsamer `type=gha`-Cache, überlappende
+  GHCR-Tags) — einmal bis ins 6-Stunden-Timeout. Der Workflow serialisiert sich
+  deshalb weiterhin per `concurrency`-Gruppe.
 - **Logging:** SvelteKit ruft `handleError` **nur bei unerwarteten
   Ausnahmen** — alles, was per `error()` geworfen wird, gilt als „erwartet"
   und ginge sonst spurlos raus (deshalb blieb ein 500er im Betrieb einmal

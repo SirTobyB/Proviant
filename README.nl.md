@@ -197,9 +197,12 @@ tijdstempel, pad, gebruiker en duur; bij onverwachte uitzonderingen bovendien
 met stacktrace en een korte fout-ID die ook op de foutpagina staat. Blijft het
 log stil bij een storing, dan lag het niet aan de app. Images worden via GitHub
 Actions voor amd64 en arm64 naar GHCR gepubliceerd:
-`ghcr.io/sirtobyb/proviant:latest`. `docker-compose.prod.yml` bevat
-Traefik-labels (extern netwerk `proxy`, websecure, certresolver
-`tls_resolver`).
+`ghcr.io/sirtobyb/proviant:latest`. Een release is een **versietag**, geen
+merge: het pushen van een `v*`-tag bouwt het image en verzet `:latest`, terwijl
+een push naar `main` alleen de controles draait. `docker compose pull` haalt
+daarmee de nieuwste uitgebrachte versie op, niet de huidige stand van de branch.
+`docker-compose.prod.yml` bevat Traefik-labels (extern netwerk `proxy`,
+websecure, certresolver `tls_resolver`).
 
 ### De eerste verbinding met Picnic
 

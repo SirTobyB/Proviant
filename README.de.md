@@ -188,8 +188,12 @@ Benutzer und Dauer protokolliert; bei unerwarteten Ausnahmen zusätzlich mit
 Stacktrace und einer kurzen Fehler-ID, die auch auf der Fehlerseite erscheint.
 Bleibt das Log bei einem Fehler still, lag es nicht an der App. Images werden
 per GitHub Actions für amd64 und arm64 nach GHCR veröffentlicht:
-`ghcr.io/sirtobyb/proviant:latest`. `docker-compose.prod.yml` enthält
-Traefik-Labels (externes Netzwerk `proxy`, websecure, Certresolver `tls_resolver`).
+`ghcr.io/sirtobyb/proviant:latest`. Ein Release ist ein **Versions-Tag**, kein
+Merge: Der Push eines `v*`-Tags baut das Image und setzt `:latest` neu, ein Push
+auf `main` lässt nur die Prüfungen laufen. `docker compose pull` holt damit die
+neueste veröffentlichte Version, nicht den aktuellen Stand des Branches.
+`docker-compose.prod.yml` enthält Traefik-Labels (externes Netzwerk `proxy`,
+websecure, Certresolver `tls_resolver`).
 
 ### Erste Picnic-Verbindung
 
