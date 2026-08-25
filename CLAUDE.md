@@ -26,12 +26,16 @@ npm run db:generate   # Migration aus dem Schema erzeugen (nach Schema-Änderung
 
 Voraussetzung: **Node.js ≥ 22.12** (Vite 8). Verifikation vor dem Commit:
 `npm run check` + `npm test` + `npm run build`; für UI-Änderungen den
-Dev-Server starten und im Browser prüfen.
+Dev-Server starten und im Browser prüfen — Anmeldung mit
+`ADMIN_USERNAME`/`ADMIN_PASSWORD` aus der `.env` (der Benutzername wird
+**exakt** verglichen, „Admin" ≠ „admin"). Es gibt weder Prettier noch ESLint:
+Formatierung von Hand am Stil der Datei ausrichten (Tabs).
 
 **Tests** (`vitest.config.ts`, bewusst ohne SvelteKit-Plugin) decken die
 reinen Logik-Module ab: `units.ts`, `suggest.ts`, `mhd.ts`, `format.ts`,
 `journal.ts`, `i18n/` (Sprachaushandlung, Plurale, Vollständigkeit der
-Wörterbücher), `picnic/unitQuantity.ts`, `picnic/checklist.ts`. Genau dort steckten die
+Wörterbücher), `picnic/unitQuantity.ts`, `picnic/checklist.ts`,
+`deliveryNewItems.ts`. Genau dort steckten die
 schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 **mit Test**, nicht in eine Route.
 
@@ -157,6 +161,14 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   stillgelegten Orts nicht mehr auffindbar. Ein Namens-Schnappschuss wie beim
   Artikel entfällt bewusst — derselbe physische Ort soll auch rückwirkend
   seinen aktuellen Namen zeigen.
+- **Artikel-Neuanlage im Lieferungs-Check** verlangt einen Standard-Lagerort —
+  ohne den entstünde ein Artikel, dessen Bestand dauerhaft im Fallback landet.
+  Alle drei Wege (`confirmAll`, `bookOne`, `importArticle`) prüfen ihn
+  serverseitig mit `activeLocation`; `confirmAll` prüft **alle** Positionen,
+  bevor die erste gebucht wird (sonst bliebe die halbe Lieferung eingebucht
+  zurück und ein zweiter Versuch buchte sie doppelt). Welche Position beim
+  Buchen neu entsteht, entscheidet `lib/deliveryNewItems.ts` — Oberfläche und
+  Server teilen sich dieses Modul bewusst.
 - **Erster Admin** wird beim Start aus `ADMIN_USERNAME`/`ADMIN_PASSWORD`
   angelegt, solange kein Benutzer existiert.
 - **Picnic:** Nur Warenkorb befüllen, **nie automatisch bestellen** — der
@@ -231,6 +243,10 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   die `--color-*`-Variablen global umbiegen — `text-white` auf Buttons muss
   hell bleiben). Neue Seiten in der bestehenden Farbwelt halten
   (gray/white/green/amber/red); neue Farbtöne brauchen einen Dark-Override.
+  Vor jeder neuen Utility-Klasse in `layout.css` nachsehen, ob sie dort steht:
+  Opazitätsvarianten sind **eigene** Klassen (`bg-green-50/50` hat einen
+  Override, `bg-green-50/60` nicht), und Zwischenstufen wie `text-gray-800`
+  kommen sonst nirgends vor — im Zweifel die benachbarte Stufe nehmen.
 - **Mobile (iPhone 13 mini / Galaxy A34):** `viewport-fit=cover` +
   Safe-Area-Paddings im Layout; Eingabefelder unter 768px mindestens **16px**
   Schrift (sonst zoomt iOS-Safari beim Fokussieren). Foto-Uploads brauchen
@@ -302,7 +318,10 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 - **Deployment:** Das Multi-Arch-Image nach GHCR baut **allein der Push eines
   Version-Tags** (`v*`) — ein Push auf `main` löst **keinen** Release mehr aus,
   dort läuft nur `ci.yml`. Ein Release ist damit ein bewusster Schritt:
-  `package.json` + `CHANGELOG.md` auf die Version ziehen, committen, pushen,
+  `npm version X.Y.Z --no-git-tag-version` (zieht `package-lock.json` mit) und
+  `CHANGELOG.md` auf die Version ziehen — dabei bleibt ein leerer
+  `## [Unveröffentlicht]`-Kopf stehen und die Vergleichs-Links am Dateiende
+  werden nachgezogen —, committen, pushen,
   dann `git tag v2.2.0 && git push origin v2.2.0`. Wer nach einem Merge auf den
   Server schaut und den Fix vermisst, hat meist schlicht **nicht getaggt** —
   das ist die neue Standard-Ursache für „läuft mein Fix schon?" (vorher: der
