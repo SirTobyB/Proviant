@@ -101,7 +101,9 @@ a troubleshooting FAQ.
   remaining lines at once after a visual check. The − button takes the last
   booking back and books it out again — off the very batch it came from, so the
   journal keeps naming the right location. Products not yet known are created
-  as items automatically (with picture and pack size). Lines that Picnic
+  as items automatically (with picture and pack size) — but only once you have
+  given each of them a default location: the check asks for it before anything
+  is booked, so new stock never ends up somewhere by accident. Lines that Picnic
   **cancelled** (out of stock, quality, not shipped) no longer count towards
   what is expected and are shown as *not delivered* with the reason. If
   something is missing at the end, the check can be closed deliberately: the

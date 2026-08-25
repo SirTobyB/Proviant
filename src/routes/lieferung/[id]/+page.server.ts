@@ -4,6 +4,11 @@ import { articles } from '$lib/server/db/schema';
 import { activeLocation, activeLocations } from '$lib/server/locations';
 import { getConnectionState, getDeliveryChecklist } from '$lib/server/picnic';
 import { importArticleFromPicnic } from '$lib/server/articleImport';
+import {
+	assignedLocationId,
+	missingLocationNames,
+	newItemsNeedingLocation
+} from '$lib/deliveryNewItems';
 import { bookIn, bookOutEntry, recordMissing } from '$lib/server/stock';
 import { eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
@@ -63,6 +68,17 @@ function deliveryLocationId(defaultLocationId: number | null, fallbackId: number
 	return fallbackId != null && activeLocation(fallbackId) ? fallbackId : null;
 }
 
+/**
+ * Standard-Lagerort für einen neu anzulegenden Artikel, aus dem Formular.
+ * Es zaehlt nur ein gewählter **und** aktiver Lagerort: Ohne die Serverprüfung
+ * käme ein veraltetes Formular oder ein zwischenzeitlich stillgelegter Ort doch
+ * wieder zu einem Artikel ohne brauchbares Zuhause.
+ */
+function chosenDefaultLocationId(raw: FormDataEntryValue | null): number | null {
+	const id = assignedLocationId({ v: typeof raw === 'string' ? raw : null }, 'v');
+	return id != null && activeLocation(id) ? id : null;
+}
+
 export const actions: Actions = {
 	// Bucht ein einzelnes gescanntes Gebinde beim Auspacken ein
 	book: async ({ request, locals }) => {
@@ -102,10 +118,12 @@ export const actions: Actions = {
 	},
 
 	// Sichtprüfung: mehrere offene Positionen auf einmal einbuchen.
-	// items = [{ productId, quantity, name, unitQuantity, imageId }] (alle noch
-	// offenen Positionen). Noch nicht im Artikelstamm vorhandene Produkte werden
-	// vorher automatisch aus Picnic angelegt (idempotent per picnicId-Dedupe).
-	// Jede Position landet im Standard-Lagerort ihres Artikels, sonst im Fallback.
+	// items = [{ productId, quantity, name, unitQuantity, imageId, defaultLocationId }]
+	// (alle noch offenen Positionen). Noch nicht im Artikelstamm vorhandene
+	// Produkte werden vorher automatisch aus Picnic angelegt (idempotent per
+	// picnicId-Dedupe) — dafür ist ihr Standard-Lagerort Pflicht und wird unten
+	// vor der ersten Buchung geprüft. Jede Position landet im Standard-Lagerort
+	// ihres Artikels, sonst im Fallback.
 	confirmAll: async ({ request, locals }) => {
 		const t = translator(locals.locale);
 		const formData = await request.formData();
@@ -116,6 +134,7 @@ export const actions: Actions = {
 			name?: string;
 			unitQuantity?: string;
 			imageId?: string | null;
+			defaultLocationId?: number | string | null;
 		}[] = [];
 		try {
 			const raw = JSON.parse(String(formData.get('items') ?? '[]'));
@@ -135,6 +154,37 @@ export const actions: Actions = {
 			.from(articles)
 			.all();
 		const byPicnicId = new Map(linked.filter((a) => a.picnicId).map((a) => [a.picnicId!, a]));
+
+		// Erst prüfen, dann buchen: Ein Abbruch mitten im Buchen ließe die halbe
+		// Lieferung eingebucht zurück, und ein zweiter Versuch buchte sie doppelt.
+		const assignments = Object.fromEntries(
+			requested.map((req) => [String(req.productId), req.defaultLocationId ?? null])
+		);
+		const lines = requested.map((req) => {
+			const article = byPicnicId.get(String(req.productId));
+			return {
+				productId: String(req.productId),
+				name: article?.name ?? String(req.name ?? '').trim(),
+				quantity: Number(req.quantity),
+				articleId: article?.id ?? null
+			};
+		});
+		// Ohne Namen lässt sich kein Artikel anlegen; solche Positionen werden beim
+		// Buchen übersprungen und dürfen die Prüfung deshalb nicht blockieren.
+		const toCreate = newItemsNeedingLocation(lines).filter((line) => line.name);
+		const unresolved = [
+			...missingLocationNames(toCreate, assignments),
+			// Ein zwischenzeitlich stillgelegter Lagerort darf nichts mehr aufnehmen
+			...toCreate
+				.filter((line) => {
+					const id = assignedLocationId(assignments, line.productId);
+					return id !== null && !activeLocation(id);
+				})
+				.map((line) => line.name)
+		];
+		if (unresolved.length > 0) {
+			return fail(400, { message: t('msg.pickLocationForNew', { names: unresolved.join(', ') }) });
+		}
 
 		const user = locals.user?.username ?? null;
 		let booked = 0;
@@ -160,6 +210,8 @@ export const actions: Actions = {
 				} else {
 					// Artikel fehlt im Stamm: automatisch aus Picnic anlegen
 					if (!reqName) continue;
+					// Standard-Lagerort ist Pflicht und oben bereits geprüft
+					const chosen = assignedLocationId(assignments, String(req.productId));
 					const result = await importArticleFromPicnic(
 						{
 							productId: String(req.productId),
@@ -167,11 +219,11 @@ export const actions: Actions = {
 							unitQuantity: String(req.unitQuantity ?? ''),
 							imageId: String(req.imageId ?? '') || null
 						},
-						null,
+						chosen,
 						user
 					);
 					articleId = result.articleId;
-					defaultLocationId = null;
+					defaultLocationId = chosen;
 					articleName = reqName;
 					if (result.created) imported += 1;
 				}
@@ -190,7 +242,8 @@ export const actions: Actions = {
 	},
 
 	// Manuelle Bestätigung einer einzelnen Position ("+"-Taste): bucht 1 Gebinde
-	// ein und legt den Artikel vorher automatisch aus Picnic an, falls er fehlt.
+	// ein und legt den Artikel vorher automatisch aus Picnic an, falls er fehlt —
+	// dann aber nur mit dem in der Oberfläche gewählten Standard-Lagerort.
 	bookOne: async ({ request, locals }) => {
 		const t = translator(locals.locale);
 		const formData = await request.formData();
@@ -205,16 +258,27 @@ export const actions: Actions = {
 		const existing = db.select().from(articles).where(eq(articles.picnicId, productId)).get();
 		let articleId: number;
 		let created = false;
+		let defaultLocationId = existing?.defaultLocationId ?? null;
 		if (existing) {
 			articleId = existing.id;
 		} else {
-			const result = await importArticleFromPicnic({ productId, name, unitQuantity, imageId }, null, user);
+			// Neuanlage ohne Standard-Lagerort gibt es nicht mehr: Der Artikel landete
+			// sonst im Fallback-Lagerort der Seite und hätte dauerhaft keinen Platz.
+			const chosen = chosenDefaultLocationId(formData.get('defaultLocationId'));
+			if (chosen === null) {
+				return fail(400, { message: t('msg.pickLocationForNew', { names: name }) });
+			}
+			const result = await importArticleFromPicnic(
+				{ productId, name, unitQuantity, imageId },
+				chosen,
+				user
+			);
 			articleId = result.articleId;
 			created = result.created;
+			defaultLocationId = chosen;
 		}
 
-		// Import liefert keine defaultLocationId — frisch angelegte Artikel haben keine
-		const locationId = deliveryLocationId(existing?.defaultLocationId ?? null, fallbackLocationId);
+		const locationId = deliveryLocationId(defaultLocationId, fallbackLocationId);
 		if (!locationId) return fail(400, { message: t('msg.noLocation') });
 		const location = activeLocation(locationId);
 		if (!location) return fail(400, { message: t('msg.locationNotFound') });
@@ -284,7 +348,8 @@ export const actions: Actions = {
 		return { missingRecorded: true, recorded, unlinked };
 	},
 
-	// Nicht verknüpfte Lieferposition direkt als Artikel importieren
+	// Nicht verknüpfte Lieferposition direkt als Artikel importieren — mit dem in
+	// der Oberfläche gewählten Standard-Lagerort, ohne den wird nichts angelegt.
 	importArticle: async ({ request, locals }) => {
 		const t = translator(locals.locale);
 		const formData = await request.formData();
@@ -294,9 +359,14 @@ export const actions: Actions = {
 		const imageId = String(formData.get('imageId') ?? '') || null;
 		if (!productId || !name) return fail(400, { message: t('msg.invalidProduct') });
 
+		const defaultLocationId = chosenDefaultLocationId(formData.get('defaultLocationId'));
+		if (defaultLocationId === null) {
+			return fail(400, { message: t('msg.pickLocationForNew', { names: name }) });
+		}
+
 		const result = await importArticleFromPicnic(
 			{ productId, name, unitQuantity, imageId },
-			null,
+			defaultLocationId,
 			locals.user?.username ?? null
 		);
 		return { articleImported: name, created: result.created };

@@ -107,7 +107,10 @@ Picnic-functies en een FAQ voor probleemoplossing.
   boeking terug en boekt die weer uit — precies van de partij waar ze vandaan
   kwam, zodat het journaal de juiste locatie blijft noemen. Nog onbekende
   producten worden daarbij automatisch als artikel aangemaakt (inclusief
-  afbeelding en verpakkingsgrootte). Door Picnic **geannuleerde** regels (niet
+  afbeelding en verpakkingsgrootte) — maar pas als elk van hen een
+  standaardlocatie heeft gekregen: daar vraagt de controle om voordat er iets
+  wordt geboekt, zodat nieuwe voorraad nooit per ongeluk ergens belandt. Door
+  Picnic **geannuleerde** regels (niet
   op voorraad, kwaliteit, niet meegeladen) tellen niet meer mee als verwacht en
   staan met reden als *niet geleverd* in de lijst. Ontbreekt er aan het eind
   iets, dan kan de controle bewust worden afgesloten: de ontbrekende

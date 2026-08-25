@@ -8,6 +8,17 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Neue Artikel bekommen beim Lieferungs-Check sofort einen Standard-Lagerort.**
+  Bisher entstanden Artikel beim Auspacken ohne Lagerort und landeten im
+  Sammel-Fallback der Seite — ihr Bestand hatte damit dauerhaft kein Zuhause.
+  Jetzt fragt der Check vorher: Beim Bestätigen aller offenen Positionen kommt
+  ein Zwischenschritt, der jeden neu entstehenden Artikel mit Bild auflistet und
+  je einen Lagerort verlangt; „+" und „+ Artikel" fragen direkt an der Zeile
+  nach. Ohne Lagerort wird nichts angelegt und nichts gebucht — auch nicht am
+  Server vorbei.
+
 ### Geändert
 
 - **Ein neues Image entsteht nur noch beim Veröffentlichen einer Version.**

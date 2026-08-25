@@ -3,28 +3,51 @@
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { translator } from '$lib/i18n';
+	import { missingLocationNames, newItemsNeedingLocation } from '$lib/deliveryNewItems';
 
 	let { data } = $props();
 
 	const t = $derived(translator(data.locale));
 
-	// Einzelimport einer nicht verknüpften Position als Artikel
+	// Einzelanlage einer nicht verknüpften Position. Beide Wege (der Link
+	// "+ Artikel" und die "+"-Taste) laufen über dieselbe Abfrage: ohne
+	// Standard-Lagerort entsteht kein Artikel — und es wird auch nichts gebucht.
 	let importingProduct = $state<string | null>(null);
-	async function importArticle(item: Item) {
+	let newArticle = $state<{
+		productId: string;
+		mode: 'import' | 'book';
+		locationId: string;
+	} | null>(null);
+
+	function askForLocation(item: Item, mode: 'import' | 'book') {
+		newArticle = { productId: item.productId, mode, locationId: '' };
+	}
+
+	async function createArticle(item: Item) {
+		if (!newArticle?.locationId) return;
+		const { mode, locationId } = newArticle;
+		// "Anlegen & einbuchen": das Anlegen erledigt der Buchungs-Endpunkt mit
+		if (mode === 'book') {
+			await bookAndCheck(item, locationId);
+			return;
+		}
 		importingProduct = item.productId;
 		const body = new FormData();
 		body.set('productId', item.productId);
 		body.set('name', item.name);
 		body.set('unitQuantity', item.unitQuantity);
 		body.set('imageId', item.imageId ?? '');
+		body.set('defaultLocationId', locationId);
 		const response = await fetch('?/importArticle', { method: 'POST', body });
 		const result = deserialize(await response.text());
 		importingProduct = null;
 		if (result.type === 'success') {
+			newArticle = null;
 			showToast(t('delivery.toast.created', { name: item.name }));
 			await invalidateAll(); // Position erscheint jetzt als verknüpft
 		} else {
-			showToast(t('delivery.toast.importFailed'), 'warn');
+			const message = result.type === 'failure' ? (result.data?.message as string) : undefined;
+			showToast(message ?? t('delivery.toast.importFailed'), 'warn');
 		}
 	}
 
@@ -72,9 +95,29 @@
 
 	// Sichtprüfung: alle offenen Positionen auf einmal bestätigen
 	let showBulk = $state(false);
+	// Schritt 2 der Sichtprüfung: Standard-Lagerort je neuem Artikel
+	let bulkStep = $state<'confirm' | 'newItems'>('confirm');
+	let newLocations = $state<Record<string, string>>({});
 	// svelte-ignore state_referenced_locally
 	let bulkLocation = $state(data.locations[0] ? String(data.locations[0].id) : '');
 	const openCount = $derived(data.items.filter((i) => (checked[i.productId] ?? 0) < i.quantity).length);
+
+	// Offene Positionen, die beim Buchen erst als Artikel entstehen. Oberfläche
+	// und Server entscheiden das über dasselbe Modul — zweimal formuliert liefe
+	// die Bedingung früher oder später auseinander.
+	const newItems = $derived(newItemsNeedingLocation(data.items, checked));
+	const pendingNewCount = $derived(missingLocationNames(newItems, newLocations).length);
+
+	function openNewItemsStep() {
+		// leer vorbelegen: Die Wahl soll bewusst passieren, nicht durchrutschen
+		for (const item of newItems) newLocations[item.productId] ??= '';
+		bulkStep = 'newItems';
+	}
+
+	function closeBulk() {
+		showBulk = false;
+		bulkStep = 'confirm';
+	}
 
 	// Soll = bestellt abzüglich der von Picnic stornierten Gebinde: Was gar nicht
 	// erst geliefert wird, darf die Prüfung nicht offen halten.
@@ -172,7 +215,8 @@
 				quantity: i.quantity - (checked[i.productId] ?? 0),
 				name: i.name,
 				unitQuantity: i.unitQuantity,
-				imageId: i.imageId ?? ''
+				imageId: i.imageId ?? '',
+				defaultLocationId: newLocations[i.productId] ?? ''
 			}));
 
 		const body = new FormData();
@@ -188,11 +232,14 @@
 			if (data_.noLocation?.length) suffix += ` · ohne Lagerort übersprungen: ${data_.noLocation.join(', ')}`;
 			if (data_.failed?.length) suffix += ` · fehlgeschlagen: ${data_.failed.join(', ')}`;
 			showToast(t('delivery.toast.bulkDone', { packs: t('common.packs', { n: data_.booked }) }) + suffix, data_.failed?.length ? 'warn' : 'ok');
-			showBulk = false;
+			closeBulk();
+			newLocations = {};
 			await invalidateAll(); // neu angelegte Artikel als verknüpft anzeigen
 			resetScanner();
 		} else {
-			showToast(t('delivery.toast.bulkFailed'), 'warn');
+			// Der Server nennt die Artikel, denen noch ein Lagerort fehlt
+			const message = result.type === 'failure' ? (result.data?.message as string) : undefined;
+			showToast(message ?? t('delivery.toast.bulkFailed'), 'warn');
 		}
 	}
 
@@ -260,8 +307,13 @@
 	// "+": bucht 1 Gebinde wirklich ein (Standard-Lagerort des Artikels, sonst
 	// Fallback) und legt den Artikel vorher automatisch aus Picnic an, falls er fehlt
 	let bookingProduct = $state<string | null>(null);
-	async function bookAndCheck(item: Item) {
+	async function bookAndCheck(item: Item, defaultLocationId = '') {
 		if (bookingProduct) return;
+		// Noch nicht verknüpft: erst den Standard-Lagerort erfragen, dann buchen
+		if (item.articleId == null && !defaultLocationId) {
+			askForLocation(item, 'book');
+			return;
+		}
 		bookingProduct = item.productId;
 		const body = new FormData();
 		body.set('productId', item.productId);
@@ -269,10 +321,12 @@
 		body.set('unitQuantity', item.unitQuantity);
 		body.set('imageId', item.imageId ?? '');
 		body.set('fallbackLocationId', bulkLocation);
+		body.set('defaultLocationId', defaultLocationId);
 		const response = await fetch('?/bookOne', { method: 'POST', body });
 		const result = deserialize(await response.text());
 		bookingProduct = null;
 		if (result.type === 'success') {
+			newArticle = null;
 			checked[item.productId] = (checked[item.productId] ?? 0) + 1;
 			const data_ = result.data as { created: boolean; locationName: string; entryId?: number };
 			rememberEntry(item.productId, data_.entryId);
@@ -366,6 +420,56 @@
 					</button>
 				</div>
 			</div>
+		{:else if bulkStep === 'newItems'}
+			<!-- Schritt 2: Was beim Buchen erst als Artikel entsteht, braucht vorher
+			     einen Standard-Lagerort — sonst landet neuer Bestand irgendwo. -->
+			<div class="mt-3 rounded-xl border border-gray-200 bg-white p-4">
+				<p class="text-sm font-semibold text-gray-900">{t('delivery.newTitle', { n: newItems.length })}</p>
+				<p class="mt-1 text-sm text-gray-600">{t('delivery.newExplain')}</p>
+				<ul class="mt-3 space-y-3">
+					{#each newItems as item (item.productId)}
+						<li>
+							<div class="flex items-center gap-2">
+								{#if itemImage(item)}
+									<img src={itemImage(item)} alt="" loading="lazy" class="h-9 w-9 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
+								{:else}
+									<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm">📦</div>
+								{/if}
+								<div class="min-w-0">
+									<div class="truncate text-sm font-medium">{item.name}</div>
+									<div class="text-xs text-gray-500">{item.unitQuantity}</div>
+								</div>
+							</div>
+							<select
+								bind:value={newLocations[item.productId]}
+								aria-label={`${t('delivery.newLocation')}: ${item.name}`}
+								class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
+							>
+								<option value="">— {t('delivery.newLocation')} —</option>
+								{#each data.locations as location (location.id)}
+									<option value={String(location.id)}>{location.name}</option>
+								{/each}
+							</select>
+						</li>
+					{/each}
+				</ul>
+				{#if pendingNewCount > 0}
+					<p class="mt-2 text-xs font-medium text-amber-700">{t('delivery.newPending', { n: pendingNewCount })}</p>
+				{/if}
+				<div class="mt-3 flex flex-wrap gap-2">
+					<button
+						type="button"
+						onclick={confirmAll}
+						disabled={pendingNewCount > 0}
+						class="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+					>
+						{t('delivery.bulkConfirm')}
+					</button>
+					<button type="button" onclick={() => (bulkStep = 'confirm')} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+						{t('delivery.newBack')}
+					</button>
+				</div>
+			</div>
 		{:else}
 			<div class="mt-3 rounded-xl border border-gray-200 bg-white p-4">
 				<p class="text-sm text-gray-700">
@@ -377,11 +481,17 @@
 						<option value={String(location.id)}>{location.name}</option>
 					{/each}
 				</select>
-				<div class="mt-3 flex gap-2">
-					<button type="button" onclick={confirmAll} class="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
-						{t('delivery.bulkConfirm')}
-					</button>
-					<button type="button" onclick={() => (showBulk = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+				<div class="mt-3 flex flex-wrap gap-2">
+					{#if newItems.length > 0}
+						<button type="button" onclick={openNewItemsStep} class="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
+							{t('delivery.bulkNext', { n: newItems.length })}
+						</button>
+					{:else}
+						<button type="button" onclick={confirmAll} class="flex-1 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
+							{t('delivery.bulkConfirm')}
+						</button>
+					{/if}
+					<button type="button" onclick={closeBulk} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
 						{t('form.cancel')}
 					</button>
 				</div>
@@ -475,52 +585,86 @@
 <ul class="mt-2 max-w-md divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
 	{#each data.items as item (item.productId)}
 		{@const done = itemStatus(item) === 'done'}
-		<li class="flex items-center gap-3 px-4 py-2.5 {done ? 'bg-green-50/50' : ''}">
-			{#if item.articleId}
-				<a href={`/artikel/${item.articleId}`} class="flex min-w-0 flex-1 items-center gap-3">
+		<li class="px-4 py-2.5 {done ? 'bg-green-50/50' : ''}">
+			<div class="flex items-center gap-3">
+				{#if item.articleId}
+					<a href={`/artikel/${item.articleId}`} class="flex min-w-0 flex-1 items-center gap-3">
+						{#if itemImage(item)}
+							<img src={itemImage(item)} alt="" loading="lazy" class="h-9 w-9 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
+						{:else}
+							<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm">📦</div>
+						{/if}
+						<div class="min-w-0 flex-1">
+							<div class="truncate text-sm font-medium hover:underline {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
+							<div class="text-xs text-gray-500">
+								{item.unitQuantity}
+								{#if item.cancelledQuantity > 0}
+									· <span class="text-amber-600">{t('delivery.cancelled')}</span>
+								{/if}
+							</div>
+						</div>
+					</a>
+				{:else}
 					{#if itemImage(item)}
 						<img src={itemImage(item)} alt="" loading="lazy" class="h-9 w-9 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
 					{:else}
 						<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm">📦</div>
 					{/if}
 					<div class="min-w-0 flex-1">
-						<div class="truncate text-sm font-medium hover:underline {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
+						<div class="truncate text-sm font-medium {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
 						<div class="text-xs text-gray-500">
 							{item.unitQuantity}
 							{#if item.cancelledQuantity > 0}
 								· <span class="text-amber-600">{t('delivery.cancelled')}</span>
 							{/if}
+							· <span class="text-amber-600">{t('delivery.notLinked')}</span>
+							· <button
+									type="button"
+									onclick={() => askForLocation(item, 'import')}
+									disabled={importingProduct !== null}
+									class="text-green-700 underline disabled:opacity-50"
+								>{importingProduct === item.productId ? t('delivery.importing') : t('delivery.addArticle')}</button>
 						</div>
 					</div>
-				</a>
-			{:else}
-				{#if itemImage(item)}
-					<img src={itemImage(item)} alt="" loading="lazy" class="h-9 w-9 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
-				{:else}
-					<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-sm">📦</div>
 				{/if}
-				<div class="min-w-0 flex-1">
-					<div class="truncate text-sm font-medium {done ? 'text-gray-500 line-through' : ''}">{item.name}</div>
-					<div class="text-xs text-gray-500">
-						{item.unitQuantity}
-						{#if item.cancelledQuantity > 0}
-							· <span class="text-amber-600">{t('delivery.cancelled')}</span>
-						{/if}
-						· <span class="text-amber-600">{t('delivery.notLinked')}</span>
-						· <button
-								type="button"
-								onclick={() => importArticle(item)}
-								disabled={importingProduct !== null}
-								class="text-green-700 underline disabled:opacity-50"
-							>{importingProduct === item.productId ? t('delivery.importing') : t('delivery.addArticle')}</button>
+				<div class="flex shrink-0 items-center gap-1.5">
+					<button type="button" onclick={() => unbook(item)} disabled={(checked[item.productId] ?? 0) === 0 || unbookingProduct !== null} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">−</button>
+					<span class="w-10 text-center text-sm font-semibold {done ? 'text-green-700' : 'text-gray-700'}">{checked[item.productId] ?? 0}/{item.quantity}</span>
+					<button type="button" onclick={() => bookAndCheck(item)} disabled={done || bookingProduct !== null} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">+</button>
+				</div>
+			</div>
+			<!-- Einzelanlage: Standard-Lagerort direkt an der Zeile abfragen, an der
+			     getippt wurde — eine Karte weiter oben stünde auf dem Handy außer Sicht. -->
+			{#if newArticle && newArticle.productId === item.productId}
+				<div class="mt-2 rounded-lg border border-green-200 bg-green-50/50 p-3">
+					<p class="text-xs font-semibold text-gray-900">{t('delivery.newSingleTitle')}</p>
+					<p class="mt-0.5 text-xs text-gray-600">{t('delivery.newSingleExplain')}</p>
+					<label for={`newLoc-${item.productId}`} class="mt-2 block text-xs font-medium text-gray-500">{t('delivery.newLocation')}</label>
+					<select
+						id={`newLoc-${item.productId}`}
+						bind:value={newArticle.locationId}
+						class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
+					>
+						<option value="">—</option>
+						{#each data.locations as location (location.id)}
+							<option value={String(location.id)}>{location.name}</option>
+						{/each}
+					</select>
+					<div class="mt-2 flex flex-wrap gap-2">
+						<button
+							type="button"
+							onclick={() => createArticle(item)}
+							disabled={!newArticle.locationId || bookingProduct !== null || importingProduct !== null}
+							class="flex-1 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+						>
+							{newArticle.mode === 'book' ? t('delivery.newCreateAndBook') : t('delivery.newCreate')}
+						</button>
+						<button type="button" onclick={() => (newArticle = null)} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+							{t('form.cancel')}
+						</button>
 					</div>
 				</div>
 			{/if}
-			<div class="flex shrink-0 items-center gap-1.5">
-				<button type="button" onclick={() => unbook(item)} disabled={(checked[item.productId] ?? 0) === 0 || unbookingProduct !== null} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">−</button>
-				<span class="w-10 text-center text-sm font-semibold {done ? 'text-green-700' : 'text-gray-700'}">{checked[item.productId] ?? 0}/{item.quantity}</span>
-				<button type="button" onclick={() => bookAndCheck(item)} disabled={done || bookingProduct !== null} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">+</button>
-			</div>
 		</li>
 	{/each}
 </ul>

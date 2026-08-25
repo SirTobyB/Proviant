@@ -103,7 +103,10 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   offenen Positionen auf einmal. Die −-Taste nimmt die letzte Buchung zurück
   und bucht sie wieder aus — genau von der Charge, aus der sie kam, damit im
   Journal der richtige Lagerort steht. Noch unbekannte Produkte werden dabei
-  automatisch als Artikel angelegt (samt Bild und Gebindegröße). Von Picnic
+  automatisch als Artikel angelegt (samt Bild und Gebindegröße) — allerdings
+  erst, wenn für jeden ein Standard-Lagerort gewählt ist: Danach fragt der Check,
+  bevor irgendetwas gebucht wird, damit neuer Bestand nicht versehentlich
+  irgendwo landet. Von Picnic
   **stornierte** Positionen (nicht vorrätig, Qualität, nicht verladen) zählen
   nicht mehr zum Soll und stehen mit Grund als *nicht geliefert* in der Liste.
   Fehlt am Ende etwas, lässt sich die Prüfung bewusst abschließen: Die
