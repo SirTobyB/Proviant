@@ -8,6 +8,14 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.2.0] - 2026-08-25
+
+Diese Fassung sorgt dafür, dass beim Auspacken kein Artikel mehr ohne Zuhause
+entsteht. Zu tun ist beim Aktualisieren nichts: keine Migration, keine neue
+Einstellung — `docker compose pull` genügt. Bestehende Artikel ohne
+Standard-Lagerort bleiben, wie sie sind, und laufen weiterhin über den
+Sammel-Lagerort der Lieferungsseite.
+
 ### Hinzugefügt
 
 - **Neue Artikel bekommen beim Lieferungs-Check sofort einen Standard-Lagerort.**
@@ -190,7 +198,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.1.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/SirTobyB/Proviant/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/SirTobyB/Proviant/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/SirTobyB/Proviant/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/SirTobyB/Proviant/compare/v1.1.0...v1.2.0
