@@ -150,6 +150,7 @@ export const de: Messages = {
 	'recipe.costSaving': 'davon {amount} gespart',
 	'recipe.costFrom': 'ab {amount}',
 	'recipe.costIncomplete': 'Kein Preis für: {names}',
+	'recipe.approxPerPortion': 'ca. {amount}/Portion',
 
 	'recipe.new.title': 'Neues Rezept',
 	'recipe.new.submit': 'Rezept anlegen',

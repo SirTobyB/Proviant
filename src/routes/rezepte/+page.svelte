@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { translator, type MessageKey } from '$lib/i18n';
+	import { formatPrice } from '$lib/format';
 
 	let { data } = $props();
 
@@ -75,6 +76,13 @@
 				<div class="p-3">
 					<div class="truncate font-medium">{recipe.name}</div>
 					<div class="text-xs text-gray-500">{recipe.category === 'cake' ? t('recipes.categoryCake') : t('recipes.categoryMeal')} · {t('recipes.servings', { n: recipe.servings })}</div>
+					{#if recipe.perPortion !== null}
+						<span class="text-xs text-gray-500">
+							{recipe.pricesComplete ? '' : '≥ '}{t('recipe.approxPerPortion', {
+								amount: formatPrice(recipe.perPortion, data.locale)
+							})}
+						</span>
+					{/if}
 					{#if recipe.tags.length > 0}
 						<div class="mt-1.5 flex flex-wrap gap-1">
 							{#each recipe.tags.slice(0, 3) as tag (tag)}

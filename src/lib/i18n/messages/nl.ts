@@ -151,6 +151,7 @@ export const nl: Messages = {
 	'recipe.costSaving': 'waarvan {amount} bespaard',
 	'recipe.costFrom': 'vanaf {amount}',
 	'recipe.costIncomplete': 'Geen prijs voor: {names}',
+	'recipe.approxPerPortion': 'ca. {amount}/portie',
 
 	'recipe.new.title': 'Nieuw recept',
 	'recipe.new.submit': 'Recept aanmaken',

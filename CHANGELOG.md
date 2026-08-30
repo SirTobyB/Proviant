@@ -16,6 +16,7 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 - Rezepte zeigen die Kosten pro Portion und gesamt — getrennt für die noch zu
   kaufenden und für alle Zutaten —, jeweils samt Ersparnis durch laufende
   Angebote. Die Portionszahl ist mit 3 vorbelegt.
+- Rezeptliste zeigt je Rezept den ungefähren Preis pro Portion.
 
 ## [2.2.0] - 2026-08-25
 

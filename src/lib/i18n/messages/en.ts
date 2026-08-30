@@ -162,6 +162,7 @@ export const en = {
 	'recipe.costSaving': 'incl. {amount} saved',
 	'recipe.costFrom': 'from {amount}',
 	'recipe.costIncomplete': 'No price for: {names}',
+	'recipe.approxPerPortion': 'approx. {amount}/serving',
 
 	'recipe.new.title': 'New recipe',
 	'recipe.new.submit': 'Create recipe',
