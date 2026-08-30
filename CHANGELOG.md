@@ -18,6 +18,8 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   Angebote. Die Portionszahl ist mit 3 vorbelegt.
 - Rezeptliste zeigt je Rezept den ungefähren Preis pro Portion.
 - Wochenplan zeigt die Summe der Einkaufsliste samt enthaltener Ersparnis.
+- Lieferungs-Check weist die bei dieser Lieferung erzielte Ersparnis aus —
+  je Position und in Summe.
 
 ## [2.2.0] - 2026-08-25
 

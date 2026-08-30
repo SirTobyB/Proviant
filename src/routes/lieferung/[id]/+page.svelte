@@ -3,6 +3,7 @@
 	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { translator } from '$lib/i18n';
+	import { formatPrice } from '$lib/format';
 	import { missingLocationNames, newItemsNeedingLocation } from '$lib/deliveryNewItems';
 
 	let { data } = $props();
@@ -138,6 +139,13 @@
 	);
 	const totalMissing = $derived(missingItems.reduce((sum, m) => sum + m.quantity, 0));
 	const cancelledItems = $derived(data.items.filter((i) => i.cancelledQuantity > 0));
+
+	// Gesamtersparnis dieser Lieferung: je Position Normal- minus Aktionspreis,
+	// negativ (Datenfehler in den Picnic-Preisen) wird auf 0 gekappt statt die
+	// Summe zu verfälschen.
+	const savedTotal = $derived(
+		data.items.reduce((sum, i) => sum + Math.max(0, (i.regularPrice ?? 0) - (i.promoPrice ?? 0)), 0)
+	);
 
 	function showToast(message: string, kind: 'ok' | 'warn' = 'ok') {
 		toast = message;
@@ -360,6 +368,13 @@
 	<div class="mt-1 h-2 overflow-hidden rounded-full bg-gray-200">
 		<div class="h-full rounded-full bg-green-600 transition-all" style={`width: ${totalExpected ? (totalChecked / totalExpected) * 100 : 0}%`}></div>
 	</div>
+
+	<!-- Gesamtersparnis dieser Lieferung -->
+	{#if savedTotal > 0}
+		<p class="mt-1 text-sm text-green-700">
+			{t('delivery.savedTotal', { amount: formatPrice(savedTotal, data.locale) })}
+		</p>
+	{/if}
 
 	<!-- Von Picnic storniert: gehört nicht ins Soll, muss aber erklärt werden -->
 	{#if cancelledItems.length > 0}
@@ -633,6 +648,12 @@
 					<button type="button" onclick={() => bookAndCheck(item)} disabled={done || bookingProduct !== null} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">+</button>
 				</div>
 			</div>
+			<!-- Erzielte Ersparnis dieser Position (Aktionspreis unter Normalpreis) -->
+			{#if item.promoPrice !== null && item.regularPrice !== null && item.promoPrice < item.regularPrice}
+				<span class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">
+					{t('delivery.saved', { amount: formatPrice(item.regularPrice - item.promoPrice, data.locale) })}
+				</span>
+			{/if}
 			<!-- Einzelanlage: Standard-Lagerort direkt an der Zeile abfragen, an der
 			     getippt wurde — eine Karte weiter oben stünde auf dem Handy außer Sicht. -->
 			{#if newArticle && newArticle.productId === item.productId}

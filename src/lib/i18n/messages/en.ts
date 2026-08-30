@@ -338,6 +338,8 @@ export const en = {
 	'delivery.doneWithMissing': 'Delivery checked — shortfall recorded',
 	'delivery.missingSummary_one': '{n} pack missing',
 	'delivery.missingSummary_other': '{n} packs missing',
+	'delivery.saved': 'Saved: {amount}',
+	'delivery.savedTotal': 'Total saved on this delivery: {amount}',
 	'delivery.toast.created': '“{name}” created as an item',
 	'delivery.toast.importFailed': 'Import failed',
 	'delivery.toast.unknownBarcode': 'Unknown barcode {ean}',

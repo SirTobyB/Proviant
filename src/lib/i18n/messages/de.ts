@@ -329,6 +329,8 @@ export const de: Messages = {
 	'delivery.doneWithMissing': 'Lieferung geprüft — Fehlbestand vermerkt',
 	'delivery.missingSummary_one': '{n} Gebinde fehlt',
 	'delivery.missingSummary_other': '{n} Gebinde fehlen',
+	'delivery.saved': 'Gespart: {amount}',
+	'delivery.savedTotal': 'Bei dieser Lieferung gespart: {amount}',
 	'delivery.toast.created': '„{name}" als Artikel angelegt',
 	'delivery.toast.importFailed': 'Import fehlgeschlagen',
 	'delivery.toast.unknownBarcode': 'Unbekannter Barcode {ean}',

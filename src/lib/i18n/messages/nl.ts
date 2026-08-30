@@ -330,6 +330,8 @@ export const nl: Messages = {
 	'delivery.doneWithMissing': 'Levering gecontroleerd — tekort vastgelegd',
 	'delivery.missingSummary_one': '{n} verpakking ontbreekt',
 	'delivery.missingSummary_other': '{n} verpakkingen ontbreken',
+	'delivery.saved': 'Bespaard: {amount}',
+	'delivery.savedTotal': 'Bespaard bij deze levering: {amount}',
 	'delivery.toast.created': '„{name}" als artikel aangemaakt',
 	'delivery.toast.importFailed': 'Importeren mislukt',
 	'delivery.toast.unknownBarcode': 'Onbekende barcode {ean}',

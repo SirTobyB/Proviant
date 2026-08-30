@@ -36,6 +36,26 @@ function line(id: string, quantity: number, name = id) {
 	};
 }
 
+/** Baut eine Bestellzeile mit Rabatt, wie Picnic sie an der ORDER_LINE führt. */
+function rabattLine(id: string, quantity: number, regular: number, promo: number) {
+	return {
+		price: regular,
+		decorators: [
+			{ type: 'PRICE', display_price: promo },
+			{ type: 'PROMO', text: 'jetzt billiger' }
+		],
+		items: [
+			{
+				id,
+				name: id,
+				image_ids: ['bild-' + id],
+				unit_quantity: '500g',
+				decorators: [{ type: 'QUANTITY', quantity }]
+			}
+		]
+	};
+}
+
 describe('lineQuantity', () => {
 	it('liest die Menge aus dem QUANTITY-Decorator', () => {
 		expect(lineQuantity([{ type: 'IMMUTABLE' }, { type: 'QUANTITY', quantity: 3 }])).toBe(3);
@@ -147,5 +167,30 @@ describe('aggregateChecklist mit Stornos', () => {
 			cancelledQuantity: 0,
 			cancelReason: null
 		});
+	});
+});
+
+describe('aggregateChecklist — Preise', () => {
+	it('übernimmt Normal- und Aktionspreis der Zeile', () => {
+		const [item] = aggregateChecklist([{ items: [rabattLine('s1', 1, 249, 199)] }]);
+		expect(item.regularPrice).toBe(249);
+		expect(item.promoPrice).toBe(199);
+	});
+
+	it('lässt die Preisfelder ohne Preisangabe leer', () => {
+		const [item] = aggregateChecklist([{ items: [line('s1', 1)] }]);
+		expect(item.regularPrice).toBeNull();
+		expect(item.promoPrice).toBeNull();
+	});
+
+	// Derselbe Artikel kann über mehrere Teilbestellungen laufen — die
+	// Zeilenpreise müssen sich dann addieren, nicht überschreiben.
+	it('summiert Preise über mehrere Bestellungen desselben Artikels', () => {
+		const [item] = aggregateChecklist([
+			{ items: [rabattLine('s1', 1, 249, 199)] },
+			{ items: [rabattLine('s1', 1, 249, 199)] }
+		]);
+		expect(item.regularPrice).toBe(498);
+		expect(item.promoPrice).toBe(398);
 	});
 });

@@ -3,6 +3,8 @@
  * Bewusst ohne SvelteKit-/Client-Abhängigkeiten, damit unabhängig testbar.
  */
 
+import { lineSavings } from './price';
+
 export type DeliveryChecklistItem = {
 	productId: string;
 	name: string;
@@ -16,6 +18,12 @@ export type DeliveryChecklistItem = {
 	cancelledQuantity: number;
 	/** Grund laut Picnic, z.B. `PRODUCT_NOT_SHIPPED`; null, wenn nicht genannt. */
 	cancelReason: string | null;
+	/** Normalpreis dieser Position über alle Bestellungen, in Cent; null wenn unbekannt. */
+	regularPrice: number | null;
+	/** Aktionspreis, in Cent; null = kein Rabatt. */
+	promoPrice: number | null;
+	/** Beschriftung der Aktion laut Picnic. */
+	promoLabel: string | null;
 };
 
 /** Von Picnic gemeldeter Lieferausfall einer Position. */
@@ -29,7 +37,11 @@ type OrderArticle = {
 	unit_quantity?: string;
 	decorators?: Decorator[];
 };
-type OrderLine = { items?: OrderArticle[] };
+// `decorators` bewusst `unknown`, nicht `Decorator[]`: Der PRICE-Decorator
+// trägt `display_price`, der PROMO-Decorator `text` — beides passt nicht in
+// den schlanken `Decorator`-Typ oben (der gehört dem Artikel-Decorator, der
+// diese Felder nicht kennt). `lineSavings` narrowt ohnehin defensiv selbst.
+type OrderLine = { items?: OrderArticle[]; price?: number; decorators?: unknown };
 type Order = { items?: OrderLine[] };
 
 /** Menge einer Bestellposition steckt im QUANTITY-Decorator, nicht in items.length. */
@@ -104,8 +116,26 @@ export function aggregateChecklist(
 					quantity: 0,
 					orderedQuantity: quantity,
 					cancelledQuantity: 0,
-					cancelReason: null
+					cancelReason: null,
+					regularPrice: null,
+					promoPrice: null,
+					promoLabel: null
 				});
+			}
+
+			const price = lineSavings(line);
+			const target = byProduct.get(article.id)!;
+			if (price) {
+				// Zeilen-Gesamtpreise, deshalb schlicht addieren — derselbe
+				// Artikel kann über mehrere Teilbestellungen laufen.
+				target.regularPrice = (target.regularPrice ?? 0) + price.regularPrice;
+				if (price.promoPrice != null) {
+					target.promoPrice = (target.promoPrice ?? 0) + price.promoPrice;
+					target.promoLabel ??= price.promoLabel;
+				} else {
+					// Ohne Rabatt zahlt man den Normalpreis — für die Summe mitzählen
+					target.promoPrice = (target.promoPrice ?? 0) + price.regularPrice;
+				}
 			}
 		}
 	}
