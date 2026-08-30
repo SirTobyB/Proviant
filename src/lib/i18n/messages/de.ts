@@ -204,6 +204,9 @@ export const de: Messages = {
 	'plan.noRecipeFound': 'Kein Rezept gefunden',
 	'plan.buildCart': 'Zutaten für die Woche in den Picnic-Warenkorb',
 	'plan.nothingPlanned': 'Für diese Woche ist noch nichts geplant.',
+	'mealPlan.listTotal': 'Summe der Einkaufsliste',
+	'mealPlan.listSavings': 'davon {amount} gespart',
+	'mealPlan.listIncomplete': 'Für einige Artikel ist kein Preis bekannt',
 
 	'recipeImport.title': 'Aus Picnic importieren',
 	'recipeImport.description':

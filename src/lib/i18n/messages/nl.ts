@@ -205,6 +205,9 @@ export const nl: Messages = {
 	'plan.noRecipeFound': 'Geen recept gevonden',
 	'plan.buildCart': 'Ingrediënten voor de week in het Picnic-mandje',
 	'plan.nothingPlanned': 'Voor deze week is nog niets gepland.',
+	'mealPlan.listTotal': 'Totaal boodschappenlijst',
+	'mealPlan.listSavings': 'waarvan {amount} bespaard',
+	'mealPlan.listIncomplete': 'Van sommige artikelen is geen prijs bekend',
 
 	'recipeImport.title': 'Importeren uit Picnic',
 	'recipeImport.description':

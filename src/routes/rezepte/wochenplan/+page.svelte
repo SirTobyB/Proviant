@@ -2,6 +2,7 @@
 	import { keepValues } from '$lib/forms';
 	import { enhance } from '$app/forms';
 	import { translator, BCP47 } from '$lib/i18n';
+	import { formatPrice } from '$lib/format';
 
 	let { data, form } = $props();
 
@@ -198,3 +199,19 @@
 		<p class="mt-2 text-xs text-gray-500">{t('plan.nothingPlanned')}</p>
 	{/if}
 </form>
+
+{#if data.shoppingTotals.total > 0}
+	<div class="mt-4 max-w-xl border-t border-gray-200 pt-3">
+		<p class="font-medium text-gray-700">
+			{t('mealPlan.listTotal')}: {formatPrice(data.shoppingTotals.total, data.locale)}
+		</p>
+		{#if data.shoppingTotals.savings > 0}
+			<p class="text-sm text-green-700">
+				{t('mealPlan.listSavings', { amount: formatPrice(data.shoppingTotals.savings, data.locale) })}
+			</p>
+		{/if}
+		{#if !data.shoppingTotals.complete}
+			<p class="text-xs text-gray-500">{t('mealPlan.listIncomplete')}</p>
+		{/if}
+	</div>
+{/if}

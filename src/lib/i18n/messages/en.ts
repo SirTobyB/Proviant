@@ -215,6 +215,9 @@ export const en = {
 	'plan.noRecipeFound': 'No recipe found',
 	'plan.buildCart': 'Ingredients for the week into the Picnic basket',
 	'plan.nothingPlanned': 'Nothing is planned for this week yet.',
+	'mealPlan.listTotal': 'Shopping list total',
+	'mealPlan.listSavings': 'incl. {amount} saved',
+	'mealPlan.listIncomplete': 'Some items have no known price',
 
 	'recipeImport.title': 'Import from Picnic',
 	'recipeImport.description':

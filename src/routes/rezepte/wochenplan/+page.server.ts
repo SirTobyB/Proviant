@@ -5,6 +5,7 @@ import { getRecipe, getRecipeIngredients, isRecipeCookable } from '$lib/server/r
 import { allTagNames } from '$lib/server/tags';
 import { auditEdit, auditNew } from '$lib/server/audit';
 import { planWeekShoppingList } from '$lib/server/mealPlan';
+import { effectivePrice, pricesFor, savingsOf } from '$lib/server/prices';
 import { addToCart, getConnectionState } from '$lib/server/picnic';
 import { eligible, pickWeighted, type SuggestCandidate } from '$lib/suggest';
 import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
@@ -81,11 +82,38 @@ export const load: PageServerLoad = () => {
 		.orderBy(sql`${recipes.name} collate nocase`)
 		.all();
 
+	// Zweiter Aufruf von planWeekShoppingList, unabhängig von der ?/buildCart-
+	// Action: die Summe soll VOR dem Bestellen sichtbar sein, nicht erst im
+	// Ergebnis der Action. Bewusst aus `rows` (ohne Dedupe je Datum) statt aus
+	// `days`, weil auch die Action nicht dedupliziert — sonst würde hier eine
+	// andere Summe stehen als der Warenkorb später tatsächlich enthält.
+	// `rows` ist bereits nach Datum sortiert, wie von planWeekShoppingList
+	// vorausgesetzt.
+	const shoppingEntries = rows.map((r) => ({ recipeId: r.recipeId, servings: r.servings }));
+	const shoppingList = planWeekShoppingList(shoppingEntries);
+	// Nur Cache lesen: Der Wochenplan kann viele Artikel umfassen, ein
+	// Auto-Refresh wäre hier eine spürbare Bremse.
+	const listPrices = pricesFor(shoppingList.items.map((item) => item.productId));
+	const shoppingTotals = shoppingList.items.reduce(
+		(acc, item) => {
+			const price = listPrices.get(item.productId);
+			if (!price) {
+				acc.complete = false;
+				return acc;
+			}
+			acc.total += effectivePrice(price) * item.quantity;
+			acc.savings += savingsOf(price) * item.quantity;
+			return acc;
+		},
+		{ total: 0, savings: 0, complete: true }
+	);
+
 	return {
 		days,
 		allTags: allTagNames(),
 		allRecipes,
-		connection: getConnectionState()
+		connection: getConnectionState(),
+		shoppingTotals
 	};
 };
 

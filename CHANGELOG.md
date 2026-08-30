@@ -17,6 +17,7 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   kaufenden und für alle Zutaten —, jeweils samt Ersparnis durch laufende
   Angebote. Die Portionszahl ist mit 3 vorbelegt.
 - Rezeptliste zeigt je Rezept den ungefähren Preis pro Portion.
+- Wochenplan zeigt die Summe der Einkaufsliste samt enthaltener Ersparnis.
 
 ## [2.2.0] - 2026-08-25
 
