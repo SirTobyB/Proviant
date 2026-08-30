@@ -200,18 +200,20 @@
 	{/if}
 </form>
 
-{#if data.shoppingTotals.total > 0}
+{#if data.shoppingTotals.total > 0 || !data.shoppingTotals.complete}
 	<div class="mt-4 max-w-xl border-t border-gray-200 pt-3">
-		<p class="font-medium text-gray-700">
-			{t('mealPlan.listTotal')}: {formatPrice(data.shoppingTotals.total, data.locale)}
-		</p>
+		{#if data.shoppingTotals.total > 0}
+			<p class="font-medium text-gray-700">
+				{t('plan.listTotal')}: {formatPrice(data.shoppingTotals.total, data.locale)}
+			</p>
+		{/if}
 		{#if data.shoppingTotals.savings > 0}
 			<p class="text-sm text-green-700">
-				{t('mealPlan.listSavings', { amount: formatPrice(data.shoppingTotals.savings, data.locale) })}
+				{t('plan.listSavings', { amount: formatPrice(data.shoppingTotals.savings, data.locale) })}
 			</p>
 		{/if}
 		{#if !data.shoppingTotals.complete}
-			<p class="text-xs text-gray-500">{t('mealPlan.listIncomplete')}</p>
+			<p class="text-xs text-gray-500">{t('plan.listIncomplete')}</p>
 		{/if}
 	</div>
 {/if}
