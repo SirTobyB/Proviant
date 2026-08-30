@@ -8,6 +8,12 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- Bestellvorschlag zeigt Preise je Artikel, laufende Picnic-Angebote mit
+  Ersparnis in Euro sowie Summe und Gesamtersparnis. Preise werden
+  zwischengespeichert und lassen sich per Knopfdruck auffrischen.
+
 ## [2.2.0] - 2026-08-25
 
 Diese Fassung sorgt dafür, dass beim Auspacken kein Artikel mehr ohne Zuhause

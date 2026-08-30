@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { keepValues } from '$lib/forms';
 	import { translator } from '$lib/i18n';
-	import { packageSize } from '$lib/format';
+	import { packageSize, formatPrice } from '$lib/format';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -64,8 +64,20 @@
 
 <svelte:head><title>{t('order.title')} – Proviant</title></svelte:head>
 
-<h1 class="text-2xl font-bold">{t('order.title')}</h1>
-<p class="mt-1 text-sm text-gray-500">{t('order.subtitle')}</p>
+<div class="flex flex-wrap items-start justify-between gap-3">
+	<div>
+		<h1 class="text-2xl font-bold">{t('order.title')}</h1>
+		<p class="mt-1 text-sm text-gray-500">{t('order.subtitle')}</p>
+	</div>
+	<form method="POST" action="?/refreshPrices" use:enhance={keepValues} class="flex flex-wrap gap-2">
+		<button type="submit" class="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50">
+			{t('order.refreshPrices')}
+		</button>
+	</form>
+</div>
+{#if form && 'pricesRefreshed' in form && form.pricesRefreshed !== undefined}
+	<p class="mt-2 text-sm text-gray-500">{t('order.pricesRefreshed', { n: form.pricesRefreshed })}</p>
+{/if}
 
 <!-- Verbindungspanel -->
 <div class="mt-4 max-w-2xl rounded-xl border border-gray-200 bg-white p-4">
@@ -200,6 +212,20 @@
 								· <a href={`/artikel/${item.id}`} class="text-amber-600 underline">{t('order.linkPicnic')}</a>
 							{/if}
 						</div>
+						<div class="mt-0.5">
+							{#if item.price}
+								<span class="text-sm text-gray-700">
+									{formatPrice((item.price.promoPrice ?? item.price.regularPrice) * item.needed, data.locale)}
+								</span>
+								{#if item.price.promoPrice !== null}
+									<span class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">
+										−{formatPrice((item.price.regularPrice - item.price.promoPrice) * item.needed, data.locale)}
+									</span>
+								{/if}
+							{:else}
+								<span class="text-sm text-gray-400">{t('order.noPrice')}</span>
+							{/if}
+						</div>
 					</div>
 					<input
 						type="number"
@@ -212,6 +238,16 @@
 				</li>
 			{/each}
 		</ul>
+
+		<div class="flex flex-wrap items-baseline justify-between gap-2 border-t border-gray-200 pt-3">
+			<span class="font-medium text-gray-700">{t('order.total')}</span>
+			<span class="text-lg font-semibold">{formatPrice(data.totals.total, data.locale)}</span>
+		</div>
+		{#if data.totals.savings > 0}
+			<p class="text-sm text-green-700">
+				{t('order.totalSavings', { amount: formatPrice(data.totals.savings, data.locale) })}
+			</p>
+		{/if}
 
 		<button
 			type="submit"
