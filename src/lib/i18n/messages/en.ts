@@ -263,7 +263,6 @@ export const en = {
 	'order.noPrice': 'No price known',
 	'order.refreshPrices': 'Refresh prices',
 	'order.pricesRefreshed': '{n} prices updated',
-	'order.pricesStale': 'Prices from {date}',
 
 	'deliveries.title': 'Check delivery',
 	'deliveries.subtitle': 'Unpack a Picnic delivery, scan and book it straight in',

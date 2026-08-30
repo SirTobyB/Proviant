@@ -255,7 +255,6 @@ export const nl: Messages = {
 	'order.noPrice': 'Geen prijs bekend',
 	'order.refreshPrices': 'Prijzen bijwerken',
 	'order.pricesRefreshed': '{n} prijzen bijgewerkt',
-	'order.pricesStale': 'Prijzen van {date}',
 
 	'deliveries.title': 'Levering controleren',
 	'deliveries.subtitle': 'Picnic-levering uitpakken, scannen en meteen inboeken',

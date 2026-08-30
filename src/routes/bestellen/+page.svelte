@@ -218,8 +218,12 @@
 									{formatPrice((item.price.promoPrice ?? item.price.regularPrice) * item.needed, data.locale)}
 								</span>
 								{#if item.price.promoPrice !== null}
-									<span class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">
-										−{formatPrice((item.price.regularPrice - item.price.promoPrice) * item.needed, data.locale)}
+									{@const savingAmount = formatPrice((item.price.regularPrice - item.price.promoPrice) * item.needed, data.locale)}
+									<span
+										class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700"
+										title={t('order.saving', { amount: savingAmount })}
+									>
+										−{savingAmount}
 									</span>
 								{/if}
 							{:else}

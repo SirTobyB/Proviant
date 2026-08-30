@@ -254,7 +254,6 @@ export const de: Messages = {
 	'order.noPrice': 'Kein Preis bekannt',
 	'order.refreshPrices': 'Preise aktualisieren',
 	'order.pricesRefreshed': '{n} Preise aktualisiert',
-	'order.pricesStale': 'Preise vom {date}',
 
 	'deliveries.title': 'Lieferung prüfen',
 	'deliveries.subtitle': 'Picnic-Lieferung auspacken, scannen und direkt einbuchen',
