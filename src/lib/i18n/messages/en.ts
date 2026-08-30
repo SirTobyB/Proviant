@@ -156,6 +156,12 @@ export const en = {
 	'recipe.delete': 'Delete recipe',
 	'recipe.deleteConfirm': 'Really delete “{name}”?',
 	'recipe.deleteYes': 'Yes, delete',
+	'recipe.costToOrder': 'To buy',
+	'recipe.costAll': 'All ingredients',
+	'recipe.costPerPortion': 'Per serving',
+	'recipe.costSaving': 'incl. {amount} saved',
+	'recipe.costFrom': 'from {amount}',
+	'recipe.costIncomplete': 'No price for: {names}',
 
 	'recipe.new.title': 'New recipe',
 	'recipe.new.submit': 'Create recipe',

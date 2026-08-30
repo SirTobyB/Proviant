@@ -3,15 +3,28 @@
 	import { enhance } from '$app/forms';
 	import { coverageMulti, scaleAmount } from '$lib/units';
 	import { translator, BCP47 } from '$lib/i18n';
-	import { unitLabel } from '$lib/format';
+	import { unitLabel, formatPrice } from '$lib/format';
+	import { recipeCost, type CostPrice } from '$lib/recipeCost';
 
 	let { data, form } = $props();
 
 	const t = $derived(translator(data.locale));
 
 	// svelte-ignore state_referenced_locally
-	let portions = $state(data.recipe.servings);
+	let portions = $state(data.defaultPortions);
 	let confirmDelete = $state(false);
+
+	// Rechnung läuft bewusst im Client (siehe $lib/recipeCost), damit der
+	// Portionsregler ohne Serverrunde reagiert.
+	const priceMap = $derived(new Map<string, CostPrice>(data.prices));
+	const cost = $derived(
+		recipeCost({
+			ingredients: data.ingredients,
+			baseServings: data.recipe.servings,
+			portions,
+			prices: priceMap
+		})
+	);
 
 	function scaledText(amount: number | null, unit: string | null): string {
 		if (amount == null) return '';
@@ -141,6 +154,33 @@
 		</li>
 	{/each}
 </ul>
+
+<!-- Kosten: getrennt für "noch zu kaufen" und "alle Zutaten", je Portion -->
+<div class="mt-4 max-w-xl grid gap-3 sm:grid-cols-2">
+	{#each [{ label: t('recipe.costToOrder'), block: cost.toOrder }, { label: t('recipe.costAll'), block: cost.all }] as entry}
+		<div class="rounded-lg border border-gray-200 p-3">
+			<p class="text-sm font-medium text-gray-700">{entry.label}</p>
+			<p class="text-lg font-semibold">
+				{entry.block.complete
+					? formatPrice(entry.block.total, data.locale)
+					: t('recipe.costFrom', { amount: formatPrice(entry.block.total, data.locale) })}
+			</p>
+			<p class="text-sm text-gray-600">
+				{t('recipe.costPerPortion')}: {formatPrice(Math.round(entry.block.perPortion), data.locale)}
+			</p>
+			{#if entry.block.savings > 0}
+				<p class="text-sm text-green-700">
+					{t('recipe.costSaving', { amount: formatPrice(entry.block.savings, data.locale) })}
+				</p>
+			{/if}
+			{#if !entry.block.complete}
+				<p class="text-xs text-gray-500">
+					{t('recipe.costIncomplete', { names: entry.block.unpriced.join(', ') })}
+				</p>
+			{/if}
+		</div>
+	{/each}
+</div>
 
 <!-- Warenkorb -->
 <!-- reset: false — sonst verliert das versteckte Portionsfeld nach dem Absenden seinen Wert -->

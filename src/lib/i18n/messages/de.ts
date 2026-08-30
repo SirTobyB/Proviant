@@ -144,6 +144,12 @@ export const de: Messages = {
 	'recipe.delete': 'Rezept löschen',
 	'recipe.deleteConfirm': '„{name}" wirklich löschen?',
 	'recipe.deleteYes': 'Ja, löschen',
+	'recipe.costToOrder': 'Zu kaufen',
+	'recipe.costAll': 'Alle Zutaten',
+	'recipe.costPerPortion': 'Pro Portion',
+	'recipe.costSaving': 'davon {amount} gespart',
+	'recipe.costFrom': 'ab {amount}',
+	'recipe.costIncomplete': 'Kein Preis für: {names}',
 
 	'recipe.new.title': 'Neues Rezept',
 	'recipe.new.submit': 'Rezept anlegen',

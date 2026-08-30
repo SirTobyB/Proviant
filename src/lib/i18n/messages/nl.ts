@@ -145,6 +145,12 @@ export const nl: Messages = {
 	'recipe.delete': 'Recept verwijderen',
 	'recipe.deleteConfirm': '„{name}" echt verwijderen?',
 	'recipe.deleteYes': 'Ja, verwijderen',
+	'recipe.costToOrder': 'Te kopen',
+	'recipe.costAll': 'Alle ingrediënten',
+	'recipe.costPerPortion': 'Per portie',
+	'recipe.costSaving': 'waarvan {amount} bespaard',
+	'recipe.costFrom': 'vanaf {amount}',
+	'recipe.costIncomplete': 'Geen prijs voor: {names}',
 
 	'recipe.new.title': 'Nieuw recept',
 	'recipe.new.submit': 'Recept aanmaken',

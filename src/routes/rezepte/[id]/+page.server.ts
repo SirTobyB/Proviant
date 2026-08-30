@@ -6,19 +6,34 @@ import { tagsForRecipe } from '$lib/server/tags';
 import { auditEdit } from '$lib/server/audit';
 import { deleteImage } from '$lib/server/images';
 import { addToCart, getConnectionState } from '$lib/server/picnic';
+import { defaultPortions } from '$lib/server/settings';
+import { pricesFor, refreshPrices } from '$lib/server/prices';
 import { coverageMulti, scaleAmount } from '$lib/units';
 import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ params, locals }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
 	const t = translator(locals.locale);
 	const recipe = loadRecipeOr404(params.id, t);
+	const ingredients = getRecipeIngredients(recipe.id);
+
+	// Alle Picnic-IDs aller Alternativartikel — welcher am Ende zählt,
+	// entscheidet coverageMulti erst bei der Portionswahl im Client.
+	const picnicIds = ingredients
+		.flatMap((ing) => ing.articles.map((a) => a.picnicId))
+		.filter((id): id is string => Boolean(id));
+	await refreshPrices(picnicIds);
+
+	const prices = pricesFor(picnicIds);
 	return {
 		recipe,
-		ingredients: getRecipeIngredients(recipe.id),
+		ingredients,
 		tags: tagsForRecipe(recipe.id),
-		connection: getConnectionState()
+		connection: getConnectionState(),
+		defaultPortions: defaultPortions(),
+		// Als Array, weil eine Map nicht durch die SvelteKit-Serialisierung geht
+		prices: [...prices].map(([id, p]) => [id, { regularPrice: p.regularPrice, promoPrice: p.promoPrice }] as const)
 	};
 };
 

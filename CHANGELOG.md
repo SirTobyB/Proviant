@@ -13,6 +13,9 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 - Bestellvorschlag zeigt Preise je Artikel, laufende Picnic-Angebote mit
   Ersparnis in Euro sowie Summe und Gesamtersparnis. Preise werden
   zwischengespeichert und lassen sich per Knopfdruck auffrischen.
+- Rezepte zeigen die Kosten pro Portion und gesamt — getrennt für die noch zu
+  kaufenden und für alle Zutaten —, jeweils samt Ersparnis durch laufende
+  Angebote. Die Portionszahl ist mit 3 vorbelegt.
 
 ## [2.2.0] - 2026-08-25
 
