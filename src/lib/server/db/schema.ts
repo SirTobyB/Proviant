@@ -273,3 +273,33 @@ export const stockMovements = sqliteTable('stock_movements', {
 	/** MHD der betroffenen Charge (ISO-Datum), falls vorhanden */
 	bestBefore: text('best_before')
 });
+
+/**
+ * Preis-Cache je Picnic-Produkt.
+ *
+ * Bewusst eine **eigene Tabelle** statt Spalten an `articles`: Ein
+ * Preis-Refresh würde sonst `updated_at`/`updated_by` des Artikels
+ * umschreiben und die Audit-Spur entwerten („wer hat den Artikel geändert?"
+ * → „der Preis-Refresh").
+ *
+ * Aus demselben Grund trägt die Tabelle als einzige **keine Audit-Felder**:
+ * Sie ist ein reiner Maschinen-Cache, kein Anwender editiert sie —
+ * `fetched_at` *ist* hier die Audit-Information.
+ *
+ * Schlüssel ist die **Picnic-ID**, nicht die Artikel-ID: Ein Abruf bedient
+ * damit alle Artikel, die auf dasselbe Produkt zeigen, und der Eintrag
+ * überlebt das Löschen eines Artikels.
+ *
+ * Zur Semantik siehe `picnic/price.ts`: `regular_price` ist der Normalpreis
+ * (Streichpreis), `promo_price` der rabattierte Preis. Ersparnis =
+ * `regular_price − promo_price`.
+ */
+export const picnicPrices = sqliteTable('picnic_prices', {
+	picnicId: text('picnic_id').primaryKey(),
+	regularPrice: integer('regular_price').notNull(),
+	promoPrice: integer('promo_price'),
+	promoLabel: text('promo_label'),
+	fetchedAt: integer('fetched_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
