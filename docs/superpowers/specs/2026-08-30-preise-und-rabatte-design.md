@@ -45,6 +45,17 @@ Ohne Rabatt fehlen beide Decorators und `line.price` ist schlicht der Preis.
 Gegenprobe: 50 ct + 30 ct = 80 ct, und die Bestellung führt
 `"total_savings": 80`. Die Deutung ist damit rechnerisch bestätigt.
 
+### 2.1a `line.price` ist der Zeilen-Gesamtpreis, nicht der Stückpreis
+
+Position „Hipp Bio Kaiserschmarrn", `QUANTITY: 2`, `price: 298` — das 190-g-Glas
+kostet also 149. Bei Menge 1 fällt der Unterschied nicht auf (Mozzarella: 249
+für ein Stück), bei Menge > 1 schon.
+
+Wer `line.price` für den Stückpreis hält, rechnet Mehrfachpositionen doppelt.
+Stückpreis = `line.price / QUANTITY`. Für die Anzeige im Lieferungs-Check
+bleiben wir bewusst auf **Zeilenebene** — dort ist die Zahl ohne Division
+korrekt.
+
 ### 2.2 `ORDER_ARTICLE.price` ist ein Müllwert
 
 Bei **jedem** Artikel der Lieferung steht `"price": 432199`, im
