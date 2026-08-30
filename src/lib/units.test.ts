@@ -95,3 +95,34 @@ describe('coverageMulti', () => {
 		expect(result).toMatchObject({ covered: false, neededPackages: 2, orderPicnicId: null });
 	});
 });
+
+describe('coverageMulti — fullPackages', () => {
+	const artikel = [
+		{ id: 1, packageAmount: 500, packageUnit: 'g', stockPackages: 0, picnicId: 'p1' }
+	];
+
+	it('rechnet ohne Vorrat wie neededPackages', () => {
+		const cov = coverageMulti(1200, 'g', artikel);
+		expect(cov.neededPackages).toBe(3);
+		expect(cov.fullPackages).toBe(3);
+	});
+
+	// Der eigentliche Zweck: „was kostet das Gericht" ignoriert den Vorrat,
+	// „was muss ich kaufen" nicht.
+	it('ignoriert vorhandenen Bestand', () => {
+		const cov = coverageMulti(1200, 'g', [{ ...artikel[0], stockPackages: 2 }]);
+		expect(cov.neededPackages).toBe(1);
+		expect(cov.fullPackages).toBe(3);
+	});
+
+	it('bleibt auch bei voll gedecktem Bedarf gefüllt', () => {
+		const cov = coverageMulti(400, 'g', [{ ...artikel[0], stockPackages: 5 }]);
+		expect(cov.covered).toBe(true);
+		expect(cov.neededPackages).toBe(0);
+		expect(cov.fullPackages).toBe(1);
+	});
+
+	it('ist 0, wenn die Einheiten nicht vergleichbar sind', () => {
+		expect(coverageMulti(2, 'l', artikel).fullPackages).toBe(0);
+	});
+});
