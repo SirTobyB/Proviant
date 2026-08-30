@@ -247,7 +247,6 @@ export const de: Messages = {
 	'order.linkPicnic': 'Picnic verknüpfen',
 	'order.submit': '{n} Artikel in den Picnic-Warenkorb',
 	'order.connectFirst': 'Zum Übertragen zuerst oben mit Picnic verbinden.',
-	'order.price': 'Preis',
 	'order.saving': 'Du sparst {amount}',
 	'order.total': 'Summe',
 	'order.totalSavings': 'Darin enthalten: {amount} gespart',

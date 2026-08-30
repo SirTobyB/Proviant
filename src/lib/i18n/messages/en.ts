@@ -256,7 +256,6 @@ export const en = {
 	'order.linkPicnic': 'Link Picnic',
 	'order.submit': '{n} items into the Picnic basket',
 	'order.connectFirst': 'To transfer, connect to Picnic above first.',
-	'order.price': 'Price',
 	'order.saving': 'You save {amount}',
 	'order.total': 'Total',
 	'order.totalSavings': 'Savings included: {amount}',

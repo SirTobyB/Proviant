@@ -248,7 +248,6 @@ export const nl: Messages = {
 	'order.linkPicnic': 'Picnic koppelen',
 	'order.submit': '{n} artikelen in het Picnic-mandje',
 	'order.connectFirst': 'Maak hierboven eerst verbinding met Picnic om over te zetten.',
-	'order.price': 'Prijs',
 	'order.saving': 'Je bespaart {amount}',
 	'order.total': 'Totaal',
 	'order.totalSavings': 'Daarvan bespaard: {amount}',
