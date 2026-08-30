@@ -282,9 +282,10 @@ export const stockMovements = sqliteTable('stock_movements', {
  * umschreiben und die Audit-Spur entwerten („wer hat den Artikel geändert?"
  * → „der Preis-Refresh").
  *
- * Aus demselben Grund trägt die Tabelle als einzige **keine Audit-Felder**:
- * Sie ist ein reiner Maschinen-Cache, kein Anwender editiert sie —
- * `fetched_at` *ist* hier die Audit-Information.
+ * Aus demselben Grund trägt die Tabelle **keine Audit-Felder** — wie
+ * `sessions`/`loginAttempts`, aber mit anderer Begründung: Sie ist ein
+ * reiner Maschinen-Cache, kein Anwender editiert sie — `fetched_at` *ist*
+ * hier die Audit-Information.
  *
  * Schlüssel ist die **Picnic-ID**, nicht die Artikel-ID: Ein Abruf bedient
  * damit alle Artikel, die auf dasselbe Produkt zeigen, und der Eintrag
