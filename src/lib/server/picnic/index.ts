@@ -6,6 +6,13 @@
  * nur den Warenkorb, bestellt wird immer manuell in der Picnic-App.
  */
 import PicnicClient from 'picnic-api';
+// Deep import bewusst: `getClient().catalog.getProductDetails()` holt intern
+// dieselbe rohe Seite wie `getProductDetailsPage()` und parst sie sofort
+// (siehe node_modules/picnic-api/lib/domains/catalog/service.js) — es gibt
+// dort keine Möglichkeit, an die rohe Seite *und* die geparsten Felder zu
+// kommen, ohne die Seite zweimal zu laden. `picnic-api` hat keine `exports`-
+// Sperre im package.json, der Deep-Import auf den Parser ist also erlaubt.
+import { extractProductDetails } from 'picnic-api/lib/domains/catalog/helpers';
 import { env } from '$env/dynamic/private';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -320,22 +327,33 @@ export async function getPicnicRecipeDetail(id: string, name?: string): Promise<
  * Preis je Produkt-ID. Es gibt **keinen Bulk-Lookup** — ein Call pro Produkt,
  * deshalb ist die Menge vom Aufrufer zu deckeln (siehe `server/prices.ts`).
  *
- * Zwei Stufen, um Aufrufe zu sparen: `getProductDetails()` liefert den
- * aktuellen Preis und verrät über `promotion`, ob überhaupt eine Aktion läuft.
- * Nur dann wird zusätzlich die **rohe** Seite geholt — nur dort steht der
- * Streichpreis. Die meisten Produkte sind nicht im Angebot, kosten also einen
- * Call.
+ * Genau **ein** HTTP-Call, ob im Angebot oder nicht: `getProductDetails()`
+ * holt intern dieselbe rohe Seite, die auch `getProductDetailsPage()` liefert,
+ * und wirft sie danach weg — ein zweiter Aufruf würde also nur dieselbe URL
+ * doppelt laden. Stattdessen wird die rohe Seite hier **einmal** geholt und
+ * zweimal ausgewertet: einmal über `extractProductDetails()` (aktueller
+ * Preis + `promotion`), bei laufender Aktion zusätzlich über
+ * `crossedOutPrice()` (Streichpreis) auf derselben Seite.
  */
 async function fetchProductPrice(id: string): Promise<ProductPrice | null> {
-	const details = await getClient().catalog.getProductDetails(id);
-	const current = (details as { displayPrice?: unknown } | null)?.displayPrice;
+	const page = await getClient().catalog.getProductDetailsPage(id);
+
+	// `extractProductDetails` parst dynamische PML-Strukturen und ist laut
+	// picnic-api selbst "experimental" — lieber null als ein kaputtes Ergebnis.
+	let details: ReturnType<typeof extractProductDetails>;
+	try {
+		details = extractProductDetails(id, page);
+	} catch {
+		return null;
+	}
+
+	const current = details.displayPrice;
 	if (typeof current !== 'number' || current <= 0) return null;
 
-	const promotion = (details as { promotion?: { label?: unknown } | null }).promotion;
+	const promotion = details.promotion;
 	if (!promotion) return { regularPrice: current, promoPrice: null, promoLabel: null };
 
 	const label = typeof promotion.label === 'string' ? promotion.label : null;
-	const page = await getClient().catalog.getProductDetailsPage(id);
 	const regular = crossedOutPrice(page, current);
 
 	// Aktion gemeldet, aber kein Streichpreis auffindbar: Beschriftung
