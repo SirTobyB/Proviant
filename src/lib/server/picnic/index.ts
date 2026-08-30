@@ -10,6 +10,7 @@ import { env } from '$env/dynamic/private';
 import fs from 'node:fs';
 import path from 'node:path';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
+import { crossedOutPrice, type ProductPrice } from './price';
 import {
 	extractRecipeTiles,
 	parseRecipeDetail,
@@ -17,7 +18,7 @@ import {
 	type PicnicRecipeTile
 } from './recipeImport';
 
-export type { DeliveryChecklistItem, ParsedPicnicRecipe, PicnicRecipeTile };
+export type { DeliveryChecklistItem, ParsedPicnicRecipe, PicnicRecipeTile, ProductPrice };
 
 type Client = InstanceType<typeof PicnicClient>;
 type AddProductsItems = Parameters<Client['cart']['addProductsToCart']>[0];
@@ -313,4 +314,47 @@ export async function getPicnicRecipeDetail(id: string, name?: string): Promise<
 	await ensureLoggedIn();
 	const page = await getClient().recipe.getRecipeDetailsPage(id);
 	return parseRecipeDetail(page, name);
+}
+
+/**
+ * Preis je Produkt-ID. Es gibt **keinen Bulk-Lookup** — ein Call pro Produkt,
+ * deshalb ist die Menge vom Aufrufer zu deckeln (siehe `server/prices.ts`).
+ *
+ * Zwei Stufen, um Aufrufe zu sparen: `getProductDetails()` liefert den
+ * aktuellen Preis und verrät über `promotion`, ob überhaupt eine Aktion läuft.
+ * Nur dann wird zusätzlich die **rohe** Seite geholt — nur dort steht der
+ * Streichpreis. Die meisten Produkte sind nicht im Angebot, kosten also einen
+ * Call.
+ */
+async function fetchProductPrice(id: string): Promise<ProductPrice | null> {
+	const details = await getClient().catalog.getProductDetails(id);
+	const current = (details as { displayPrice?: unknown } | null)?.displayPrice;
+	if (typeof current !== 'number' || current <= 0) return null;
+
+	const promotion = (details as { promotion?: { label?: unknown } | null }).promotion;
+	if (!promotion) return { regularPrice: current, promoPrice: null, promoLabel: null };
+
+	const label = typeof promotion.label === 'string' ? promotion.label : null;
+	const page = await getClient().catalog.getProductDetailsPage(id);
+	const regular = crossedOutPrice(page, current);
+
+	// Aktion gemeldet, aber kein Streichpreis auffindbar: Beschriftung
+	// behalten, Ersparnis weglassen. Lieber kein Rabatt als ein erfundener.
+	return regular == null
+		? { regularPrice: current, promoPrice: null, promoLabel: label }
+		: { regularPrice: regular, promoPrice: current, promoLabel: label };
+}
+
+/**
+ * Preise zu mehreren Produkt-IDs. Einzelne Fehlschläge werden übersprungen —
+ * ein nicht mehr existierendes Produkt darf nicht die ganze Seite kippen.
+ */
+export async function getProductPrices(ids: string[]): Promise<Map<string, ProductPrice>> {
+	await ensureLoggedIn();
+	const prices = new Map<string, ProductPrice>();
+	const results = await Promise.allSettled(ids.map((id) => fetchProductPrice(id)));
+	results.forEach((result, index) => {
+		if (result.status === 'fulfilled' && result.value) prices.set(ids[index], result.value);
+	});
+	return prices;
 }
