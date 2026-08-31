@@ -33,9 +33,63 @@ const normalSeite = {
 	layout: { body: { children: [{ markdown: { props: { __ep1: { v0: { price: 249 } } } } }] } }
 };
 
+/**
+ * Produktseite mit Hauptcontainer: Das Produkt selbst ist **nicht** im
+ * Angebot, weiter unten wirbt aber eine Nachbarkachel („Ähnliche Produkte")
+ * mit einem Streichpreis. Genau so sieht die Falle aus, die `promotion` aus
+ * `extractProductDetails` über die ganze Seite hinweg auslöst.
+ */
+const seiteMitFremdemAngebot = {
+	layout: {
+		body: {
+			children: [
+				{
+					id: 'product-details-page-root-main-container',
+					children: [{ markdown: { props: { __ep1: { v0: { price: 249 } } } } }]
+				},
+				{
+					id: 'alternatives-container',
+					children: [
+						{ type: 'PRICE', price: 349 },
+						{ type: 'PRICE', price: 449, isCrossed: true }
+					]
+				}
+			]
+		}
+	}
+};
+
 describe('crossedOutPrice', () => {
 	it('findet den durchgestrichenen Originalpreis', () => {
 		expect(crossedOutPrice(angebotsSeite, 349)).toBe(449);
+	});
+
+	// `extractProductDetails` liest den Preis nur aus dem Hauptcontainer, die
+	// `promotion` dagegen von der ganzen Seite. Suchten wir den Streichpreis
+	// ebenfalls seitenweit, erfände ein Nachbarangebot einen Rabatt mit
+	// überhöhtem „Normalpreis" — der teuerste denkbare Fehler hier.
+	it('ignoriert einen Streichpreis außerhalb des Hauptcontainers', () => {
+		expect(crossedOutPrice(seiteMitFremdemAngebot, 249)).toBeNull();
+	});
+
+	it('findet den Streichpreis innerhalb des Hauptcontainers weiterhin', () => {
+		const seite = {
+			layout: {
+				body: {
+					children: [
+						{
+							id: 'product-details-page-root-main-container',
+							children: [
+								{ type: 'PRICE', price: 349 },
+								{ type: 'PRICE', price: 449, isCrossed: true }
+							]
+						},
+						{ id: 'alternatives-container', children: [{ type: 'PRICE', price: 999, isCrossed: true }] }
+					]
+				}
+			}
+		};
+		expect(crossedOutPrice(seite, 349)).toBe(449);
 	});
 
 	it('meldet ohne PRICE-Komponente keinen Rabatt', () => {
