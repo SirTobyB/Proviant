@@ -4,6 +4,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { translator } from '$lib/i18n';
 	import { formatPrice } from '$lib/format';
+	import { savingsOf } from '$lib/prices';
 	import { missingLocationNames, newItemsNeedingLocation } from '$lib/deliveryNewItems';
 
 	let { data } = $props();
@@ -140,11 +141,15 @@
 	const totalMissing = $derived(missingItems.reduce((sum, m) => sum + m.quantity, 0));
 	const cancelledItems = $derived(data.items.filter((i) => i.cancelledQuantity > 0));
 
-	// Gesamtersparnis dieser Lieferung: je Position Normal- minus Aktionspreis,
-	// negativ (Datenfehler in den Picnic-Preisen) wird auf 0 gekappt statt die
-	// Summe zu verfälschen.
+	// Gesamtersparnis dieser Lieferung. `savingsOf` kappt Negatives (Datenfehler
+	// in den Picnic-Preisen) auf 0, statt die Summe zu verfälschen. Stornierte
+	// Positionen tragen nichts bei — ihre Preise sind bereits anteilig gekürzt.
 	const savedTotal = $derived(
-		data.items.reduce((sum, i) => sum + Math.max(0, (i.regularPrice ?? 0) - (i.promoPrice ?? 0)), 0)
+		data.items.reduce(
+			(sum, i) =>
+				sum + (i.regularPrice == null ? 0 : savingsOf({ regularPrice: i.regularPrice, promoPrice: i.promoPrice })),
+			0
+		)
 	);
 
 	function showToast(message: string, kind: 'ok' | 'warn' = 'ok') {
