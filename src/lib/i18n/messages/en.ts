@@ -159,7 +159,7 @@ export const en = {
 	'recipe.costToOrder': 'To buy',
 	'recipe.costAll': 'All ingredients',
 	'recipe.costPerPortion': 'Per serving',
-	'recipe.costSaving': 'incl. {amount} saved',
+	'recipe.costSaving': '{amount} saved',
 	'recipe.costFrom': 'from {amount}',
 	'recipe.costIncomplete': 'No price for: {names}',
 	'recipe.approxPerPortion': 'approx. {amount}/serving',
@@ -217,7 +217,7 @@ export const en = {
 	'plan.buildCart': 'Ingredients for the week into the Picnic basket',
 	'plan.nothingPlanned': 'Nothing is planned for this week yet.',
 	'plan.listTotal': 'Shopping list total',
-	'plan.listSavings': 'incl. {amount} saved',
+	'plan.listSavings': '{amount} saved',
 	'plan.listIncomplete': 'Some items have no known price',
 	'plan.pricesAsOf': 'Prices as of {date}',
 
@@ -273,7 +273,8 @@ export const en = {
 	'order.totalSavings': 'Savings included: {amount}',
 	'order.noPrice': 'No price known',
 	'order.refreshPrices': 'Refresh prices',
-	'order.pricesRefreshed': '{n} prices updated',
+	'order.pricesRefreshed_one': '{n} price updated',
+	'order.pricesRefreshed_other': '{n} prices updated',
 
 	'deliveries.title': 'Check delivery',
 	'deliveries.subtitle': 'Unpack a Picnic delivery, scan and book it straight in',

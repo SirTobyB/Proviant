@@ -147,7 +147,7 @@ export const de: Messages = {
 	'recipe.costToOrder': 'Zu kaufen',
 	'recipe.costAll': 'Alle Zutaten',
 	'recipe.costPerPortion': 'Pro Portion',
-	'recipe.costSaving': 'davon {amount} gespart',
+	'recipe.costSaving': '{amount} gespart',
 	'recipe.costFrom': 'ab {amount}',
 	'recipe.costIncomplete': 'Kein Preis für: {names}',
 	'recipe.approxPerPortion': 'ca. {amount}/Portion',
@@ -206,7 +206,7 @@ export const de: Messages = {
 	'plan.buildCart': 'Zutaten für die Woche in den Picnic-Warenkorb',
 	'plan.nothingPlanned': 'Für diese Woche ist noch nichts geplant.',
 	'plan.listTotal': 'Summe der Einkaufsliste',
-	'plan.listSavings': 'davon {amount} gespart',
+	'plan.listSavings': '{amount} gespart',
 	'plan.listIncomplete': 'Für einige Artikel ist kein Preis bekannt',
 	'plan.pricesAsOf': 'Preise vom {date}',
 
@@ -264,7 +264,8 @@ export const de: Messages = {
 	'order.totalSavings': 'Darin enthalten: {amount} gespart',
 	'order.noPrice': 'Kein Preis bekannt',
 	'order.refreshPrices': 'Preise aktualisieren',
-	'order.pricesRefreshed': '{n} Preise aktualisiert',
+	'order.pricesRefreshed_one': '{n} Preis aktualisiert',
+	'order.pricesRefreshed_other': '{n} Preise aktualisiert',
 
 	'deliveries.title': 'Lieferung prüfen',
 	'deliveries.subtitle': 'Picnic-Lieferung auspacken, scannen und direkt einbuchen',

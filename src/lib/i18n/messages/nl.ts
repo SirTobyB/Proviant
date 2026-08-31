@@ -148,7 +148,7 @@ export const nl: Messages = {
 	'recipe.costToOrder': 'Te kopen',
 	'recipe.costAll': 'Alle ingrediënten',
 	'recipe.costPerPortion': 'Per portie',
-	'recipe.costSaving': 'waarvan {amount} bespaard',
+	'recipe.costSaving': '{amount} bespaard',
 	'recipe.costFrom': 'vanaf {amount}',
 	'recipe.costIncomplete': 'Geen prijs voor: {names}',
 	'recipe.approxPerPortion': 'ca. {amount}/portie',
@@ -207,7 +207,7 @@ export const nl: Messages = {
 	'plan.buildCart': 'Ingrediënten voor de week in het Picnic-mandje',
 	'plan.nothingPlanned': 'Voor deze week is nog niets gepland.',
 	'plan.listTotal': 'Totaal boodschappenlijst',
-	'plan.listSavings': 'waarvan {amount} bespaard',
+	'plan.listSavings': '{amount} bespaard',
 	'plan.listIncomplete': 'Van sommige artikelen is geen prijs bekend',
 	'plan.pricesAsOf': 'Prijzen van {date}',
 
@@ -265,7 +265,8 @@ export const nl: Messages = {
 	'order.totalSavings': 'Daarvan bespaard: {amount}',
 	'order.noPrice': 'Geen prijs bekend',
 	'order.refreshPrices': 'Prijzen bijwerken',
-	'order.pricesRefreshed': '{n} prijzen bijgewerkt',
+	'order.pricesRefreshed_one': '{n} prijs bijgewerkt',
+	'order.pricesRefreshed_other': '{n} prijzen bijgewerkt',
 
 	'deliveries.title': 'Levering controleren',
 	'deliveries.subtitle': 'Picnic-levering uitpakken, scannen en meteen inboeken',
