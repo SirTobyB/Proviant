@@ -105,7 +105,7 @@ Picnic-functies en een FAQ voor probleemoplossing.
   van gecachte Picnic-prijzen (één HTTP-aanroep per product — Picnic biedt
   geen verzamelopvraging, een prijs kan dus tot een dag oud zijn en ontbreekt
   totdat hij voor het eerst is opgehaald). De bestelpagina en de receptdetail
-  vullen verouderde prijzen automatisch aan, een knop „Prijzen verversen" op
+  vullen verouderde prijzen automatisch aan, een knop „Prijzen bijwerken" op
   de bestelpagina forceert een volledige verversing; de receptenlijst en de
   weekplanning lezen alleen uit de cache. Lopende Picnic-aanbiedingen worden
   getoond met het bespaarde bedrag in euro's, per artikel, per portie en in
