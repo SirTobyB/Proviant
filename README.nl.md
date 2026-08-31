@@ -110,9 +110,9 @@ Picnic-functies en een FAQ voor probleemoplossing.
   weekplanning lezen alleen uit de cache. Lopende Picnic-aanbiedingen worden
   getoond met het bespaarde bedrag in euro's, per artikel, per portie en in
   totaal; ontbreekt bij een ingrediënt het gekoppelde artikel of een gecachte
-  prijs, dan verschijnt het totaal als ondergrens („vanaf …", in de
-  receptenlijst met „≥") in plaats van stilzwijgend als nul, en worden de
-  ingrediënten zonder prijs met naam genoemd.
+  prijs, dan verschijnt het totaal als ondergrens („vanaf …") in plaats van
+  stilzwijgend als nul, en worden de ingrediënten zonder prijs met naam
+  genoemd.
 - **Leveringscontrole** — tijdens het uitpakken van een Picnic-levering: regels
   scannen met de barcode (gekoppeld via het Picnic-artikelnummer) en meteen op
   de doellocatie inboeken, per stuk bevestigen met de +-knop, of na visuele

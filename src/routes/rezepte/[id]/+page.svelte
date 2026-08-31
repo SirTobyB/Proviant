@@ -165,8 +165,12 @@
 					? formatPrice(entry.block.total, data.locale)
 					: t('recipe.costFrom', { amount: formatPrice(entry.block.total, data.locale) })}
 			</p>
+			<!-- Fehlen Preise, ist auch der Portionspreis nur eine Untergrenze —
+			     die Zeile darüber sagt „ab …", diese muss es genauso tun. -->
 			<p class="text-sm text-gray-600">
-				{t('recipe.costPerPortion')}: {formatPrice(Math.round(entry.block.perPortion), data.locale)}
+				{t('recipe.costPerPortion')}: {entry.block.complete
+					? formatPrice(Math.round(entry.block.perPortion), data.locale)
+					: t('recipe.costFrom', { amount: formatPrice(Math.round(entry.block.perPortion), data.locale) })}
 			</p>
 			{#if entry.block.savings > 0}
 				<p class="text-sm text-green-700">

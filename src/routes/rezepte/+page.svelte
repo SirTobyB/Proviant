@@ -77,10 +77,14 @@
 					<div class="truncate font-medium">{recipe.name}</div>
 					<div class="text-xs text-gray-500">{recipe.category === 'cake' ? t('recipes.categoryCake') : t('recipes.categoryMeal')} · {t('recipes.servings', { n: recipe.servings })}</div>
 					{#if recipe.perPortion !== null}
+						{@const perPortion = t('recipe.approxPerPortion', {
+							amount: formatPrice(recipe.perPortion, data.locale)
+						})}
+						<!-- Fehlen Preise, ist die Zahl eine Untergrenze — dafür derselbe
+						     übersetzte Baustein wie auf der Detailseite. Ein rohes „≥"
+						     war weder übersetzt noch neben „ca." lesbar. -->
 						<span class="text-xs text-gray-500">
-							{recipe.pricesComplete ? '' : '≥ '}{t('recipe.approxPerPortion', {
-								amount: formatPrice(recipe.perPortion, data.locale)
-							})}
+							{recipe.pricesComplete ? perPortion : t('recipe.costFrom', { amount: perPortion })}
 						</span>
 					{/if}
 					{#if recipe.tags.length > 0}

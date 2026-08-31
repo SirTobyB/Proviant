@@ -4,7 +4,6 @@ import { getRecipeIngredients, isRecipeCookable } from '$lib/server/recipeData';
 import { tagsForRecipe } from '$lib/server/tags';
 import { recipeCost } from '$lib/recipeCost';
 import { pricesFor } from '$lib/server/prices';
-import { defaultPortions } from '$lib/server/settings';
 import { sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
@@ -38,16 +37,24 @@ export const load: PageServerLoad = ({ url }) => {
 		.flatMap((entry) => entry.ingredients.flatMap((ing) => ing.articles.map((a) => a.picnicId)))
 		.filter((id): id is string => Boolean(id));
 	const prices = pricesFor(allPicnicIds);
-	const portions = defaultPortions();
 
 	const enriched = withIngredients.map(({ recipe, ingredients }) => {
 		// Bewusst der all-Block: Kacheln sollen Rezepte vergleichbar machen —
 		// ein vorratsabhängiger toOrder-Preis wäre morgen ein anderer, ohne
 		// dass sich am Rezept etwas geändert hätte.
+		//
+		// Und bewusst die **eigene** Portionszahl des Rezepts statt der
+		// Vorgabe: Direkt neben der Zahl steht „Für 12 Personen", eine auf 3
+		// gerechnete Kachel widerspräche also ihrer eigenen Beschriftung.
+		// Dazu rechnet die Kostenrechnung auf ganze Gebinde — ein
+		// 12-Portionen-Kuchen auf 3 heruntergerechnet braucht immer noch den
+		// ganzen Sack Mehl und sähe dreimal so teuer aus, wie er ist.
+		// Vergleichbar bleiben die Kacheln trotzdem: Es ist überall der
+		// vorratsunabhängige Preis je Portion.
 		const { all } = recipeCost({
 			ingredients,
 			baseServings: recipe.servings,
-			portions,
+			portions: recipe.servings,
 			prices
 		});
 		return {

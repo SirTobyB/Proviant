@@ -104,8 +104,8 @@ a troubleshooting FAQ.
   meal plan read the cache only. Running Picnic offers are shown with the
   euro amount saved, per item, per serving and in total; if an ingredient
   has no linked product or no cached price yet, totals are shown as a lower
-  bound ("from €…", or "≥" on the recipe list) rather than a silent zero, and
-  the unpriced ingredients are named.
+  bound ("from €…") rather than a silent zero, and the unpriced ingredients
+  are named.
 - **Delivery check-in** — while unpacking a Picnic delivery: scan items by
   barcode (matched via the Picnic ID) and book them straight into the target
   location, confirm them individually with the + button, or confirm all

@@ -107,9 +107,8 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   Wochenplan lesen nur aus dem Cache. Laufende Picnic-Angebote werden mit der
   erzielten Ersparnis in Euro angezeigt, je Artikel, je Portion und in
   Summe; fehlt zu einer Zutat der verknüpfte Artikel oder ein gecachter
-  Preis, erscheint die Summe als Untergrenze („ab …", in der Rezeptliste mit
-  „≥") statt stillschweigend als Null, und die ungepreisten Zutaten werden
-  namentlich genannt.
+  Preis, erscheint die Summe als Untergrenze („ab …") statt stillschweigend
+  als Null, und die ungepreisten Zutaten werden namentlich genannt.
 - **Lieferungs-Check** — Beim Auspacken einer Picnic-Lieferung: Positionen per
   Barcode scannen (matcht über die Picnic-ID) und direkt in den Ziel-Lagerort
   einbuchen, per +-Taste einzeln bestätigen oder nach Sichtprüfung alle
