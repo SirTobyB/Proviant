@@ -97,6 +97,19 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   Picnic stornierte Positionen gelten dabei nicht als unterwegs und werden
   wieder vorgeschlagen, statt bis zur nächsten Lieferung unsichtbar zu bleiben.
   Alle Vorschläge lassen sich mit einem Klick an- und abwählen.
+- **Preise und Rabatte** — Bestellvorschläge, Rezepte, Rezeptliste, Wochenplan
+  und Lieferungs-Check zeigen, was etwas kostet, auf Basis gecachter
+  Picnic-Preise (ein HTTP-Aufruf je Produkt — Picnic bietet keinen
+  Sammelabruf an, ein Preis kann deshalb bis zu einen Tag alt sein und fehlt,
+  bis er zum ersten Mal abgerufen wurde). Bestellseite und Rezeptdetail
+  frischen veraltete Preise automatisch auf, ein „Preise auffrischen"-Knopf
+  auf der Bestellseite erzwingt einen vollständigen Refresh; Rezeptliste und
+  Wochenplan lesen nur aus dem Cache. Laufende Picnic-Angebote werden mit der
+  erzielten Ersparnis in Euro angezeigt, je Artikel, je Portion und in
+  Summe; fehlt zu einer Zutat der verknüpfte Artikel oder ein gecachter
+  Preis, erscheint die Summe als Untergrenze („ab …", in der Rezeptliste mit
+  „≥") statt stillschweigend als Null, und die ungepreisten Zutaten werden
+  namentlich genannt.
 - **Lieferungs-Check** — Beim Auspacken einer Picnic-Lieferung: Positionen per
   Barcode scannen (matcht über die Picnic-ID) und direkt in den Ziel-Lagerort
   einbuchen, per +-Taste einzeln bestätigen oder nach Sichtprüfung alle
