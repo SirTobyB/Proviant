@@ -18,9 +18,12 @@ export type DeliveryChecklistItem = {
 	cancelledQuantity: number;
 	/** Grund laut Picnic, z.B. `PRODUCT_NOT_SHIPPED`; null, wenn nicht genannt. */
 	cancelReason: string | null;
-	/** Normalpreis dieser Position über alle Bestellungen, in Cent; null wenn unbekannt. */
+	/**
+	 * Normalpreis dieser Position über alle Bestellungen, in Cent; null wenn
+	 * unbekannt. Bei Storno anteilig auf `quantity` gekürzt.
+	 */
 	regularPrice: number | null;
-	/** Aktionspreis, in Cent; null = kein Rabatt. */
+	/** Aktionspreis, in Cent, ebenfalls anteilig gekürzt; null = kein Rabatt. */
 	promoPrice: number | null;
 	/** Beschriftung der Aktion laut Picnic. */
 	promoLabel: string | null;
@@ -88,6 +91,19 @@ export function deliveryIssues(decorators: unknown): Map<string, DeliveryIssue> 
 }
 
 /**
+ * Anteil eines Zeilen-Gesamtpreises, der auf die noch erwartete Menge entfällt.
+ *
+ * Bewusst **einmal** am Ende gerundet statt Bruchteile mitzuschleppen: Der
+ * Preis bleibt so eine ganze Cent-Zahl, und über mehrere Positionen summiert
+ * sich kein Rundungsfehler auf. Menge 0 ergibt 0 — nicht `null`, denn der
+ * Preis ist bekannt, er beträgt schlicht nichts mehr.
+ */
+function share(price: number | null, quantity: number, orderedQuantity: number): number | null {
+	if (price == null) return null;
+	return Math.round((price * quantity) / orderedQuantity);
+}
+
+/**
  * Aggregiert alle Positionen sämtlicher (Teil-)Bestellungen einer Lieferung
  * je Produkt-ID und summiert die Mengen.
  *
@@ -148,6 +164,16 @@ export function aggregateChecklist(
 		item.cancelledQuantity = Math.min(issue?.quantity ?? 0, item.orderedQuantity);
 		item.cancelReason = item.cancelledQuantity > 0 ? (issue?.reason ?? null) : null;
 		item.quantity = item.orderedQuantity - item.cancelledQuantity;
+
+		// Preise anteilig auf die tatsächlich kommende Menge kürzen: Die
+		// Zeilenpreise gelten für die **bestellte** Menge, eine stornierte
+		// Position wird aber weder bezahlt noch gespart. Ohne diese Kürzung
+		// zählte ein nie geliefertes Angebot in die Lieferungs-Ersparnis
+		// hinein — gespart wurde dabei nichts.
+		if (item.cancelledQuantity > 0 && item.orderedQuantity > 0) {
+			item.regularPrice = share(item.regularPrice, item.quantity, item.orderedQuantity);
+			item.promoPrice = share(item.promoPrice, item.quantity, item.orderedQuantity);
+		}
 	}
 
 	return [...byProduct.values()].sort((a, b) => a.name.localeCompare(b.name, 'de'));

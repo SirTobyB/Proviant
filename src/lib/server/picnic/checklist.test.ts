@@ -194,3 +194,53 @@ describe('aggregateChecklist — Preise', () => {
 		expect(item.promoPrice).toBe(398);
 	});
 });
+
+describe('aggregateChecklist — Preise bei Storno', () => {
+	it('lässt eine komplett stornierte Position nichts mehr beitragen', () => {
+		// 2 Gebinde bestellt (498 statt 598), beide storniert: gezahlt und
+		// gespart wurde nichts. Ein voller Preis stünde sonst in der
+		// Lieferungs-Ersparnis, obwohl nie etwas ankam.
+		const [item] = aggregateChecklist(
+			[{ items: [rabattLine('s1', 2, 598, 498)] }],
+			issuesDecorator([{ article_id: 's1', quantity: 2 }])
+		);
+		expect(item).toMatchObject({ quantity: 0, regularPrice: 0, promoPrice: 0 });
+	});
+
+	it('kürzt eine teilweise stornierte Position auf den gelieferten Anteil', () => {
+		// 4 Gebinde bestellt: 400 statt 500. Eines storniert, drei kommen —
+		// also 3/4: 500 * 3 / 4 = 375 und 400 * 3 / 4 = 300.
+		const [item] = aggregateChecklist(
+			[{ items: [rabattLine('s1', 4, 500, 400)] }],
+			issuesDecorator([{ article_id: 's1', quantity: 1 }])
+		);
+		expect(item).toMatchObject({ quantity: 3, regularPrice: 375, promoPrice: 300 });
+	});
+
+	it('rundet den Anteil auf ganze Cent, statt Bruchteile weiterzureichen', () => {
+		// 3 Gebinde für 299, eines storniert: 299 * 2 / 3 = 199,33… → 199
+		const [item] = aggregateChecklist(
+			[{ items: [rabattLine('s1', 3, 299, 200)] }],
+			issuesDecorator([{ article_id: 's1', quantity: 1 }])
+		);
+		// 200 * 2 / 3 = 133,33… → 133
+		expect(item).toMatchObject({ quantity: 2, regularPrice: 199, promoPrice: 133 });
+	});
+
+	it('lässt eine nicht stornierte Position unangetastet', () => {
+		const [item] = aggregateChecklist(
+			[{ items: [rabattLine('s1', 2, 598, 498)] }],
+			issuesDecorator([{ article_id: 's2', quantity: 1 }])
+		);
+		expect(item).toMatchObject({ quantity: 2, regularPrice: 598, promoPrice: 498 });
+	});
+
+	it('macht aus unbekannten Preisen auch bei Storno keine Nullen', () => {
+		// Ohne Preisangabe bleibt der Preis unbekannt — 0 wäre eine Behauptung
+		const [item] = aggregateChecklist(
+			[{ items: [line('s1', 2)] }],
+			issuesDecorator([{ article_id: 's1', quantity: 1 }])
+		);
+		expect(item).toMatchObject({ quantity: 1, regularPrice: null, promoPrice: null });
+	});
+});

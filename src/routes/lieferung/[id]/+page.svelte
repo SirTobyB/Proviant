@@ -648,9 +648,13 @@
 					<button type="button" onclick={() => bookAndCheck(item)} disabled={done || bookingProduct !== null} class="flex h-7 w-7 items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-30">+</button>
 				</div>
 			</div>
-			<!-- Erzielte Ersparnis dieser Position (Aktionspreis unter Normalpreis) -->
+			<!-- Erzielte Ersparnis dieser Position (Aktionspreis unter Normalpreis).
+			     Die Preise sind bei Storno bereits anteilig gekürzt, eine komplett
+			     stornierte Position hat deshalb gar keine Ersparnis mehr.
+			     `inline-block` + `mt-1`: davor steht eine Block-Zeile, ohne das
+			     klebte das Schildchen ohne Abstand darunter. -->
 			{#if item.promoPrice !== null && item.regularPrice !== null && item.promoPrice < item.regularPrice}
-				<span class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">
+				<span class="mt-1 inline-block rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">
 					{t('delivery.saved', { amount: formatPrice(item.regularPrice - item.promoPrice, data.locale) })}
 				</span>
 			{/if}
