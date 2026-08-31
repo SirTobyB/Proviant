@@ -8,6 +8,7 @@
 import { db } from '$lib/server/db';
 import { picnicPrices } from '$lib/server/db/schema';
 import { getConnectionState, getProductPrices } from '$lib/server/picnic';
+import { logWarn } from '$lib/server/log';
 import { inArray } from 'drizzle-orm';
 
 export type CachedPrice = {
@@ -93,15 +94,30 @@ export async function refreshPrices(
 	}
 
 	const now = new Date();
+	let updated = 0;
 	for (const [picnicId, price] of fetched) {
-		db.insert(picnicPrices)
-			.values({ picnicId, ...price, fetchedAt: now })
-			.onConflictDoUpdate({
-				target: picnicPrices.picnicId,
-				set: { ...price, fetchedAt: now }
-			})
-			.run();
+		// Schreibfehler (SQLITE_BUSY bei Backup, Volume-Snapshot, zweitem
+		// Container auf derselben Datei) dürfen nicht als Ausnahme nach oben
+		// durchschlagen: `refreshPrices` wird im `load` abgewartet, die Seite
+		// wäre sonst ein 500er. Genau davor soll dieses Modul schützen — ein
+		// veralteter Preis schlägt eine Fehlerseite. Stumm bleibt es trotzdem
+		// nicht, sonst bliebe ein echtes Datenbankproblem unbemerkt.
+		try {
+			db.insert(picnicPrices)
+				.values({ picnicId, ...price, fetchedAt: now })
+				.onConflictDoUpdate({
+					target: picnicPrices.picnicId,
+					set: { ...price, fetchedAt: now }
+				})
+				.run();
+			updated += 1;
+		} catch (err) {
+			logWarn('Preis konnte nicht zwischengespeichert werden', {
+				picnicId,
+				fehler: err instanceof Error ? err.message : String(err)
+			});
+		}
 	}
 
-	return { updated: fetched.size, failed: stale.length - fetched.size };
+	return { updated, failed: stale.length - updated };
 }

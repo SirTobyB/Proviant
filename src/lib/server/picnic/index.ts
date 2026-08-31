@@ -364,15 +364,65 @@ async function fetchProductPrice(id: string): Promise<ProductPrice | null> {
 }
 
 /**
+ * Gleichzeitig laufende Preisabrufe. Picnics API ist inoffiziell und
+ * erfahrungsgemäß empfindlich; der Auffrisch-Knopf schickt bis zu 200 IDs auf
+ * einmal, und die alle parallel loszulassen war ein Sturm auf eine fremde
+ * Schnittstelle. Ein paar wenige gleichzeitig sind schnell genug.
+ */
+const PRICE_CONCURRENCY = 5;
+
+/**
+ * Geduld je Produkt. Ohne Deckel hing ein einziger stehengebliebener Abruf die
+ * ganze Seite auf — `refreshPrices` wird im `load` von `/bestellen` und
+ * `/rezepte/[id]` abgewartet. Ein fehlender Preis ist dort das kleinere Übel
+ * als eine Seite, die nie fertig lädt.
+ */
+const PRICE_TIMEOUT_MS = 10_000;
+
+/**
+ * Wartet höchstens `ms` auf `promise`; danach (und bei jedem Fehler) `null`.
+ *
+ * Der Abruf selbst läuft weiter — abbrechen lässt er sich über die
+ * `picnic-api` nicht. Er ist danach nur niemandes Problem mehr.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+	return new Promise((resolve) => {
+		const timer = setTimeout(() => resolve(null), ms);
+		promise.then(
+			(value) => {
+				clearTimeout(timer);
+				resolve(value);
+			},
+			() => {
+				clearTimeout(timer);
+				resolve(null);
+			}
+		);
+	});
+}
+
+/**
  * Preise zu mehreren Produkt-IDs. Einzelne Fehlschläge werden übersprungen —
- * ein nicht mehr existierendes Produkt darf nicht die ganze Seite kippen.
+ * ein nicht mehr existierendes Produkt darf nicht die ganze Seite kippen. Die
+ * zurückgegebene Map darf also kleiner sein als die Eingabe.
+ *
+ * Abgearbeitet wird die Liste als Warteschlange durch wenige Arbeiter, statt
+ * alle IDs gleichzeitig loszuschicken.
  */
 export async function getProductPrices(ids: string[]): Promise<Map<string, ProductPrice>> {
 	await ensureLoggedIn();
 	const prices = new Map<string, ProductPrice>();
-	const results = await Promise.allSettled(ids.map((id) => fetchProductPrice(id)));
-	results.forEach((result, index) => {
-		if (result.status === 'fulfilled' && result.value) prices.set(ids[index], result.value);
-	});
+
+	let next = 0;
+	async function worker(): Promise<void> {
+		while (next < ids.length) {
+			const id = ids[next++];
+			const price = await withTimeout(fetchProductPrice(id), PRICE_TIMEOUT_MS);
+			if (price) prices.set(id, price);
+		}
+	}
+
+	const workers = Array.from({ length: Math.min(PRICE_CONCURRENCY, ids.length) }, () => worker());
+	await Promise.all(workers);
 	return prices;
 }
