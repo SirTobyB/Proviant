@@ -107,7 +107,8 @@ Picnic-functies en een FAQ voor probleemoplossing.
   totdat hij voor het eerst is opgehaald). De bestelpagina en de receptdetail
   vullen verouderde prijzen automatisch aan, een knop „Prijzen bijwerken" op
   de bestelpagina forceert een volledige verversing; de receptenlijst en de
-  weekplanning lezen alleen uit de cache. Lopende Picnic-aanbiedingen worden
+  weekplanning lezen alleen uit de cache en noemen daarbij de datum van de
+  oudste getoonde prijs. Lopende Picnic-aanbiedingen worden
   getoond met het bespaarde bedrag in euro's, per artikel, per portie en in
   totaal; ontbreekt bij een ingrediënt het gekoppelde artikel of een gecachte
   prijs, dan verschijnt het totaal als ondergrens („vanaf …") in plaats van

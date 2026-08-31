@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { translator, type MessageKey } from '$lib/i18n';
+	import { BCP47, translator, type MessageKey } from '$lib/i18n';
 	import { formatPrice } from '$lib/format';
 
 	let { data } = $props();
@@ -98,4 +98,13 @@
 			</a>
 		{/each}
 	</div>
+	<!-- Diese Seite liest Preise nur aus dem Cache und frischt nie auf; das
+	     Datum des ältesten verwendeten Preises sagt, worauf man schaut. -->
+	{#if data.pricesAsOf && data.recipes.some((r) => r.perPortion !== null)}
+		<p class="mt-2 text-xs text-gray-400">
+			{t('recipe.pricesAsOf', {
+				date: new Date(data.pricesAsOf).toLocaleDateString(BCP47[data.locale])
+			})}
+		</p>
+	{/if}
 {/if}

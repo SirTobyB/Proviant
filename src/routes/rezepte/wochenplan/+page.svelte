@@ -215,5 +215,14 @@
 		{#if !data.shoppingTotals.complete}
 			<p class="text-xs text-gray-500">{t('plan.listIncomplete')}</p>
 		{/if}
+		<!-- Diese Seite frischt Preise nicht auf; ohne das Datum sähe ein
+		     wochenalter Preis aus wie der von heute. -->
+		{#if data.pricesAsOf}
+			<p class="text-xs text-gray-400">
+				{t('plan.pricesAsOf', {
+					date: new Date(data.pricesAsOf).toLocaleDateString(BCP47[data.locale])
+				})}
+			</p>
+		{/if}
 	</div>
 {/if}

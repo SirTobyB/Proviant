@@ -51,6 +51,25 @@ export function pricesFor(picnicIds: string[]): Map<string, CachedPrice> {
 }
 
 /**
+ * Ältester Abrufzeitpunkt der übergebenen Preise als ISO-Zeichenkette; `null`,
+ * wenn keiner dabei ist.
+ *
+ * Gedacht für die beiden Flächen, die **nur** aus dem Cache lesen (Rezeptliste
+ * und Wochenplan): Dort frischt nichts nach, und die Auffrischung anderswo ist
+ * auf 20 IDs je Aufruf gedeckelt — der Preis eines selten geöffneten Rezepts
+ * kann also wochenalt sein. Ohne diesen Hinweis sähe er aus wie der von heute.
+ *
+ * Bewusst der **älteste**: Ein Hinweis darf die Frische nie überschätzen.
+ */
+export function oldestFetchedAt(prices: Map<string, CachedPrice>): string | null {
+	let oldest: Date | null = null;
+	for (const price of prices.values()) {
+		if (oldest == null || price.fetchedAt < oldest) oldest = price.fetchedAt;
+	}
+	return oldest ? oldest.toISOString() : null;
+}
+
+/**
  * Frischt veraltete und fehlende Preise auf. Älteste zuerst, gedeckelt — über
  * mehrere Seitenaufrufe wird so alles nachgezogen, ohne dass ein einzelner
  * spürbar hängt.

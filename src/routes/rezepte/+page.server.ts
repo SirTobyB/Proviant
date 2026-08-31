@@ -3,7 +3,7 @@ import { recipes } from '$lib/server/db/schema';
 import { getRecipeIngredients, isRecipeCookable } from '$lib/server/recipeData';
 import { tagsForRecipe } from '$lib/server/tags';
 import { recipeCost } from '$lib/recipeCost';
-import { pricesFor } from '$lib/server/prices';
+import { oldestFetchedAt, pricesFor } from '$lib/server/prices';
 import { sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
@@ -70,5 +70,10 @@ export const load: PageServerLoad = ({ url }) => {
 	const filtered = onlyCookable ? enriched.filter((r) => r.cookable) : enriched;
 	filtered.sort((a, b) => (a.cookable === b.cookable ? 0 : a.cookable ? -1 : 1));
 
-	return { recipes: filtered, category, onlyCookable };
+	// Alter der Preise ausweisen: Diese Seite frischt bewusst nichts auf, ohne
+	// den Hinweis stünde ein wochenalter Preis da wie der von heute. Bezugsmenge
+	// sind alle gelesenen Preise, nicht nur die je Kachel tatsächlich
+	// verrechneten — das nennt im Zweifel ein älteres Datum und übertreibt die
+	// Frische damit nie.
+	return { recipes: filtered, category, onlyCookable, pricesAsOf: oldestFetchedAt(prices) };
 };

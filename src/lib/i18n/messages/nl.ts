@@ -152,6 +152,7 @@ export const nl: Messages = {
 	'recipe.costFrom': 'vanaf {amount}',
 	'recipe.costIncomplete': 'Geen prijs voor: {names}',
 	'recipe.approxPerPortion': 'ca. {amount}/portie',
+	'recipe.pricesAsOf': 'Prijzen van {date}',
 
 	'recipe.new.title': 'Nieuw recept',
 	'recipe.new.submit': 'Recept aanmaken',
@@ -208,6 +209,7 @@ export const nl: Messages = {
 	'plan.listTotal': 'Totaal boodschappenlijst',
 	'plan.listSavings': 'waarvan {amount} bespaard',
 	'plan.listIncomplete': 'Van sommige artikelen is geen prijs bekend',
+	'plan.pricesAsOf': 'Prijzen van {date}',
 
 	'recipeImport.title': 'Importeren uit Picnic',
 	'recipeImport.description':

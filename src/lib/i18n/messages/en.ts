@@ -163,6 +163,7 @@ export const en = {
 	'recipe.costFrom': 'from {amount}',
 	'recipe.costIncomplete': 'No price for: {names}',
 	'recipe.approxPerPortion': 'approx. {amount}/serving',
+	'recipe.pricesAsOf': 'Prices as of {date}',
 
 	'recipe.new.title': 'New recipe',
 	'recipe.new.submit': 'Create recipe',
@@ -218,6 +219,7 @@ export const en = {
 	'plan.listTotal': 'Shopping list total',
 	'plan.listSavings': 'incl. {amount} saved',
 	'plan.listIncomplete': 'Some items have no known price',
+	'plan.pricesAsOf': 'Prices as of {date}',
 
 	'recipeImport.title': 'Import from Picnic',
 	'recipeImport.description':

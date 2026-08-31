@@ -5,7 +5,7 @@ import { getRecipe, getRecipeIngredients, isRecipeCookable } from '$lib/server/r
 import { allTagNames } from '$lib/server/tags';
 import { auditEdit, auditNew } from '$lib/server/audit';
 import { planWeekShoppingList } from '$lib/server/mealPlan';
-import { effectivePrice, pricesFor, savingsOf } from '$lib/server/prices';
+import { effectivePrice, oldestFetchedAt, pricesFor, savingsOf } from '$lib/server/prices';
 import { addToCart, getConnectionState } from '$lib/server/picnic';
 import { eligible, pickWeighted, type SuggestCandidate } from '$lib/suggest';
 import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
@@ -113,7 +113,10 @@ export const load: PageServerLoad = () => {
 		allTags: allTagNames(),
 		allRecipes,
 		connection: getConnectionState(),
-		shoppingTotals
+		shoppingTotals,
+		// Wie die Rezeptliste liest auch diese Seite nur den Cache — das Alter
+		// der Preise gehört deshalb sichtbar dazu.
+		pricesAsOf: oldestFetchedAt(listPrices)
 	};
 };
 

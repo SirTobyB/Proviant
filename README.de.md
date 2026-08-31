@@ -104,7 +104,8 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   bis er zum ersten Mal abgerufen wurde). Bestellseite und Rezeptdetail
   frischen veraltete Preise automatisch auf, ein „Preise aktualisieren"-Knopf
   auf der Bestellseite erzwingt einen vollständigen Refresh; Rezeptliste und
-  Wochenplan lesen nur aus dem Cache. Laufende Picnic-Angebote werden mit der
+  Wochenplan lesen nur aus dem Cache und nennen dafür das Datum des ältesten
+  gezeigten Preises. Laufende Picnic-Angebote werden mit der
   erzielten Ersparnis in Euro angezeigt, je Artikel, je Portion und in
   Summe; fehlt zu einer Zutat der verknüpfte Artikel oder ein gecachter
   Preis, erscheint die Summe als Untergrenze („ab …") statt stillschweigend

@@ -151,6 +151,7 @@ export const de: Messages = {
 	'recipe.costFrom': 'ab {amount}',
 	'recipe.costIncomplete': 'Kein Preis für: {names}',
 	'recipe.approxPerPortion': 'ca. {amount}/Portion',
+	'recipe.pricesAsOf': 'Preise vom {date}',
 
 	'recipe.new.title': 'Neues Rezept',
 	'recipe.new.submit': 'Rezept anlegen',
@@ -207,6 +208,7 @@ export const de: Messages = {
 	'plan.listTotal': 'Summe der Einkaufsliste',
 	'plan.listSavings': 'davon {amount} gespart',
 	'plan.listIncomplete': 'Für einige Artikel ist kein Preis bekannt',
+	'plan.pricesAsOf': 'Preise vom {date}',
 
 	'recipeImport.title': 'Aus Picnic importieren',
 	'recipeImport.description':
