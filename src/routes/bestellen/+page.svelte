@@ -2,6 +2,7 @@
 	import { keepValues } from '$lib/forms';
 	import { translator } from '$lib/i18n';
 	import { packageSize, formatPrice } from '$lib/format';
+	import { effectivePrice, savingsOf } from '$lib/prices';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -60,6 +61,40 @@
 		}
 	}
 
+	/**
+	 * Menge dieser Zeile laut Eingabefeld. Die Prüfung spiegelt die
+	 * Server-Action: Was dort verworfen wird (leer, Komma, 0), zählt hier auch
+	 * nicht mit — sonst verspräche die Summe etwas, das nie im Warenkorb landet.
+	 */
+	function lineQuantity(id: number): number {
+		const quantity = quantities[id];
+		return Number.isInteger(quantity) && quantity > 0 ? quantity : 0;
+	}
+
+	/** Was diese Zeile zum Warenkorb beiträgt — abgewählte und unverknüpfte nichts. */
+	function orderedQuantity(item: { id: number; picnicId: string | null }): number {
+		return item.picnicId && selected[item.id] ? lineQuantity(item.id) : 0;
+	}
+
+	/**
+	 * Summe und Ersparnis der **tatsächlichen** Auswahl.
+	 *
+	 * Bewusst hier und nicht im `load`: Auswahl und Mengen ändern sich ohne
+	 * Serverrunde, eine im `load` gerechnete Summe stünde nach dem ersten
+	 * Häkchen unverändert über einem Knopf, der längst etwas anderes tut.
+	 */
+	const totals = $derived(
+		data.suggestions.reduce(
+			(acc, s) => {
+				const quantity = orderedQuantity(s);
+				if (!s.price || quantity === 0) return acc;
+				acc.total += effectivePrice(s.price) * quantity;
+				acc.savings += savingsOf(s.price) * quantity;
+				return acc;
+			},
+			{ total: 0, savings: 0 }
+		)
+	);
 </script>
 
 <svelte:head><title>{t('order.title')} – Proviant</title></svelte:head>
@@ -214,11 +249,12 @@
 						</div>
 						<div class="mt-0.5">
 							{#if item.price}
+								{@const lineUnits = lineQuantity(item.id)}
 								<span class="text-sm text-gray-700">
-									{formatPrice((item.price.promoPrice ?? item.price.regularPrice) * item.needed, data.locale)}
+									{formatPrice(effectivePrice(item.price) * lineUnits, data.locale)}
 								</span>
 								{#if item.price.promoPrice !== null}
-									{@const savingAmount = formatPrice((item.price.regularPrice - item.price.promoPrice) * item.needed, data.locale)}
+									{@const savingAmount = formatPrice(savingsOf(item.price) * lineUnits, data.locale)}
 									<span
 										class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700"
 										title={t('order.saving', { amount: savingAmount })}
@@ -245,11 +281,11 @@
 
 		<div class="flex flex-wrap items-baseline justify-between gap-2 border-t border-gray-200 pt-3">
 			<span class="font-medium text-gray-700">{t('order.total')}</span>
-			<span class="text-lg font-semibold">{formatPrice(data.totals.total, data.locale)}</span>
+			<span class="text-lg font-semibold">{formatPrice(totals.total, data.locale)}</span>
 		</div>
-		{#if data.totals.savings > 0}
+		{#if totals.savings > 0}
 			<p class="text-sm text-green-700">
-				{t('order.totalSavings', { amount: formatPrice(data.totals.savings, data.locale) })}
+				{t('order.totalSavings', { amount: formatPrice(totals.savings, data.locale) })}
 			</p>
 		{/if}
 

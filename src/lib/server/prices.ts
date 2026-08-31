@@ -26,15 +26,10 @@ export const DEFAULT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
  */
 export const DEFAULT_REFRESH_LIMIT = 20;
 
-/** Tatsächlich zu zahlender Preis in Cent. */
-export function effectivePrice(price: { regularPrice: number; promoPrice: number | null }): number {
-	return price.promoPrice ?? price.regularPrice;
-}
-
-/** Ersparnis in Cent; 0 ohne Rabatt. */
-export function savingsOf(price: { regularPrice: number; promoPrice: number | null }): number {
-	return price.promoPrice == null ? 0 : Math.max(0, price.regularPrice - price.promoPrice);
-}
+// Die reine Rechnung liegt in `$lib/prices` — auch Komponenten brauchen sie,
+// und `$lib/server/*` ist für die nicht importierbar. Hier nur durchgereicht,
+// damit die Server-Seiten ihre gewohnte Bezugsquelle behalten.
+export { effectivePrice, savingsOf } from '$lib/prices';
 
 /** Gecachte Preise zu den gefragten IDs. Fehlende fehlen einfach in der Map. */
 export function pricesFor(picnicIds: string[]): Map<string, CachedPrice> {

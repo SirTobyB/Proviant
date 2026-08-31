@@ -11,7 +11,7 @@ import {
 	verify2FA,
 	addToCart
 } from '$lib/server/picnic';
-import { effectivePrice, pricesFor, refreshPrices, savingsOf } from '$lib/server/prices';
+import { pricesFor, refreshPrices } from '$lib/server/prices';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -87,18 +87,11 @@ export const load: PageServerLoad = async () => {
 		price: s.picnicId ? (prices.get(s.picnicId) ?? null) : null
 	}));
 
-	// Summen über die vorgeschlagenen Mengen — was der Warenkorb kosten würde
-	const totals = priced.reduce(
-		(acc, s) => {
-			if (!s.price) return acc;
-			acc.total += effectivePrice(s.price) * s.needed;
-			acc.savings += savingsOf(s.price) * s.needed;
-			return acc;
-		},
-		{ total: 0, savings: 0 }
-	);
-
-	return { suggestions: priced, covered, connection, cartUnavailable, openOrdersUnavailable, totals };
+	// Summe und Ersparnis rechnet bewusst die **Seite**, nicht der Server:
+	// Auswahl und Mengen sind dort veränderlicher Zustand, eine hier
+	// berechnete Summe beschriebe nach dem ersten Klick etwas anderes als der
+	// Knopf darunter tut. Der Server liefert die Preise, die Seite die Menge.
+	return { suggestions: priced, covered, connection, cartUnavailable, openOrdersUnavailable };
 };
 
 export const actions: Actions = {
