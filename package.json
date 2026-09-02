@@ -7,7 +7,7 @@
 		"url": "git+https://github.com/SirTobyB/Proviant.git"
 	},
 	"private": true,
-	"version": "2.3.0",
+	"version": "2.3.1",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",

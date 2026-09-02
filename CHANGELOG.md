@@ -8,6 +8,11 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.3.1] - 2026-09-02
+
+Eine kleine Nachbesserung zu 2.3.0. Zu tun ist beim Aktualisieren nichts:
+`docker compose pull` genügt.
+
 ### Geändert
 
 - **Ein Versions-Tag legt jetzt auch den Release-Eintrag auf GitHub an.**
@@ -241,7 +246,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.3.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.3.1...HEAD
+[2.3.1]: https://github.com/SirTobyB/Proviant/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/SirTobyB/Proviant/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/SirTobyB/Proviant/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/SirTobyB/Proviant/compare/v2.0.0...v2.1.0
