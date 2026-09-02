@@ -95,6 +95,21 @@
 			{ total: 0, savings: 0 }
 		)
 	);
+
+	/**
+	 * Zeilen, die wirklich im Warenkorb landen — angehakt, verknüpft **und** mit
+	 * brauchbarer Menge.
+	 *
+	 * Getrennt von `selectedCount`, weil der zwei verschiedene Fragen
+	 * beantworten müsste: Die „alle auswählen"-Checkbox richtet sich nach den
+	 * Häkchen und darf nicht umspringen, nur weil ein Mengenfeld leer ist.
+	 * Knopfbeschriftung und Sperre gehören dagegen an das, was der Klick
+	 * auslöst — sonst nennt der Knopf eine Zahl, die die Summe daneben
+	 * widerlegt.
+	 */
+	const orderableCount = $derived(
+		data.suggestions.filter((s) => orderedQuantity(s) > 0).length
+	);
 </script>
 
 <svelte:head><title>{t('order.title')} – Proviant</title></svelte:head>
@@ -291,10 +306,10 @@
 
 		<button
 			type="submit"
-			disabled={connection !== 'connected' || selectedCount === 0}
+			disabled={connection !== 'connected' || orderableCount === 0}
 			class="mt-4 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 sm:w-auto"
 		>
-			{t('order.submit', { n: selectedCount })}
+			{t('order.submit', { n: orderableCount })}
 		</button>
 		{#if connection !== 'connected'}
 			<p class="mt-2 text-xs text-gray-500">{t('order.connectFirst')}</p>

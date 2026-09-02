@@ -8,6 +8,13 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Behoben
+
+- Der Bestellknopf zählt nur noch Zeilen, die wirklich im Warenkorb landen.
+  Bisher richtete er sich allein nach den Häkchen: Wer ein Mengenfeld leerte,
+  las „3 Artikel" über einer Summe von 0,00 €. Die Auswahl-Checkbox oben
+  bleibt davon unberührt.
+
 ## [2.3.0] - 2026-09-02
 
 Diese Fassung zeigt, was Dinge kosten und was man spart. Zu tun ist beim
