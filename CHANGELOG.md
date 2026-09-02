@@ -8,6 +8,13 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- **Ein Versions-Tag legt jetzt auch den Release-Eintrag auf GitHub an.**
+  Bisher baute er nur das Image; die Releases-Seite wurde von Hand gepflegt
+  und blieb deshalb zweimal leer. Der Text kommt aus dem Changelog-Abschnitt
+  der Version, damit beide nicht auseinanderlaufen.
+
 ### Behoben
 
 - Der Bestellknopf zählt nur noch Zeilen, die wirklich im Warenkorb landen.
