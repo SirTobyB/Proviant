@@ -8,6 +8,18 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.3.0] - 2026-09-02
+
+Diese Fassung zeigt, was Dinge kosten und was man spart. Zu tun ist beim
+Aktualisieren nichts: `docker compose pull` genügt, die neue Preis-Tabelle legt
+die App beim Start selbst an.
+
+Eines ist beim ersten Start zu erwarten: **Preise erscheinen nicht sofort.**
+Picnic kennt keinen Sammelabruf, deshalb holt die App sie nach und nach — die
+Bestell- und die Rezeptseite frischen beim Öffnen je bis zu 20 veraltete Preise
+auf, „Preise aktualisieren" auf der Bestellseite holt alles auf einmal. Bis
+dahin stehen die Kosten als Untergrenze („ab …") da, nie als stille Null.
+
 ### Hinzugefügt
 
 - Bestellvorschlag zeigt Preise je Artikel, laufende Picnic-Angebote mit
@@ -215,7 +227,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.2.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/SirTobyB/Proviant/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/SirTobyB/Proviant/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/SirTobyB/Proviant/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/SirTobyB/Proviant/compare/v1.2.0...v2.0.0
