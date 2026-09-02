@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { translator, type MessageKey } from '$lib/i18n';
+	import { BCP47, translator, type MessageKey } from '$lib/i18n';
+	import { formatPrice } from '$lib/format';
 
 	let { data } = $props();
 
@@ -75,6 +76,17 @@
 				<div class="p-3">
 					<div class="truncate font-medium">{recipe.name}</div>
 					<div class="text-xs text-gray-500">{recipe.category === 'cake' ? t('recipes.categoryCake') : t('recipes.categoryMeal')} · {t('recipes.servings', { n: recipe.servings })}</div>
+					{#if recipe.perPortion !== null}
+						{@const perPortion = t('recipe.approxPerPortion', {
+							amount: formatPrice(recipe.perPortion, data.locale)
+						})}
+						<!-- Fehlen Preise, ist die Zahl eine Untergrenze — dafür derselbe
+						     übersetzte Baustein wie auf der Detailseite. Ein rohes „≥"
+						     war weder übersetzt noch neben „ca." lesbar. -->
+						<span class="text-xs text-gray-500">
+							{recipe.pricesComplete ? perPortion : t('recipe.costFrom', { amount: perPortion })}
+						</span>
+					{/if}
 					{#if recipe.tags.length > 0}
 						<div class="mt-1.5 flex flex-wrap gap-1">
 							{#each recipe.tags.slice(0, 3) as tag (tag)}
@@ -86,4 +98,13 @@
 			</a>
 		{/each}
 	</div>
+	<!-- Diese Seite liest Preise nur aus dem Cache und frischt nie auf; das
+	     Datum des ältesten verwendeten Preises sagt, worauf man schaut. -->
+	{#if data.pricesAsOf && data.recipes.some((r) => r.perPortion !== null)}
+		<p class="mt-2 text-xs text-gray-400">
+			{t('recipe.pricesAsOf', {
+				date: new Date(data.pricesAsOf).toLocaleDateString(BCP47[data.locale])
+			})}
+		</p>
+	{/if}
 {/if}

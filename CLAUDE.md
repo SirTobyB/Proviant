@@ -208,6 +208,20 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     nichts im Warenkorb, die App meldete trotzdem Erfolg. Nach dem Befüllen
     deshalb gegenprüfen (siehe `notInCart` auf der Bestellseite). Dasselbe
     Produkt existiert im Katalog teils unter mehreren IDs.
+  - **Preise und Rabatte folgen zwei gegenläufigen Regeln** (live geprüft):
+    An der **ORDER_LINE** ist `line.price` der **Streichpreis** und der
+    `PRICE`-Decorator (`display_price`) der tatsächlich gezahlte Preis, dazu
+    ein `PROMO`-Decorator mit Beschriftung. Auf der **Katalogseite** ist es
+    umgekehrt: `displayPrice` ist der **rabattierte** Preis, der Streichpreis
+    steckt ausschließlich als PML-Knoten `{ type: "PRICE", isCrossed: true }`
+    in der rohen `getProductDetailsPage()`. Wer eine Regel auf die andere
+    Quelle anwendet, verbucht den Rabatt als Aufschlag. Deshalb liegen sie in
+    `picnic/price.ts` als **zwei getrennte Funktionen** nebeneinander.
+    Weiteres: `getProductDetails()` kennt den Streichpreis gar nicht (nur ein
+    `promotion.label`), `search()` liefert **leere** `decorators` und ist für
+    Rabatte unbrauchbar, und `ORDER_ARTICLE.price` ist ein Sentinel-Müllwert
+    (`432199`) — der echte Preis steht an der Line. `line.price` ist zudem der
+    **Zeilen**-Gesamtpreis, nicht der Stückpreis.
 - **Anmeldung:** Fehlversuche zählt `login_attempts` **je eingegebenem
   Benutzernamen**, auch bei unbekannten — deshalb hat die Tabelle bewusst
   *keinen* Fremdschlüssel auf `users`: sonst wäre am Verhalten ablesbar, welche

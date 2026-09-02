@@ -95,6 +95,18 @@ a troubleshooting FAQ.
   count as on their way, so they are suggested again instead of quietly
   disappearing until the next delivery. All suggestions can be selected and
   deselected with one click.
+- **Prices and offers** — order suggestions, recipes, the recipe list, the
+  meal plan and the delivery check show what things cost, based on cached
+  Picnic prices (one HTTP call per product — Picnic has no bulk lookup, so a
+  price can be up to a day old and is missing until first fetched). The order
+  page and recipe detail top up stale prices automatically, a "refresh
+  prices" button on the order page forces a full refresh; the recipe list and
+  meal plan read the cache only and name the date of the oldest price they
+  show. Running Picnic offers are shown with the
+  euro amount saved, per item, per serving and in total; if an ingredient
+  has no linked product or no cached price yet, totals are shown as a lower
+  bound ("from €…") rather than a silent zero, and the unpriced ingredients
+  are named.
 - **Delivery check-in** — while unpacking a Picnic delivery: scan items by
   barcode (matched via the Picnic ID) and book them straight into the target
   location, confirm them individually with the + button, or confirm all

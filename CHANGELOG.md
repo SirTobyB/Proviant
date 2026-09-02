@@ -8,6 +8,23 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- Bestellvorschlag zeigt Preise je Artikel, laufende Picnic-Angebote mit
+  Ersparnis in Euro sowie Summe und Gesamtersparnis. Preise werden
+  zwischengespeichert und lassen sich per Knopfdruck auffrischen.
+- Rezepte zeigen die Kosten pro Portion und gesamt — getrennt für die noch zu
+  kaufenden und für alle Zutaten —, jeweils samt Ersparnis durch laufende
+  Angebote. Die Portionszahl ist mit 3 vorbelegt.
+- Rezeptliste zeigt je Rezept den ungefähren Preis pro Portion, gerechnet mit
+  der Portionszahl des Rezepts.
+- Wochenplan zeigt die Summe der Einkaufsliste und daneben die Ersparnis
+  gegenüber den Normalpreisen.
+- Rezeptliste und Wochenplan nennen das Datum der ältesten Preise, die sie
+  zeigen — beide frischen bewusst nicht auf und lesen nur den Cache.
+- Lieferungs-Check weist die bei dieser Lieferung erzielte Ersparnis aus —
+  je Position und in Summe.
+
 ## [2.2.0] - 2026-08-25
 
 Diese Fassung sorgt dafür, dass beim Auspacken kein Artikel mehr ohne Zuhause

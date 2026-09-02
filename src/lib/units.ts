@@ -33,6 +33,12 @@ export type CoverageResult = {
 	comparable: boolean;
 	/** Noch benötigte Gebinde (auf ganze Packungen aufgerundet), 0 wenn gedeckt. */
 	neededPackages: number;
+	/**
+	 * Benötigte Gebinde **ohne jeden Vorrat** — für die Frage „was kostet
+	 * dieses Gericht", die den Lagerbestand bewusst ausblendet. Gleiche
+	 * Rundung und derselbe Gebinde-Artikel wie bei `neededPackages`.
+	 */
+	fullPackages: number;
 	/** Picnic-Artikel für die fehlende Menge (erster kompatibler Alternativartikel mit Picnic-Verknüpfung). */
 	orderPicnicId: string | null;
 };
@@ -105,7 +111,7 @@ export function coverageMulti(
 	const requiredBase = toBase(requiredAmount, requiredUnit);
 	const requiredFamily = unitFamily(requiredUnit);
 	if (requiredBase == null || requiredFamily == null) {
-		return { covered: false, comparable: false, neededPackages: 0, orderPicnicId: null };
+		return { covered: false, comparable: false, neededPackages: 0, fullPackages: 0, orderPicnicId: null };
 	}
 
 	const { referenceArticle, orderArticle, availableBase, comparable } = pickOrderArticle(
@@ -114,21 +120,30 @@ export function coverageMulti(
 	);
 
 	if (!comparable || !referenceArticle) {
-		return { covered: false, comparable: false, neededPackages: 0, orderPicnicId: null };
+		return { covered: false, comparable: false, neededPackages: 0, fullPackages: 0, orderPicnicId: null };
 	}
 
-	const missingBase = requiredBase - availableBase;
-	if (missingBase <= 0) {
-		return { covered: true, comparable: true, neededPackages: 0, orderPicnicId: orderArticle?.picnicId ?? null };
-	}
 	// Gebindegröße für die Rundung: bevorzugt der bestellbare Artikel (damit die
 	// Warenkorb-Menge stimmt), sonst der erste kompatible Artikel (nur Anzeige).
 	const sizingArticle = orderArticle ?? referenceArticle;
 	const sizingPackageBase = toBase(sizingArticle.packageAmount!, sizingArticle.packageUnit)!;
+	const fullPackages = Math.ceil(requiredBase / sizingPackageBase);
+
+	const missingBase = requiredBase - availableBase;
+	if (missingBase <= 0) {
+		return {
+			covered: true,
+			comparable: true,
+			neededPackages: 0,
+			fullPackages,
+			orderPicnicId: orderArticle?.picnicId ?? null
+		};
+	}
 	return {
 		covered: false,
 		comparable: true,
 		neededPackages: Math.ceil(missingBase / sizingPackageBase),
+		fullPackages,
 		orderPicnicId: orderArticle?.picnicId ?? null
 	};
 }

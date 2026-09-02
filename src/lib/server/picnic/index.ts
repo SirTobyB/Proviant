@@ -6,10 +6,18 @@
  * nur den Warenkorb, bestellt wird immer manuell in der Picnic-App.
  */
 import PicnicClient from 'picnic-api';
+// Deep import bewusst: `getClient().catalog.getProductDetails()` holt intern
+// dieselbe rohe Seite wie `getProductDetailsPage()` und parst sie sofort
+// (siehe node_modules/picnic-api/lib/domains/catalog/service.js) — es gibt
+// dort keine Möglichkeit, an die rohe Seite *und* die geparsten Felder zu
+// kommen, ohne die Seite zweimal zu laden. `picnic-api` hat keine `exports`-
+// Sperre im package.json, der Deep-Import auf den Parser ist also erlaubt.
+import { extractProductDetails } from 'picnic-api/lib/domains/catalog/helpers';
 import { env } from '$env/dynamic/private';
 import fs from 'node:fs';
 import path from 'node:path';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
+import { crossedOutPrice, type ProductPrice } from './price';
 import {
 	extractRecipeTiles,
 	parseRecipeDetail,
@@ -17,7 +25,7 @@ import {
 	type PicnicRecipeTile
 } from './recipeImport';
 
-export type { DeliveryChecklistItem, ParsedPicnicRecipe, PicnicRecipeTile };
+export type { DeliveryChecklistItem, ParsedPicnicRecipe, PicnicRecipeTile, ProductPrice };
 
 type Client = InstanceType<typeof PicnicClient>;
 type AddProductsItems = Parameters<Client['cart']['addProductsToCart']>[0];
@@ -313,4 +321,108 @@ export async function getPicnicRecipeDetail(id: string, name?: string): Promise<
 	await ensureLoggedIn();
 	const page = await getClient().recipe.getRecipeDetailsPage(id);
 	return parseRecipeDetail(page, name);
+}
+
+/**
+ * Preis je Produkt-ID. Es gibt **keinen Bulk-Lookup** — ein Call pro Produkt,
+ * deshalb ist die Menge vom Aufrufer zu deckeln (siehe `server/prices.ts`).
+ *
+ * Genau **ein** HTTP-Call, ob im Angebot oder nicht: `getProductDetails()`
+ * holt intern dieselbe rohe Seite, die auch `getProductDetailsPage()` liefert,
+ * und wirft sie danach weg — ein zweiter Aufruf würde also nur dieselbe URL
+ * doppelt laden. Stattdessen wird die rohe Seite hier **einmal** geholt und
+ * zweimal ausgewertet: einmal über `extractProductDetails()` (aktueller
+ * Preis + `promotion`), bei laufender Aktion zusätzlich über
+ * `crossedOutPrice()` (Streichpreis) auf derselben Seite.
+ */
+async function fetchProductPrice(id: string): Promise<ProductPrice | null> {
+	const page = await getClient().catalog.getProductDetailsPage(id);
+
+	// `extractProductDetails` parst dynamische PML-Strukturen und ist laut
+	// picnic-api selbst "experimental" — lieber null als ein kaputtes Ergebnis.
+	let details: ReturnType<typeof extractProductDetails>;
+	try {
+		details = extractProductDetails(id, page);
+	} catch {
+		return null;
+	}
+
+	const current = details.displayPrice;
+	if (typeof current !== 'number' || current <= 0) return null;
+
+	const promotion = details.promotion;
+	if (!promotion) return { regularPrice: current, promoPrice: null, promoLabel: null };
+
+	const label = typeof promotion.label === 'string' ? promotion.label : null;
+	const regular = crossedOutPrice(page, current);
+
+	// Aktion gemeldet, aber kein Streichpreis auffindbar: Beschriftung
+	// behalten, Ersparnis weglassen. Lieber kein Rabatt als ein erfundener.
+	return regular == null
+		? { regularPrice: current, promoPrice: null, promoLabel: label }
+		: { regularPrice: regular, promoPrice: current, promoLabel: label };
+}
+
+/**
+ * Gleichzeitig laufende Preisabrufe. Picnics API ist inoffiziell und
+ * erfahrungsgemäß empfindlich; der Auffrisch-Knopf schickt bis zu 200 IDs auf
+ * einmal, und die alle parallel loszulassen war ein Sturm auf eine fremde
+ * Schnittstelle. Ein paar wenige gleichzeitig sind schnell genug.
+ */
+const PRICE_CONCURRENCY = 5;
+
+/**
+ * Geduld je Produkt. Ohne Deckel hing ein einziger stehengebliebener Abruf die
+ * ganze Seite auf — `refreshPrices` wird im `load` von `/bestellen` und
+ * `/rezepte/[id]` abgewartet. Ein fehlender Preis ist dort das kleinere Übel
+ * als eine Seite, die nie fertig lädt.
+ */
+const PRICE_TIMEOUT_MS = 10_000;
+
+/**
+ * Wartet höchstens `ms` auf `promise`; danach (und bei jedem Fehler) `null`.
+ *
+ * Der Abruf selbst läuft weiter — abbrechen lässt er sich über die
+ * `picnic-api` nicht. Er ist danach nur niemandes Problem mehr.
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+	return new Promise((resolve) => {
+		const timer = setTimeout(() => resolve(null), ms);
+		promise.then(
+			(value) => {
+				clearTimeout(timer);
+				resolve(value);
+			},
+			() => {
+				clearTimeout(timer);
+				resolve(null);
+			}
+		);
+	});
+}
+
+/**
+ * Preise zu mehreren Produkt-IDs. Einzelne Fehlschläge werden übersprungen —
+ * ein nicht mehr existierendes Produkt darf nicht die ganze Seite kippen. Die
+ * zurückgegebene Map darf also kleiner sein als die Eingabe.
+ *
+ * Abgearbeitet wird die Liste als Warteschlange durch wenige Arbeiter, statt
+ * alle IDs gleichzeitig loszuschicken.
+ */
+export async function getProductPrices(ids: string[]): Promise<Map<string, ProductPrice>> {
+	await ensureLoggedIn();
+	const prices = new Map<string, ProductPrice>();
+
+	let next = 0;
+	async function worker(): Promise<void> {
+		while (next < ids.length) {
+			const id = ids[next++];
+			const price = await withTimeout(fetchProductPrice(id), PRICE_TIMEOUT_MS);
+			if (price) prices.set(id, price);
+		}
+	}
+
+	const workers = Array.from({ length: Math.min(PRICE_CONCURRENCY, ids.length) }, () => worker());
+	await Promise.all(workers);
+	return prices;
 }

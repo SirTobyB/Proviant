@@ -100,6 +100,20 @@ Picnic-functies en een FAQ voor probleemoplossing.
   niet meer). Door Picnic geannuleerde regels gelden daarbij niet als onderweg
   en worden opnieuw voorgesteld, in plaats van tot de volgende levering
   onzichtbaar te blijven. Alle suggesties zijn met één klik aan en uit te vinken.
+- **Prijzen en aanbiedingen** — bestelsuggesties, recepten, de receptenlijst,
+  de weekplanning en de leveringscontrole laten zien wat iets kost, op basis
+  van gecachte Picnic-prijzen (één HTTP-aanroep per product — Picnic biedt
+  geen verzamelopvraging, een prijs kan dus tot een dag oud zijn en ontbreekt
+  totdat hij voor het eerst is opgehaald). De bestelpagina en de receptdetail
+  vullen verouderde prijzen automatisch aan, een knop „Prijzen bijwerken" op
+  de bestelpagina forceert een volledige verversing; de receptenlijst en de
+  weekplanning lezen alleen uit de cache en noemen daarbij de datum van de
+  oudste getoonde prijs. Lopende Picnic-aanbiedingen worden
+  getoond met het bespaarde bedrag in euro's, per artikel, per portie en in
+  totaal; ontbreekt bij een ingrediënt het gekoppelde artikel of een gecachte
+  prijs, dan verschijnt het totaal als ondergrens („vanaf …") in plaats van
+  stilzwijgend als nul, en worden de ingrediënten zonder prijs met naam
+  genoemd.
 - **Leveringscontrole** — tijdens het uitpakken van een Picnic-levering: regels
   scannen met de barcode (gekoppeld via het Picnic-artikelnummer) en meteen op
   de doellocatie inboeken, per stuk bevestigen met de +-knop, of na visuele

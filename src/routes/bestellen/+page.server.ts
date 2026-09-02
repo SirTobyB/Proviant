@@ -11,6 +11,7 @@ import {
 	verify2FA,
 	addToCart
 } from '$lib/server/picnic';
+import { pricesFor, refreshPrices } from '$lib/server/prices';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -75,10 +76,39 @@ export const load: PageServerLoad = async () => {
 			});
 	}
 
-	return { suggestions, covered, connection, cartUnavailable, openOrdersUnavailable };
+	// Preise: veraltete gedeckelt nachziehen, dann aus dem Cache lesen. Die
+	// Vorschlagsliste ist kurz, deshalb ist das hier vertretbar.
+	const picnicIds = suggestions.map((s) => s.picnicId).filter((id): id is string => Boolean(id));
+	await refreshPrices(picnicIds);
+	const prices = pricesFor(picnicIds);
+
+	const priced = suggestions.map((s) => ({
+		...s,
+		price: s.picnicId ? (prices.get(s.picnicId) ?? null) : null
+	}));
+
+	// Summe und Ersparnis rechnet bewusst die **Seite**, nicht der Server:
+	// Auswahl und Mengen sind dort veränderlicher Zustand, eine hier
+	// berechnete Summe beschriebe nach dem ersten Klick etwas anderes als der
+	// Knopf darunter tut. Der Server liefert die Preise, die Seite die Menge.
+	return { suggestions: priced, covered, connection, cartUnavailable, openOrdersUnavailable };
 };
 
 export const actions: Actions = {
+	// Alle verknüpften Artikel auffrischen — bewusst ohne Altersgrenze und mit
+	// hohem Deckel: Wer hier klickt, will aktuelle Preise und nimmt die
+	// Wartezeit in Kauf.
+	refreshPrices: async () => {
+		const ids = db
+			.select({ picnicId: articles.picnicId })
+			.from(articles)
+			.all()
+			.map((row) => row.picnicId)
+			.filter((id): id is string => Boolean(id));
+		const { updated } = await refreshPrices(ids, { maxAgeMs: 0, limit: 200 });
+		return { pricesRefreshed: updated };
+	},
+
 	// Picnic-Verbindung herstellen (env-Credentials)
 	connect: async () => {
 		try {
