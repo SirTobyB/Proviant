@@ -347,7 +347,23 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   laufenden Stand zuerst dort nachsehen. Ein einzelner Build dauert 3–6 Minuten;
   **parallele Runs blieben hängen** (gemeinsamer `type=gha`-Cache, überlappende
   GHCR-Tags) — einmal bis ins 6-Stunden-Timeout. Der Workflow serialisiert sich
-  deshalb weiterhin per `concurrency`-Gruppe.
+  deshalb weiterhin per `concurrency`-Gruppe. **Denselben Hänger löst auch ein
+  abgebrochener Lauf aus:** Wird ein Build mitten im Buildx-Schritt gecancelt,
+  bleibt im `type=gha`-Cache eine unfertige Reservierung zurück, auf die der
+  nächste Build blockiert — Symptom ist ein Lauf, der bei „Image bauen und
+  pushen" stehenbleibt, statt nach 3–6 Minuten fertig zu sein. `gh cache list`
+  hilft dabei **nicht**: dort stehen nur abgeschlossene Einträge, die Reservierung
+  ist unsichtbar, und die vorhandenen Blobs sehen gesund aus. Erkennen lässt es
+  sich nur durch Ausschluss — ein einfacher `gh run rerun` hängt erneut an
+  derselben Stelle. Hilft: alle `buildkit-*`- und `index-buildkit-*`-Einträge
+  löschen, dann neu starten; der Build läuft dann kalt, aber durch. Deshalb
+  einen Buildx-Lauf **nicht mittendrin abbrechen** — ein versehentlich
+  angestoßener `workflow_dispatch` richtet weniger Schaden an, wenn man ihn
+  durchlaufen lässt (er fasst `:latest` ohnehin nicht an), als wenn man ihn
+  killt. Passiert es doch, vor dem nächsten Version-Tag den Cache räumen.
+  Der Tag legt seit 2.3.1 auch das **GitHub-Release** an (Notizen aus dem
+  Changelog-Abschnitt der Version, per `gh` im Workflow); vorher wurde die
+  Releases-Seite von Hand gepflegt und blieb bei 2.2.0 und 2.3.0 leer.
 - **Logging:** SvelteKit ruft `handleError` **nur bei unerwarteten
   Ausnahmen** — alles, was per `error()` geworfen wird, gilt als „erwartet"
   und ginge sonst spurlos raus (deshalb blieb ein 500er im Betrieb einmal
