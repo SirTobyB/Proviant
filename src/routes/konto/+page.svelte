@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import { BCP47, LOCALES, LOCALE_LABEL, translator } from '$lib/i18n';
+	import { refreshAll } from '$app/navigation';
+	import { BCP47, LOCALES, LOCALE_LABEL, translator } from '#lib/i18n/index.js';
 
 	let { data, form } = $props();
 
 	// Übersetzer aus der Sprache dieser Anfrage — nie aus einem globalen
-	// Zustand, siehe Kommentar in $lib/i18n/translate.ts
+	// Zustand, siehe Kommentar in #lib/i18n/translate.ts
 	const t = $derived(translator(data.locale));
 
 	const roleLabel = $derived(t(data.account?.role === 'admin' ? 'users.roleAdmin' : 'users.roleUser'));
@@ -72,10 +72,10 @@
 			method="POST"
 			action="?/setLanguage"
 			use:enhance={() => async ({ update }) => {
-				// reset: false haelt die Auswahl; invalidateAll laedt die Seite in
+				// reset: false haelt die Auswahl; refreshAll laedt die Seite in
 				// der neuen Sprache neu, sonst bliebe die alte stehen
 				await update({ reset: false });
-				await invalidateAll();
+				await refreshAll();
 			}}
 			class="mt-3 flex flex-wrap items-end gap-2"
 		>

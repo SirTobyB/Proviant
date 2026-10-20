@@ -1,10 +1,10 @@
-import { db } from '$lib/server/db';
-import { translator } from '$lib/i18n';
-import { articles } from '$lib/server/db/schema';
-import { activeLocations } from '$lib/server/locations';
-import { parseArticleForm } from '$lib/server/articleForm';
-import { allArticleTagNames, setArticleTags } from '$lib/server/articleTags';
-import { auditNew } from '$lib/server/audit';
+import { db } from '#lib/server/db/index.js';
+import { translator } from '#lib/i18n/index.js';
+import { articles } from '#lib/server/db/schema.js';
+import { activeLocations } from '#lib/server/locations.js';
+import { parseArticleForm } from '#lib/server/articleForm.js';
+import { allArticleTagNames, setArticleTags } from '#lib/server/articleTags.js';
+import { auditNew } from '#lib/server/audit.js';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 

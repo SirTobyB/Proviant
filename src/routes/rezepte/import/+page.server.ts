@@ -1,14 +1,14 @@
-import { db } from '$lib/server/db';
-import { translator } from '$lib/i18n';
-import { recipes, recipeIngredients } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { translator } from '#lib/i18n/index.js';
+import { recipes, recipeIngredients } from '#lib/server/db/schema.js';
 import {
 	getConnectionState,
 	getPicnicRecipeDetail,
 	listPicnicRecipes,
 	type PicnicRecipeTile
-} from '$lib/server/picnic';
-import { buildInstructions } from '$lib/server/picnic/recipeImport';
-import { auditNew } from '$lib/server/audit';
+} from '#lib/server/picnic/index.js';
+import { buildInstructions } from '#lib/server/picnic/recipeImport.js';
+import { auditNew } from '#lib/server/audit.js';
 import { sql } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';

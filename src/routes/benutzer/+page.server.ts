@@ -1,9 +1,9 @@
-import { db } from '$lib/server/db';
-import { translator } from '$lib/i18n';
-import { users } from '$lib/server/db/schema';
-import { hashPassword } from '$lib/server/password';
-import { auditNew } from '$lib/server/audit';
-import { deleteUserSessions } from '$lib/server/auth';
+import { db } from '#lib/server/db/index.js';
+import { translator } from '#lib/i18n/index.js';
+import { users } from '#lib/server/db/schema.js';
+import { hashPassword } from '#lib/server/password.js';
+import { auditNew } from '#lib/server/audit.js';
+import { deleteUserSessions } from '#lib/server/auth.js';
 import { eq, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
+	import BarcodeScanner from '#lib/components/BarcodeScanner.svelte';
 	import { deserialize } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import { translator } from '$lib/i18n';
-	import { formatPrice } from '$lib/format';
-	import { savingsOf } from '$lib/prices';
-	import { missingLocationNames, newItemsNeedingLocation } from '$lib/deliveryNewItems';
+	import { refreshAll } from '$app/navigation';
+	import { translator } from '#lib/i18n/index.js';
+	import { formatPrice } from '#lib/format.js';
+	import { savingsOf } from '#lib/prices.js';
+	import { missingLocationNames, newItemsNeedingLocation } from '#lib/deliveryNewItems.js';
 
 	let { data } = $props();
 
@@ -46,7 +46,7 @@
 		if (result.type === 'success') {
 			newArticle = null;
 			showToast(t('delivery.toast.created', { name: item.name }));
-			await invalidateAll(); // Position erscheint jetzt als verknüpft
+			await refreshAll(); // Position erscheint jetzt als verknüpft
 		} else {
 			const message = result.type === 'failure' ? (result.data?.message as string) : undefined;
 			showToast(message ?? t('delivery.toast.importFailed'), 'warn');
@@ -247,7 +247,7 @@
 			showToast(t('delivery.toast.bulkDone', { packs: t('common.packs', { n: data_.booked }) }) + suffix, data_.failed?.length ? 'warn' : 'ok');
 			closeBulk();
 			newLocations = {};
-			await invalidateAll(); // neu angelegte Artikel als verknüpft anzeigen
+			await refreshAll(); // neu angelegte Artikel als verknüpft anzeigen
 			resetScanner();
 		} else {
 			// Der Server nennt die Artikel, denen noch ein Lagerort fehlt
@@ -289,7 +289,7 @@
 					: t('delivery.toast.unbookedCounterOnly', { name: item.name }),
 				data_.taken > 0 ? 'ok' : 'warn'
 			);
-			await invalidateAll();
+			await refreshAll();
 		} else {
 			showToast(t('delivery.toast.unbookFailed'), 'warn');
 		}
@@ -345,7 +345,7 @@
 			rememberEntry(item.productId, data_.entryId);
 			const created = data_.created ? t('delivery.toast.createdSuffix') : '';
 			showToast(t('delivery.toast.bookedOne', { name: item.name, location: data_.locationName }) + created);
-			await invalidateAll();
+			await refreshAll();
 		} else {
 			const message = result.type === 'failure' ? (result.data?.message as string) : undefined;
 			showToast(message ?? t('delivery.toast.bookFailed'), 'warn');

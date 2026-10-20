@@ -4,8 +4,8 @@ import Database from 'better-sqlite3';
 import { sql } from 'drizzle-orm';
 import { scryptSync, randomBytes } from 'node:crypto';
 import * as schema from './schema';
-import { env } from '$env/dynamic/private';
-import { building } from '$app/environment';
+import * as env from '$app/env/private';
+import { building } from '$app/env';
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { BCP47, translator, type MessageKey } from '$lib/i18n';
-	import { formatPrice } from '$lib/format';
+	import { BCP47, translator, type MessageKey } from '#lib/i18n/index.js';
+	import { formatPrice } from '#lib/format.js';
 
 	let { data } = $props();
 

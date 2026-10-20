@@ -3,8 +3,8 @@
  * sich denselben Lagerbestand, eine Einzelrezept-für-Einzelrezept-Prüfung
  * würde denselben Vorrat für mehrere Tage doppelt als "vorhanden" werten.
  */
-import { getRecipe, getRecipeIngredients } from '$lib/server/recipeData';
-import { pickOrderArticle, scaleAmount, toBase, unitFamily, type IngredientArticleStock } from '$lib/units';
+import { getRecipe, getRecipeIngredients } from '#lib/server/recipeData.js';
+import { pickOrderArticle, scaleAmount, toBase, unitFamily, type IngredientArticleStock } from '#lib/units.js';
 
 export type WeekShoppingList = {
 	items: { productId: string; quantity: number }[];

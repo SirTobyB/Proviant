@@ -1,12 +1,12 @@
 /**
  * Serverseitiges Drumherum zur Oberflächensprache.
  *
- * Die Sprachlogik selbst steht in `$lib/i18n` (rein und testbar); hier liegt
+ * Die Sprachlogik selbst steht in `#lib/i18n` (rein und testbar); hier liegt
  * nur, was Cookies und SvelteKit betrifft.
  */
 import type { Cookies } from '@sveltejs/kit';
-import { dev } from '$app/environment';
-import type { Locale } from '$lib/i18n';
+import { dev } from '$app/env';
+import type { Locale } from '#lib/i18n/index.js';
 
 /**
  * Gemerkte Sprachwahl. Nötig zusätzlich zur Spalte am Benutzer, weil die

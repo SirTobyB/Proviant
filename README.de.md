@@ -163,7 +163,7 @@ unterdrücken.
 
 ## Entwicklung
 
-Voraussetzung: **Node.js ≥ 22.12** (Vite 8).
+Voraussetzung: **Node.js ≥ 22.17** (SvelteKit 3).
 
 ```sh
 cp .env.example .env      # Werte anpassen (siehe unten)

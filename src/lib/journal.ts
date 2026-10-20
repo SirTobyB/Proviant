@@ -3,7 +3,7 @@
  * die Zuordnung von Buchungsart zu Text testbar bleibt.
  */
 
-import type { Translate } from '$lib/i18n';
+import type { Translate } from '#lib/i18n/index.js';
 
 export type MovementType = 'in' | 'out' | 'move' | 'correction' | 'missing';
 

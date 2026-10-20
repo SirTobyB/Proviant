@@ -1,6 +1,6 @@
-import { db } from '$lib/server/db';
-import { translator } from '$lib/i18n';
-import { articles, stockEntries } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { translator } from '#lib/i18n/index.js';
+import { articles, stockEntries } from '#lib/server/db/schema.js';
 import { eq, sql } from 'drizzle-orm';
 import {
 	getConnectionState,
@@ -10,8 +10,8 @@ import {
 	request2FACode,
 	verify2FA,
 	addToCart
-} from '$lib/server/picnic';
-import { pricesFor, refreshPrices } from '$lib/server/prices';
+} from '#lib/server/picnic/index.js';
+import { pricesFor, refreshPrices } from '#lib/server/prices.js';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 

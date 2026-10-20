@@ -2,7 +2,7 @@
  * Ablage von Artikel-/Rezeptbildern im Dateisystem (DATA_DIR/images).
  * In der DB steht nur der Dateiname; ausgeliefert wird über /api/images/[file].
  */
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';

@@ -1,13 +1,12 @@
-import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { articles } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { articles } from '#lib/server/db/schema.js';
 import { sql } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
 /** Sucht im eigenen Artikelstamm (zur Verknüpfung von Rezeptzutaten). */
 export const GET: RequestHandler = ({ url }) => {
 	const query = url.searchParams.get('q')?.trim() ?? '';
-	if (!query) return json({ results: [] });
+	if (!query) return Response.json({ results: [] });
 
 	const results = db
 		.select({
@@ -24,5 +23,5 @@ export const GET: RequestHandler = ({ url }) => {
 		.limit(10)
 		.all();
 
-	return json({ results });
+	return Response.json({ results });
 };

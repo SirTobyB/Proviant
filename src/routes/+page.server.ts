@@ -1,7 +1,7 @@
-import { db } from '$lib/server/db';
-import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { articles, stockEntries, storageLocations } from '#lib/server/db/schema.js';
 import { count, eq, sql } from 'drizzle-orm';
-import { MHD_SOON_DAYS } from '$lib/mhd';
+import { MHD_SOON_DAYS } from '#lib/mhd.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {

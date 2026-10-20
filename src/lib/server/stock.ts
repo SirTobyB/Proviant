@@ -6,11 +6,11 @@
  * hier aus. Wer eine neue Buchungsart ergänzt, muss `recordMovement` mitrufen,
  * sonst hat das Journal eine Lücke.
  */
-import { db } from '$lib/server/db';
-import { articles, stockEntries, stockMovements } from '$lib/server/db/schema';
-import { auditEdit, auditNew } from '$lib/server/audit';
-import { activeLocation } from '$lib/server/locations';
-import type { Translate } from '$lib/i18n';
+import { db } from '#lib/server/db/index.js';
+import { articles, stockEntries, stockMovements } from '#lib/server/db/schema.js';
+import { auditEdit, auditNew } from '#lib/server/audit.js';
+import { activeLocation } from '#lib/server/locations.js';
+import type { Translate } from '#lib/i18n/index.js';
 import { and, eq, sql } from 'drizzle-orm';
 
 /** Woher eine Buchung ausgelöst wurde — im Journal sichtbar. */

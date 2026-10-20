@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { keepValues } from '$lib/forms';
+	import { keepValues } from '#lib/forms.js';
 	import { enhance } from '$app/forms';
-	import { translator, BCP47 } from '$lib/i18n';
-	import { formatPrice } from '$lib/format';
+	import { translator, BCP47 } from '#lib/i18n/index.js';
+	import { formatPrice } from '#lib/format.js';
 
 	let { data, form } = $props();
 

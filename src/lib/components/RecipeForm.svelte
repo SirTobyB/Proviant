@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import TagInput from '$lib/components/TagInput.svelte';
+	import TagInput from '#lib/components/TagInput.svelte';
 	import { page } from '$app/state';
-	import { translator } from '$lib/i18n';
-	import { UNITS, unitLabel } from '$lib/format';
+	import { translator } from '#lib/i18n/index.js';
+	import { UNITS, unitLabel } from '#lib/format.js';
 
 	type ArticleHit = {
 		id: number;

@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { keepValues } from '$lib/forms';
+	import { keepValues } from '#lib/forms.js';
 	import { enhance } from '$app/forms';
-	import { coverageMulti, scaleAmount } from '$lib/units';
-	import { translator, BCP47 } from '$lib/i18n';
-	import { unitLabel, formatPrice } from '$lib/format';
-	import { recipeCost, type CostPrice } from '$lib/recipeCost';
+	import { coverageMulti, scaleAmount } from '#lib/units.js';
+	import { translator, BCP47 } from '#lib/i18n/index.js';
+	import { unitLabel, formatPrice } from '#lib/format.js';
+	import { recipeCost, type CostPrice } from '#lib/recipeCost.js';
 
 	let { data, form } = $props();
 
@@ -14,7 +14,7 @@
 	let portions = $state(data.defaultPortions);
 	let confirmDelete = $state(false);
 
-	// Rechnung läuft bewusst im Client (siehe $lib/recipeCost), damit der
+	// Rechnung läuft bewusst im Client (siehe #lib/recipeCost), damit der
 	// Portionsregler ohne Serverrunde reagiert.
 	const priceMap = $derived(new Map<string, CostPrice>(data.prices));
 	const cost = $derived(

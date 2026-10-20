@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { formatPrice } from '$lib/format';
-	import { translator, BCP47 } from '$lib/i18n';
+	import { formatPrice } from '#lib/format.js';
+	import { translator, BCP47 } from '#lib/i18n/index.js';
 	let { data } = $props();
 
 	const t = $derived(translator(data.locale));

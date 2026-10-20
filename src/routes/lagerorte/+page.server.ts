@@ -5,8 +5,8 @@ import {
 	renameLocation,
 	setLocationActive,
 	type LocationResult
-} from '$lib/server/locations';
-import { translator } from '$lib/i18n';
+} from '#lib/server/locations.js';
+import { translator } from '#lib/i18n/index.js';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 

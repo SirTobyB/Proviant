@@ -1,6 +1,6 @@
 <script lang="ts">
-	import RecipeForm from '$lib/components/RecipeForm.svelte';
-	import { translator } from '$lib/i18n';
+	import RecipeForm from '#lib/components/RecipeForm.svelte';
+	import { translator } from '#lib/i18n/index.js';
 
 	let { data, form } = $props();
 

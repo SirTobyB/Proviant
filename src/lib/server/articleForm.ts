@@ -1,9 +1,9 @@
 /**
  * Gemeinsame Auswertung des Artikelformulars (Neuanlage und Bearbeitung).
  */
-import { saveImageFromUpload, saveImageFromUrl, saveImageFromDataUri } from '$lib/server/images';
-import type { Translate } from '$lib/i18n';
-import { ensureLoggedIn, getProductImage } from '$lib/server/picnic';
+import { saveImageFromUpload, saveImageFromUrl, saveImageFromDataUri } from '#lib/server/images.js';
+import type { Translate } from '#lib/i18n/index.js';
+import { ensureLoggedIn, getProductImage } from '#lib/server/picnic/index.js';
 
 export const UNITS = ['g', 'kg', 'ml', 'l', 'Stück'] as const;
 

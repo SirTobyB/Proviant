@@ -39,12 +39,6 @@ export default defineConfig({
 					'frame-ancestors': ['none'],
 					'form-action': ['self']
 				}
-			},
-
-			typescript: {
-				config: (config) => {
-					config.include.push('../drizzle.config.ts');
-				}
 			}
 		})
 	]

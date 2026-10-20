@@ -2,8 +2,8 @@
  * Auswertung des Rezeptformulars (Neuanlage und Bearbeitung).
  * Zutaten werden als JSON-Array im Feld `ingredients` übergeben.
  */
-import { saveImageFromUpload } from '$lib/server/images';
-import type { Translate } from '$lib/i18n';
+import { saveImageFromUpload } from '#lib/server/images.js';
+import type { Translate } from '#lib/i18n/index.js';
 
 export type ParsedIngredient = {
 	/** Akzeptierte Artikel (Hauptartikel + Alternativen), in erfasster Reihenfolge. */

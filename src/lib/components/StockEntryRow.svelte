@@ -9,10 +9,10 @@
 	 * eine Zeile der Liste aufgeklappt.
 	 */
 	import { enhance } from '$app/forms';
-	import { keepValues } from '$lib/forms';
-	import { formatDate, mhdLabel, mhdStatus, MHD_BADGE_CLASSES } from '$lib/mhd';
+	import { keepValues } from '#lib/forms.js';
+	import { formatDate, mhdLabel, mhdStatus, MHD_BADGE_CLASSES } from '#lib/mhd.js';
 	import { page } from '$app/state';
-	import { translator } from '$lib/i18n';
+	import { translator } from '#lib/i18n/index.js';
 
 	// Sprache aus den Layout-Daten statt per Prop durch jede Seite gereicht;
 	// page ist kontextgebunden und damit auch beim SSR pro Anfrage korrekt

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { formatPrice, UNITS, unitLabel } from '$lib/format';
+	import { formatPrice, UNITS, unitLabel } from '#lib/format.js';
 	import { page } from '$app/state';
-	import { translator } from '$lib/i18n';
+	import { translator } from '#lib/i18n/index.js';
 	import { enhance } from '$app/forms';
-	import TagInput from '$lib/components/TagInput.svelte';
+	import TagInput from '#lib/components/TagInput.svelte';
 
 	type Location = { id: number; name: string };
 	type ArticleValues = {

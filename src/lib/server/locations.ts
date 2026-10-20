@@ -8,11 +8,11 @@
  * **jede** Auswahlliste ihre Lagerorte über `activeLocations()` und jede
  * Buchung ihr Ziel über `activeLocation()` bzw. `bookingLocationId()`.
  */
-import { db } from '$lib/server/db';
-import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
-import { auditEdit, auditNew } from '$lib/server/audit';
+import { db } from '#lib/server/db/index.js';
+import { articles, stockEntries, storageLocations } from '#lib/server/db/schema.js';
+import { auditEdit, auditNew } from '#lib/server/audit.js';
 import { and, eq, ne, sql } from 'drizzle-orm';
-import type { Translate } from '$lib/i18n';
+import type { Translate } from '#lib/i18n/index.js';
 
 export type StorageLocation = typeof storageLocations.$inferSelect;
 

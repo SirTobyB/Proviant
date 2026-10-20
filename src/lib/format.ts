@@ -2,7 +2,7 @@
  * Kleine Darstellungshelfer, die sonst in jeder zweiten Seite dupliziert
  * würden. Bewusst ohne Framework-Bezug, damit überall verwendbar.
  */
-import { BCP47, type Locale, type Translate } from '$lib/i18n';
+import { BCP47, type Locale, type Translate } from '#lib/i18n/index.js';
 
 /**
  * Auswählbare Maßeinheiten. Die Werte sind **Daten** und stehen so in der

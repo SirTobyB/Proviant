@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ArticleForm from '$lib/components/ArticleForm.svelte';
-	import { translator } from '$lib/i18n';
+	import ArticleForm from '#lib/components/ArticleForm.svelte';
+	import { translator } from '#lib/i18n/index.js';
 
 	let { data, form } = $props();
 

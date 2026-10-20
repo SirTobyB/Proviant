@@ -1,15 +1,12 @@
 import { defineConfig } from 'vitest/config';
-import path from 'node:path';
 
 /**
  * Bewusst ohne das SvelteKit-Plugin: getestet werden nur die reinen
- * Logik-Module (keine Komponenten, kein $app/$env), das hält den Lauf schnell
- * und unabhängig vom Framework.
+ * Logik-Module (keine Komponenten, kein $app), das hält den Lauf schnell
+ * und unabhängig vom Framework. `#lib` braucht keinen Alias: Node löst die
+ * Subpath-Imports aus package.json selbst auf.
  */
 export default defineConfig({
-	resolve: {
-		alias: { $lib: path.resolve('./src/lib') }
-	},
 	test: {
 		include: ['src/**/*.test.ts']
 	}

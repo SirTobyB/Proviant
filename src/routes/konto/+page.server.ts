@@ -1,14 +1,14 @@
-import { db } from '$lib/server/db';
-import { users } from '$lib/server/db/schema';
-import { hashPassword, verifyPassword } from '$lib/server/password';
-import { deleteUserSessions, SESSION_COOKIE, createSession } from '$lib/server/auth';
-import { clearLocaleCookie, setLocaleCookie } from '$lib/server/locale';
-import { isLocale, localeFromHeader, translator, DEFAULT_LOCALE } from '$lib/i18n';
-import { dev } from '$app/environment';
-import { env } from '$env/dynamic/private';
+import { db } from '#lib/server/db/index.js';
+import { users } from '#lib/server/db/schema.js';
+import { hashPassword, verifyPassword } from '#lib/server/password.js';
+import { deleteUserSessions, SESSION_COOKIE, createSession } from '#lib/server/auth.js';
+import { clearLocaleCookie, setLocaleCookie } from '#lib/server/locale.js';
+import { isLocale, localeFromHeader, translator, DEFAULT_LOCALE } from '#lib/i18n/index.js';
+import { dev } from '$app/env';
+import * as env from '$app/env/private';
 import { eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
-import { parseChangelog } from '$lib/changelog';
+import { parseChangelog } from '#lib/changelog.js';
 // Als Text ins Bundle: Das Docker-Image enthält nur build/, die Datei selbst
 // liegt dort nicht — ein Lesen zur Laufzeit würde im Betrieb scheitern.
 import changelogText from '../../../CHANGELOG.md?raw';

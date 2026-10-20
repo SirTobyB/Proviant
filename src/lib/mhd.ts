@@ -2,7 +2,7 @@
  * Hilfsfunktionen rund um das Mindesthaltbarkeitsdatum (MHD).
  * MHD wird als ISO-Datum (YYYY-MM-DD) gespeichert.
  */
-import { BCP47, type Locale, type Translate } from '$lib/i18n';
+import { BCP47, type Locale, type Translate } from '#lib/i18n/index.js';
 
 export type MhdStatus = 'expired' | 'critical' | 'soon' | 'ok' | 'none';
 

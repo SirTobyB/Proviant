@@ -24,7 +24,7 @@ npm test              # Vitest (reine Logik-Module), npm run test:watch zum Mitl
 npm run db:generate   # Migration aus dem Schema erzeugen (nach Schema-Änderung)
 ```
 
-Voraussetzung: **Node.js ≥ 22.12** (Vite 8). Verifikation vor dem Commit:
+Voraussetzung: **Node.js ≥ 22.17** (SvelteKit 3). Verifikation vor dem Commit:
 `npm run check` + `npm test` + `npm run build`; für UI-Änderungen den
 Dev-Server starten und im Browser prüfen — Anmeldung mit
 `ADMIN_USERNAME`/`ADMIN_PASSWORD` aus der `.env` (der Benutzername wird
@@ -240,7 +240,7 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   Origin der App. Externe Bild-URLs sind auf `openfoodfacts.org` beschränkt
   (`redirect: 'error'`, sonst führte eine Weiterleitung aus der Allowlist
   heraus) — sonst wäre der Server ein Sprungbrett ins Heimnetz.
-- **CSP** steht in `vite.config.ts` unter `kit.csp`, **nicht** im Hook: nur dort
+- **CSP** steht in `vite.config.ts` unter `csp` (im `sveltekit()`-Plugin), **nicht** im Hook: nur dort
   bekommen SvelteKits Inline-Scripte ihren Nonce, ein selbst gesetzter Header
   müsste `'unsafe-inline'` erlauben und wäre wirkungslos. Die übrigen
   Schutzheader setzt `hooks.server.ts`. Neue externe Quellen (Schriften, Bilder,
@@ -288,6 +288,21 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 - **Env:** Passwörter mit `#`/`$` in `.env` und `docker-compose*.yml` **quoten**
   (unquotiertes `#` wird als Kommentar abgeschnitten). Die App liest die `.env`
   im Projektstamm. Erster Admin via `ADMIN_USERNAME`/`ADMIN_PASSWORD`.
+  Seit SvelteKit 3 wird jede Variable in `src/env.ts` (`defineEnvVars`)
+  deklariert und aus `$app/env/private` importiert — eine neue Variable
+  fehlt sonst schlicht. Alle sind bewusst optional (`undefined` statt `''`),
+  weil der Code per `??` auf Standardwerte zurückfällt.
+- **`ORIGIN` und `server.js`:** adapter-node 6 kennt `ORIGIN` nicht mehr und
+  will die Adresse beim Build (`paths.origin`) — beim fertigen Image steht sie
+  aber erst zur Laufzeit fest. Der Container startet deshalb über `server.js`,
+  das `ORIGIN` per eigener Header an adapter-node weiterreicht. Ohne das nähme
+  adapter-node immer `https` an, und über `http://localhost:3000` scheiterte
+  jedes Formular am CSRF-Abgleich (403). `node build` lokal ohne `ORIGIN`
+  funktioniert weiterhin.
+- **Imports:** `$lib` gibt es seit SvelteKit 3 nicht mehr; stattdessen
+  `#lib/…` (Subpath-Import aus `package.json`) **mit Dateiendung** —
+  `#lib/format.js` (auch für `.ts`), `#lib/i18n/index.js` für Ordner,
+  Komponenten als `#lib/components/X.svelte`.
 - **`overrides` in `package.json`:** Der Eintrag für `@esbuild-kit/core-utils`
   hebt dessen uraltes esbuild 0.18 auf ≥ 0.25 an (GHSA-67mh-4wv8-2f99, betrifft
   nur `esbuild serve`). Die Kette kommt über `drizzle-kit` →
@@ -364,20 +379,21 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   Der Tag legt seit 2.3.1 auch das **GitHub-Release** an (Notizen aus dem
   Changelog-Abschnitt der Version, per `gh` im Workflow); vorher wurde die
   Releases-Seite von Hand gepflegt und blieb bei 2.2.0 und 2.3.0 leer.
-- **Logging:** SvelteKit ruft `handleError` **nur bei unerwarteten
-  Ausnahmen** — alles, was per `error()` geworfen wird, gilt als „erwartet"
-  und ginge sonst spurlos raus (deshalb blieb ein 500er im Betrieb einmal
-  unauffindbar). `hooks.server.ts` protokolliert deshalb **am Statuscode**:
-  jede Antwort ab 500 landet mit Methode, Pfad, Benutzer und Dauer im Log;
-  `handleError` ergänzt Stacktrace und eine Fehler-ID, die auch auf der
-  Fehlerseite steht. Neue Log-Ausgaben über `logInfo`/`logWarn`/`logError`
+- **Logging:** Per `error()` geworfene Fehler gelten als „erwartet" und
+  gingen ohne eigenes Logging spurlos raus (deshalb blieb ein 500er im Betrieb
+  einmal unauffindbar). `hooks.server.ts` protokolliert deshalb **am
+  Statuscode**: jede Antwort ab 500 landet mit Methode, Pfad, Benutzer und
+  Dauer im Log. `handleError` bekommt seit SvelteKit 3 zwar **alle** Fehler
+  (auch 404er), protokolliert aber nur `kind === 'unknown'` — dort ergänzt es
+  Stacktrace und eine Fehler-ID, die auch auf der Fehlerseite steht; sonst
+  stünde jeder Fehler doppelt im Log. Neue Log-Ausgaben über `logInfo`/`logWarn`/`logError`
   aus `server/log.ts`, nicht per nacktem `console.*` — sonst fehlt der
   Zeitstempel, und im Container-Log ist nichts mehr zuzuordnen.
 - **Formulare:** `use:enhance` macht standardmäßig ein `form.reset()` nach
   erfolgreichem Absenden. Svelte setzt `value`/`checked` nur als DOM-Property
   (ohne HTML-Attribut), Felder fallen dadurch auf **leer** zurück. Überall,
   wo ein Formular Daten trägt, die das Absenden überleben müssen (Mengen,
-  versteckte Felder), deshalb `use:enhance={keepValues}` aus `$lib/forms`
+  versteckte Felder), deshalb `use:enhance={keepValues}` aus `#lib/forms.js`
   verwenden. Fällt beim Testen leicht durchs Raster: nach direktem
   Seitenaufruf liefert SSR echte `value`-Attribute, der Fehler zeigt sich nur
   nach App-interner Navigation.

@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { ensureLoggedIn, getProductImage } from '$lib/server/picnic';
+import { ensureLoggedIn, getProductImage } from '#lib/server/picnic/index.js';
 import type { RequestHandler } from './$types';
 
 /** Liefert ein Picnic-Produktbild aus (Vorschau im Artikelformular). */

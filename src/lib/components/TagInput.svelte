@@ -5,7 +5,7 @@
 	 * umgebende Form muss es nur serverseitig parsen (parseTags-Muster).
 	 */
 	import { page } from '$app/state';
-	import { translator } from '$lib/i18n';
+	import { translator } from '#lib/i18n/index.js';
 
 	const t = $derived(translator(page.data.locale));
 

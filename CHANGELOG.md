@@ -8,6 +8,17 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- **Unterbau auf SvelteKit 3 und adapter-node 6 gehoben.** Für Anwender
+  ändert sich nichts; beim Aktualisieren genügt weiterhin
+  `docker compose pull`. Die Umgebungsvariable `ORIGIN` wirkt unverändert,
+  obwohl adapter-node 6 sie nicht mehr kennt — der Container startet dafür
+  über ein kleines Startskript (`server.js`), das sie weiterreicht. Ohne
+  diesen Ersatz wäre beim Aufruf über `http://localhost:3000` jedes Formular
+  mit „403" abgelehnt worden, auch die Anmeldung.
+- Wer selbst baut, braucht jetzt **Node.js ≥ 22.17**.
+
 ## [2.3.1] - 2026-09-02
 
 Eine kleine Nachbesserung zu 2.3.0. Zu tun ist beim Aktualisieren nichts:
