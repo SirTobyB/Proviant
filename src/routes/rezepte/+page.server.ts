@@ -1,9 +1,9 @@
-import { db } from '$lib/server/db';
-import { recipes } from '$lib/server/db/schema';
-import { getRecipeIngredients, isRecipeCookable } from '$lib/server/recipeData';
-import { tagsForRecipe } from '$lib/server/tags';
-import { recipeCost } from '$lib/recipeCost';
-import { oldestFetchedAt, pricesFor } from '$lib/server/prices';
+import { db } from '#lib/server/db/index.js';
+import { recipes } from '#lib/server/db/schema.js';
+import { getRecipeIngredients, isRecipeCookable } from '#lib/server/recipeData.js';
+import { tagsForRecipe } from '#lib/server/tags.js';
+import { recipeCost } from '#lib/recipeCost.js';
+import { oldestFetchedAt, pricesFor } from '#lib/server/prices.js';
 import { sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 

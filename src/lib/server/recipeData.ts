@@ -2,10 +2,10 @@
  * Lädt ein Rezept samt Zutaten und – für verknüpfte Artikel (inkl. akzeptierter
  * Alternativartikel) – Gebindegröße, Picnic-ID und aktuellem Gesamtbestand.
  */
-import { db } from '$lib/server/db';
-import type { Translate } from '$lib/i18n';
-import { articles, recipeIngredientArticles, recipeIngredients, recipes, stockEntries } from '$lib/server/db/schema';
-import { coverageMulti, scaleAmount } from '$lib/units';
+import { db } from '#lib/server/db/index.js';
+import type { Translate } from '#lib/i18n/index.js';
+import { articles, recipeIngredientArticles, recipeIngredients, recipes, stockEntries } from '#lib/server/db/schema.js';
+import { coverageMulti, scaleAmount } from '#lib/units.js';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 

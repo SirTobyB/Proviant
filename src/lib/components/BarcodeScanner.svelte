@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { translator } from '$lib/i18n';
-	import { playScanBeep, unlockAudio } from '$lib/sound';
+	import { translator } from '#lib/i18n/index.js';
+	import { playScanBeep, unlockAudio } from '#lib/sound.js';
 	// Die WASM-Datei wird mitgebaut und aus dem eigenen Build ausgeliefert.
 	// Voreingestellt lädt zxing-wasm sie zur Laufzeit von fastly.jsdelivr.net —
 	// damit führte die App fremden Code aus einer Quelle aus, die niemand hier

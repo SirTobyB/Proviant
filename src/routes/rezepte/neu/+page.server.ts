@@ -1,9 +1,9 @@
-import { db } from '$lib/server/db';
-import { translator } from '$lib/i18n';
-import { recipes, recipeIngredientArticles, recipeIngredients } from '$lib/server/db/schema';
-import { parseRecipeForm } from '$lib/server/recipeForm';
-import { allTagNames, setRecipeTags } from '$lib/server/tags';
-import { auditLink, auditNew } from '$lib/server/audit';
+import { db } from '#lib/server/db/index.js';
+import { translator } from '#lib/i18n/index.js';
+import { recipes, recipeIngredientArticles, recipeIngredients } from '#lib/server/db/schema.js';
+import { parseRecipeForm } from '#lib/server/recipeForm.js';
+import { allTagNames, setRecipeTags } from '#lib/server/tags.js';
+import { auditLink, auditNew } from '#lib/server/audit.js';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 

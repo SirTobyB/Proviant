@@ -1,6 +1,5 @@
-import { json } from '@sveltejs/kit';
-import { db } from '$lib/server/db';
-import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { articles, stockEntries, storageLocations } from '#lib/server/db/schema.js';
 import { eq, sql } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
@@ -8,7 +7,7 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = ({ params }) => {
 	const ean = params.ean.replace(/\D/g, '');
 	const article = db.select().from(articles).where(eq(articles.ean, ean)).get();
-	if (!article) return json({ found: false });
+	if (!article) return Response.json({ found: false });
 
 	const stock = db
 		.select({
@@ -22,7 +21,7 @@ export const GET: RequestHandler = ({ params }) => {
 		.groupBy(stockEntries.locationId)
 		.all();
 
-	return json({
+	return Response.json({
 		found: true,
 		article,
 		stock,

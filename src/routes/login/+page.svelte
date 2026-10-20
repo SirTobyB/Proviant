@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { translator } from '$lib/i18n';
+	import { translator } from '#lib/i18n/index.js';
 	let { data, form } = $props();
 
 	// locale kommt aus dem Root-Layout — die Anmeldeseite rendert ohne App-Chrome,

@@ -1,5 +1,5 @@
-import { db } from '$lib/server/db';
-import { articles, stockMovements, storageLocations } from '$lib/server/db/schema';
+import { db } from '#lib/server/db/index.js';
+import { articles, stockMovements, storageLocations } from '#lib/server/db/schema.js';
 import { and, desc, eq, sql, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 import type { PageServerLoad } from './$types';

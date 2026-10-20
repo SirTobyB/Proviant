@@ -1,9 +1,9 @@
 /**
  * Verwaltung frei vergebbarer Rezept-Tags.
  */
-import { db } from '$lib/server/db';
-import { recipeTags, tags } from '$lib/server/db/schema';
-import { auditLink, auditNew } from '$lib/server/audit';
+import { db } from '#lib/server/db/index.js';
+import { recipeTags, tags } from '#lib/server/db/schema.js';
+import { auditLink, auditNew } from '#lib/server/audit.js';
 import { eq, inArray, sql } from 'drizzle-orm';
 
 /** Alle vorhandenen Tag-Namen (für Autocomplete), alphabetisch. */

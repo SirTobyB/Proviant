@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { translator, BCP47 } from '$lib/i18n';
-	import { invalidateAll } from '$app/navigation';
+	import { translator, BCP47 } from '#lib/i18n/index.js';
+	import { refreshAll } from '$app/navigation';
 
 	let { data, form } = $props();
 
@@ -131,7 +131,7 @@
 			return async ({ update }) => {
 				submitting = false;
 				await update();
-				await invalidateAll();
+				await refreshAll();
 			};
 		}}
 		class="mt-4 max-w-2xl"

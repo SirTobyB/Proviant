@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { packageSize, tagFilterHref } from '$lib/format';
-	import { keepValues } from '$lib/forms';
+	import { packageSize, tagFilterHref } from '#lib/format.js';
+	import { keepValues } from '#lib/forms.js';
 	import { enhance } from '$app/forms';
-	import { translator } from '$lib/i18n';
+	import { translator } from '#lib/i18n/index.js';
 
 	let { data } = $props();
 

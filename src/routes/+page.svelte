@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { mhdStatus, mhdLabel, formatDate, MHD_BADGE_CLASSES } from '$lib/mhd';
-	import { translator } from '$lib/i18n';
+	import { mhdStatus, mhdLabel, formatDate, MHD_BADGE_CLASSES } from '#lib/mhd.js';
+	import { translator } from '#lib/i18n/index.js';
 
 	let { data } = $props();
 

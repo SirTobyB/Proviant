@@ -1,5 +1,4 @@
-import { json } from '@sveltejs/kit';
-import { ensureLoggedIn, searchProducts } from '$lib/server/picnic';
+import { ensureLoggedIn, searchProducts } from '#lib/server/picnic/index.js';
 import type { RequestHandler } from './$types';
 
 /**
@@ -9,12 +8,12 @@ import type { RequestHandler } from './$types';
  */
 export const GET: RequestHandler = async ({ url }) => {
 	const query = url.searchParams.get('q')?.trim();
-	if (!query) return json({ results: [] });
+	if (!query) return Response.json({ results: [] });
 
 	try {
 		await ensureLoggedIn();
 		const units = await searchProducts(query);
-		return json({
+		return Response.json({
 			results: units.slice(0, 15).map((unit) => ({
 				id: unit.id,
 				name: unit.name,
@@ -25,6 +24,6 @@ export const GET: RequestHandler = async ({ url }) => {
 		});
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Picnic-Suche fehlgeschlagen';
-		return json({ error: message }, { status: 502 });
+		return Response.json({ error: message }, { status: 502 });
 	}
 };

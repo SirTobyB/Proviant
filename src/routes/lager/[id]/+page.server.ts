@@ -1,8 +1,8 @@
-import { db } from '$lib/server/db';
-import { translator, type Translate } from '$lib/i18n';
-import { articles, stockEntries, storageLocations } from '$lib/server/db/schema';
-import { activeLocationsExcept } from '$lib/server/locations';
-import { moveStockEntryFromForm, updateStockEntryFromForm } from '$lib/server/stock';
+import { db } from '#lib/server/db/index.js';
+import { translator, type Translate } from '#lib/i18n/index.js';
+import { articles, stockEntries, storageLocations } from '#lib/server/db/schema.js';
+import { activeLocationsExcept } from '#lib/server/locations.js';
+import { moveStockEntryFromForm, updateStockEntryFromForm } from '#lib/server/stock.js';
 import { eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';

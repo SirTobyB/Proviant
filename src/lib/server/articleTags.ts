@@ -2,9 +2,9 @@
  * Verwaltung frei vergebbarer Artikel-Tags (eigener Pool, getrennt von den
  * Rezept-Tags in tags.ts — gleiches Muster, andere Tabellen).
  */
-import { db } from '$lib/server/db';
-import { articleTagLinks, articleTags } from '$lib/server/db/schema';
-import { auditLink, auditNew } from '$lib/server/audit';
+import { db } from '#lib/server/db/index.js';
+import { articleTagLinks, articleTags } from '#lib/server/db/schema.js';
+import { auditLink, auditNew } from '#lib/server/audit.js';
 import { eq, inArray, sql } from 'drizzle-orm';
 
 /** Alle vorhandenen Artikel-Tag-Namen (für Autocomplete), alphabetisch. */

@@ -26,6 +26,9 @@ WORKDIR /app
 # in den adapter-node-Build gebündelt werden.
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
+# Startpunkt: hält die Laufzeit-Variable ORIGIN am Leben, die adapter-node 6
+# nicht mehr kennt (Begründung in server.js)
+COPY --from=build /app/server.js ./
 # Drizzle-Migrationen werden beim App-Start angewendet
 COPY --from=build /app/drizzle ./drizzle
 COPY package.json ./
@@ -53,4 +56,4 @@ ENV BODY_SIZE_LIMIT=15M
 VOLUME /data
 EXPOSE 3000
 
-CMD ["node", "build"]
+CMD ["node", "server.js"]

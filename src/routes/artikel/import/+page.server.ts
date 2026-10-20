@@ -1,13 +1,13 @@
-import { db } from '$lib/server/db';
-import { translator } from '$lib/i18n';
-import { articles } from '$lib/server/db/schema';
-import { activeLocations } from '$lib/server/locations';
+import { db } from '#lib/server/db/index.js';
+import { translator } from '#lib/i18n/index.js';
+import { articles } from '#lib/server/db/schema.js';
+import { activeLocations } from '#lib/server/locations.js';
 import {
 	getConnectionState,
 	listOrderedProducts,
 	type OrderedProduct
-} from '$lib/server/picnic';
-import { importArticleFromPicnic } from '$lib/server/articleImport';
+} from '#lib/server/picnic/index.js';
+import { importArticleFromPicnic } from '#lib/server/articleImport.js';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 

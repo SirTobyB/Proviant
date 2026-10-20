@@ -4,9 +4,9 @@
 		movementAmountLabel,
 		movementSourceLabel,
 		movementTypeLabel
-	} from '$lib/journal';
-	import { formatDate } from '$lib/mhd';
-	import { translator, BCP47 } from '$lib/i18n';
+	} from '#lib/journal.js';
+	import { formatDate } from '#lib/mhd.js';
+	import { translator, BCP47 } from '#lib/i18n/index.js';
 
 	let { data } = $props();
 

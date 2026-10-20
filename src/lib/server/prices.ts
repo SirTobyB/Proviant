@@ -5,10 +5,10 @@
  * Rendern scheidet damit aus. Der Cache ist deshalb keine Optimierung,
  * sondern Voraussetzung.
  */
-import { db } from '$lib/server/db';
-import { picnicPrices } from '$lib/server/db/schema';
-import { getConnectionState, getProductPrices } from '$lib/server/picnic';
-import { logWarn } from '$lib/server/log';
+import { db } from '#lib/server/db/index.js';
+import { picnicPrices } from '#lib/server/db/schema.js';
+import { getConnectionState, getProductPrices } from '#lib/server/picnic/index.js';
+import { logWarn } from '#lib/server/log.js';
 import { inArray } from 'drizzle-orm';
 
 export type CachedPrice = {
@@ -26,10 +26,10 @@ export const DEFAULT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
  */
 export const DEFAULT_REFRESH_LIMIT = 20;
 
-// Die reine Rechnung liegt in `$lib/prices` — auch Komponenten brauchen sie,
-// und `$lib/server/*` ist für die nicht importierbar. Hier nur durchgereicht,
+// Die reine Rechnung liegt in `#lib/prices` — auch Komponenten brauchen sie,
+// und `#lib/server/*` ist für die nicht importierbar. Hier nur durchgereicht,
 // damit die Server-Seiten ihre gewohnte Bezugsquelle behalten.
-export { effectivePrice, savingsOf } from '$lib/prices';
+export { effectivePrice, savingsOf } from '#lib/prices.js';
 
 /** Gecachte Preise zu den gefragten IDs. Fehlende fehlen einfach in der Map. */
 export function pricesFor(picnicIds: string[]): Map<string, CachedPrice> {

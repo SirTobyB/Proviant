@@ -1,10 +1,10 @@
-import { db } from '$lib/server/db';
-import { translator } from '$lib/i18n';
-import { recipes, recipeTags, tags } from '$lib/server/db/schema';
-import { getRecipe, getRecipeIngredients, isRecipeCookable } from '$lib/server/recipeData';
-import { allTagNames, tagsForRecipe } from '$lib/server/tags';
-import { auditEdit } from '$lib/server/audit';
-import { eligible, pickWeighted, type SuggestCandidate } from '$lib/suggest';
+import { db } from '#lib/server/db/index.js';
+import { translator } from '#lib/i18n/index.js';
+import { recipes, recipeTags, tags } from '#lib/server/db/schema.js';
+import { getRecipe, getRecipeIngredients, isRecipeCookable } from '#lib/server/recipeData.js';
+import { allTagNames, tagsForRecipe } from '#lib/server/tags.js';
+import { auditEdit } from '#lib/server/audit.js';
+import { eligible, pickWeighted, type SuggestCandidate } from '#lib/suggest.js';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';

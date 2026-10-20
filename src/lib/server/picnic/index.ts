@@ -13,7 +13,7 @@ import PicnicClient from 'picnic-api';
 // kommen, ohne die Seite zweimal zu laden. `picnic-api` hat keine `exports`-
 // Sperre im package.json, der Deep-Import auf den Parser ist also erlaubt.
 import { extractProductDetails } from 'picnic-api/lib/domains/catalog/helpers';
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 import fs from 'node:fs';
 import path from 'node:path';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';

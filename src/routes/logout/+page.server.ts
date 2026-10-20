@@ -1,4 +1,4 @@
-import { deleteSession, SESSION_COOKIE } from '$lib/server/auth';
+import { deleteSession, SESSION_COOKIE } from '#lib/server/auth.js';
 import { redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 

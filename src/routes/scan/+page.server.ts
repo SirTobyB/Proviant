@@ -1,8 +1,8 @@
-import { db } from '$lib/server/db';
-import { translator, type Translate } from '$lib/i18n';
-import { articles } from '$lib/server/db/schema';
-import { activeLocation, activeLocations } from '$lib/server/locations';
-import { bookIn, bookOut } from '$lib/server/stock';
+import { db } from '#lib/server/db/index.js';
+import { translator, type Translate } from '#lib/i18n/index.js';
+import { articles } from '#lib/server/db/schema.js';
+import { activeLocation, activeLocations } from '#lib/server/locations.js';
+import { bookIn, bookOut } from '#lib/server/stock.js';
 import { eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';

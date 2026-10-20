@@ -1,4 +1,4 @@
-import { getConnectionState, getRecentDeliveries } from '$lib/server/picnic';
+import { getConnectionState, getRecentDeliveries } from '#lib/server/picnic/index.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {

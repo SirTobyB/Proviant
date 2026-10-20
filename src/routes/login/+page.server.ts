@@ -5,11 +5,11 @@ import {
 	loginLockMs,
 	registerFailedLogin,
 	SESSION_COOKIE
-} from '$lib/server/auth';
-import { remainingLockMinutes } from '$lib/loginThrottle';
-import { translator } from '$lib/i18n';
-import { logWarn } from '$lib/server/log';
-import { dev } from '$app/environment';
+} from '#lib/server/auth.js';
+import { remainingLockMinutes } from '#lib/loginThrottle.js';
+import { translator } from '#lib/i18n/index.js';
+import { logWarn } from '#lib/server/log.js';
+import { dev } from '$app/env';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 

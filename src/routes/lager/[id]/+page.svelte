@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { packageSize } from '$lib/format';
-	import { translator } from '$lib/i18n';
-	import StockEntryRow from '$lib/components/StockEntryRow.svelte';
-	import { sumQuantity } from '$lib/stock';
+	import { packageSize } from '#lib/format.js';
+	import { translator } from '#lib/i18n/index.js';
+	import StockEntryRow from '#lib/components/StockEntryRow.svelte';
+	import { sumQuantity } from '#lib/stock.js';
 
 	let { data, form } = $props();
 

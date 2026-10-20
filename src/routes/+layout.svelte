@@ -2,7 +2,7 @@
 	import './layout.css';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
-	import { translator, type MessageKey } from '$lib/i18n';
+	import { translator, type MessageKey } from '#lib/i18n/index.js';
 
 	let { children, data } = $props();
 

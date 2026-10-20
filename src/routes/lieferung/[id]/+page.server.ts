@@ -1,15 +1,15 @@
-import { db } from '$lib/server/db';
-import { translator } from '$lib/i18n';
-import { articles } from '$lib/server/db/schema';
-import { activeLocation, activeLocations } from '$lib/server/locations';
-import { getConnectionState, getDeliveryChecklist } from '$lib/server/picnic';
-import { importArticleFromPicnic } from '$lib/server/articleImport';
+import { db } from '#lib/server/db/index.js';
+import { translator } from '#lib/i18n/index.js';
+import { articles } from '#lib/server/db/schema.js';
+import { activeLocation, activeLocations } from '#lib/server/locations.js';
+import { getConnectionState, getDeliveryChecklist } from '#lib/server/picnic/index.js';
+import { importArticleFromPicnic } from '#lib/server/articleImport.js';
 import {
 	assignedLocationId,
 	missingLocationNames,
 	newItemsNeedingLocation
-} from '$lib/deliveryNewItems';
-import { bookIn, bookOutEntry, recordMissing } from '$lib/server/stock';
+} from '#lib/deliveryNewItems.js';
+import { bookIn, bookOutEntry, recordMissing } from '#lib/server/stock.js';
 import { eq } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';

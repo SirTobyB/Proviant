@@ -1,4 +1,4 @@
-import type { SubmitFunction } from '@sveltejs/kit';
+import type { SubmitFunction } from '$app/forms';
 
 /**
  * Enhance-Callback für Formulare, deren Eingaben das Absenden überleben müssen.

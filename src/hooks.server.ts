@@ -1,9 +1,10 @@
-import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
-import { SESSION_COOKIE, validateSession } from '$lib/server/auth';
-import { LOCALE_COOKIE } from '$lib/server/locale';
-import { resolveLocale } from '$lib/i18n';
-import { logError, logInfo } from '$lib/server/log';
+import { redirect } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
+import * as env from '$app/env/private';
+import { SESSION_COOKIE, validateSession } from '#lib/server/auth.js';
+import { LOCALE_COOKIE } from '#lib/server/locale.js';
+import { resolveLocale } from '#lib/i18n/index.js';
+import { logError, logInfo } from '#lib/server/log.js';
 
 // Öffentlich erreichbare Pfade (ohne Login)
 const PUBLIC_PATHS = ['/login'];
@@ -83,8 +84,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	// Am Status statt am Fehlerobjekt hängen: So landet JEDE Fehlerantwort im
-	// Log — auch die per error() geworfenen, die handleError nie zu sehen
-	// bekommt (SvelteKit behandelt sie als „erwartet").
+	// Log — auch die per error() geworfenen, die handleError bewusst nicht
+	// protokolliert (sie gelten als „erwartet").
 	if (response.status >= 500) {
 		logError(`${event.request.method} ${path} → ${response.status}`, undefined, {
 			user: event.locals.user?.username,
@@ -96,14 +97,18 @@ export const handle: Handle = async ({ event, resolve }) => {
 };
 
 /**
- * Greift nur bei unerwarteten Ausnahmen — dort steckt der Stacktrace, der die
- * Ursache verrät. Die Kennung erscheint auch auf der Fehlerseite, damit sich
- * eine Meldung des Nutzers eindeutig im Log wiederfinden lässt.
+ * Seit SvelteKit 3 landen hier **alle** Fehler, auch per error() geworfene und
+ * 404er des Frameworks. Protokolliert (samt Kennung) werden nur die
+ * unerwarteten Ausnahmen — dort steckt der Stacktrace, der die Ursache
+ * verrät; die erwarteten erfasst schon das Status-Logging in `handle`. Die
+ * Kennung erscheint auch auf der Fehlerseite, damit sich eine Meldung des
+ * Nutzers eindeutig im Log wiederfinden lässt.
  */
-export const handleError: HandleServerError = ({ error, event, status, message }) => {
+export const handleError: HandleServerError = ({ kind, error, event }) => {
+	if (kind !== 'unknown') return;
 	const id = Math.random().toString(36).slice(2, 8);
-	logError(`${event.request.method} ${event.url.pathname} → ${status} (${id})`, error, {
+	logError(`${event.request.method} ${event.url.pathname} → 500 (${id})`, error, {
 		user: event.locals.user?.username
 	});
-	return { message: `${message} (Fehler-ID ${id})` };
+	return { message: `Internal Error (Fehler-ID ${id})` };
 };

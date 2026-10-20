@@ -2,10 +2,10 @@
  * Sessions und Benutzer-Nachschlagen für die Authentifizierung.
  */
 import { randomBytes } from 'node:crypto';
-import { db } from '$lib/server/db';
-import { loginAttempts, sessions, users } from '$lib/server/db/schema';
-import { hashPassword, verifyPassword } from '$lib/server/password';
-import { RESET_AFTER_MS, isStale, lockoutMs, remainingLockMs } from '$lib/loginThrottle';
+import { db } from '#lib/server/db/index.js';
+import { loginAttempts, sessions, users } from '#lib/server/db/schema.js';
+import { hashPassword, verifyPassword } from '#lib/server/password.js';
+import { RESET_AFTER_MS, isStale, lockoutMs, remainingLockMs } from '#lib/loginThrottle.js';
 import { and, eq, gt, lt } from 'drizzle-orm';
 
 export const SESSION_COOKIE = 'lmk_session';

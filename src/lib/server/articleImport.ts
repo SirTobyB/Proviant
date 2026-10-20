@@ -2,12 +2,12 @@
  * Anlage eines Artikels aus einem Picnic-Produkt (Bulk-Import aus Lieferungen
  * und Einzelimport beim Auspacken).
  */
-import { db } from '$lib/server/db';
-import { articles } from '$lib/server/db/schema';
-import { auditNew } from '$lib/server/audit';
-import { saveImageFromDataUri } from '$lib/server/images';
-import { getProductImage } from '$lib/server/picnic';
-import { parseUnitQuantity } from '$lib/server/picnic/unitQuantity';
+import { db } from '#lib/server/db/index.js';
+import { articles } from '#lib/server/db/schema.js';
+import { auditNew } from '#lib/server/audit.js';
+import { saveImageFromDataUri } from '#lib/server/images.js';
+import { getProductImage } from '#lib/server/picnic/index.js';
+import { parseUnitQuantity } from '#lib/server/picnic/unitQuantity.js';
 import { eq } from 'drizzle-orm';
 
 export type PicnicProductInput = {

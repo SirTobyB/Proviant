@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { keepValues } from '$lib/forms';
-	import { translator } from '$lib/i18n';
-	import { packageSize } from '$lib/format';
-	import BarcodeScanner from '$lib/components/BarcodeScanner.svelte';
+	import { keepValues } from '#lib/forms.js';
+	import { translator } from '#lib/i18n/index.js';
+	import { packageSize } from '#lib/format.js';
+	import BarcodeScanner from '#lib/components/BarcodeScanner.svelte';
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
 

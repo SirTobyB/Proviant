@@ -1,9 +1,9 @@
 <script lang="ts">
-	import ArticleForm from '$lib/components/ArticleForm.svelte';
-	import StockEntryRow from '$lib/components/StockEntryRow.svelte';
-	import { sumQuantity } from '$lib/stock';
+	import ArticleForm from '#lib/components/ArticleForm.svelte';
+	import StockEntryRow from '#lib/components/StockEntryRow.svelte';
+	import { sumQuantity } from '#lib/stock.js';
 	import { enhance } from '$app/forms';
-	import { translator } from '$lib/i18n';
+	import { translator } from '#lib/i18n/index.js';
 
 	let { data, form } = $props();
 

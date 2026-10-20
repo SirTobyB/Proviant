@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { imageFile } from '$lib/server/images';
+import { imageFile } from '#lib/server/images.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { RequestHandler } from './$types';
