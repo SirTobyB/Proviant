@@ -1,7 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
 import * as env from '$app/env/private';
-import { SESSION_COOKIE, validateSession } from '#lib/server/auth.js';
+import { SESSION_COOKIE, setSessionCookie, validateSession } from '#lib/server/auth.js';
 import { LOCALE_COOKIE } from '#lib/server/locale.js';
 import { resolveLocale } from '#lib/i18n/index.js';
 import { logError, logInfo } from '#lib/server/log.js';
@@ -30,7 +30,10 @@ process.on('unhandledRejection', (reason) => {
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const token = event.cookies.get(SESSION_COOKIE);
-	event.locals.user = validateSession(token);
+	const session = validateSession(token);
+	event.locals.user = session?.user ?? null;
+	// Gleitende Sitzung: verlängerten Ablauf auch ins Cookie übernehmen
+	if (token && session?.renewedUntil) setSessionCookie(event.cookies, token, session.renewedUntil);
 
 	// Sprache serverseitig bestimmen, nicht im Browser: sonst rendert die Seite
 	// erst in der Standardsprache und springt danach um (sichtbares Flackern

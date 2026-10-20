@@ -8,6 +8,14 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- **Die Anmeldung gleitet jetzt mit.** Bisher endete jede Sitzung genau
+  30 Tage nach dem Login, auch wenn die App täglich benutzt wurde — auf dem
+  Smartphone stand man dann unvermittelt wieder vor der Anmeldeseite. Jetzt
+  verlängert jede Nutzung die Sitzung wieder auf 30 Tage; neu anmelden muss
+  sich nur, wer die App 30 Tage lang nicht geöffnet hat.
+
 ## [2.4.0] - 2026-10-20
 
 Neuer Unterbau (SvelteKit 3) und zwei kleine Korrekturen. Zu tun ist beim

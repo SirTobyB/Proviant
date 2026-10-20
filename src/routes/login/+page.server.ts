@@ -4,12 +4,11 @@ import {
 	createSession,
 	loginLockMs,
 	registerFailedLogin,
-	SESSION_COOKIE
+	setSessionCookie
 } from '#lib/server/auth.js';
 import { remainingLockMinutes } from '#lib/loginThrottle.js';
 import { translator } from '#lib/i18n/index.js';
 import { logWarn } from '#lib/server/log.js';
-import { dev } from '$app/env';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
@@ -46,13 +45,7 @@ export const actions: Actions = {
 
 		clearFailedLogins(username);
 		const { token, expiresAt } = createSession(user.username);
-		cookies.set(SESSION_COOKIE, token, {
-			path: '/',
-			httpOnly: true,
-			sameSite: 'lax',
-			secure: !dev,
-			expires: expiresAt
-		});
+		setSessionCookie(cookies, token, expiresAt);
 
 		redirect(303, '/');
 	}

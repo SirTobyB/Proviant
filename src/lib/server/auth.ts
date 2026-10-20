@@ -6,10 +6,12 @@ import { db } from '#lib/server/db/index.js';
 import { loginAttempts, sessions, users } from '#lib/server/db/schema.js';
 import { hashPassword, verifyPassword } from '#lib/server/password.js';
 import { RESET_AFTER_MS, isStale, lockoutMs, remainingLockMs } from '#lib/loginThrottle.js';
+import { renewedExpiry, sessionExpiry } from '#lib/sessionExpiry.js';
+import { dev } from '$app/env';
+import type { Cookies } from '@sveltejs/kit';
 import { and, eq, gt, lt } from 'drizzle-orm';
 
 export const SESSION_COOKIE = 'lmk_session';
-const SESSION_DAYS = 30;
 
 export type SessionUser = {
 	username: string;
@@ -89,26 +91,53 @@ export function clearFailedLogins(username: string): void {
 /** Legt eine Session an und gibt das Cookie-Token samt Ablauf zurück. */
 export function createSession(username: string): { token: string; expiresAt: Date } {
 	const token = randomBytes(32).toString('hex');
-	const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
+	const expiresAt = sessionExpiry(new Date());
 	db.insert(sessions).values({ token, username, expiresAt }).run();
 	return { token, expiresAt };
 }
 
-/** Löst ein Session-Token zum aktuellen User auf (null wenn ungültig/abgelaufen). */
-export function validateSession(token: string | undefined): SessionUser | null {
+/** Setzt das Sitzungs-Cookie — Laufzeit wie die Session in der Datenbank. */
+export function setSessionCookie(cookies: Cookies, token: string, expiresAt: Date): void {
+	cookies.set(SESSION_COOKIE, token, {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax',
+		secure: !dev,
+		expires: expiresAt
+	});
+}
+
+/**
+ * Löst ein Session-Token zum aktuellen User auf (null wenn ungültig/abgelaufen).
+ *
+ * Die Sitzung gleitet: Ist sie fällig (siehe `renewedExpiry`), wird ihr Ablauf
+ * hier vorgeschoben und als `renewedUntil` gemeldet — das Cookie muss der
+ * Aufrufer mitziehen, sonst verfiele es im Browser trotz gültiger Session.
+ */
+export function validateSession(
+	token: string | undefined,
+	now = new Date()
+): { user: SessionUser; renewedUntil: Date | null } | null {
 	if (!token) return null;
 	const row = db
 		.select({
 			username: users.username,
 			email: users.email,
 			role: users.role,
-			locale: users.locale
+			locale: users.locale,
+			expiresAt: sessions.expiresAt
 		})
 		.from(sessions)
 		.innerJoin(users, eq(users.username, sessions.username))
-		.where(and(eq(sessions.token, token), gt(sessions.expiresAt, new Date())))
+		.where(and(eq(sessions.token, token), gt(sessions.expiresAt, now)))
 		.get();
-	return row ?? null;
+	if (!row) return null;
+	const { expiresAt, ...user } = row;
+	const renewedUntil = renewedExpiry(expiresAt, now);
+	if (renewedUntil) {
+		db.update(sessions).set({ expiresAt: renewedUntil }).where(eq(sessions.token, token)).run();
+	}
+	return { user, renewedUntil };
 }
 
 export function deleteSession(token: string | undefined): void {

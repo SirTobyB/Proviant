@@ -48,7 +48,8 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   Sprache mit. Die eigenen Daten — Artikel, Tags, Rezepte und Lagerortnamen —
   bleiben genau so, wie sie eingegeben wurden.
 - **Anmeldung & Benutzer** — Login mit Benutzername + Passwort (scrypt-Hashing),
-  Rollen Benutzer/Admin. Nur Admins verwalten Benutzer; jeder kann sein eigenes
+  Rollen Benutzer/Admin. Wer die App benutzt, bleibt angemeldet; erst nach
+  30 Tagen ohne Nutzung ist eine neue Anmeldung fällig. Nur Admins verwalten Benutzer; jeder kann sein eigenes
   Passwort ändern. Alle Datensätze tragen anlegenden/ändernden Benutzer und
   Zeitstempel (Audit). Die Konto-Seite zeigt unter **Version** die
   App-Version, Build-Zeitpunkt und Commit der laufenden Instanz — praktisch,

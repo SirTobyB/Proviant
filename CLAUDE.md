@@ -232,6 +232,11 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   **nur auf Zeit**, eine dauerhafte Sperre wäre ein Weg, Familienmitglieder
   auszusperren. Die Prüfung gehört **vor** den Passwortvergleich, sonst ist sie
   nur eine Meldung und keine Bremse.
+  Die Sitzung **gleitet** (30 Tage ab letzter Nutzung, Regel in
+  `lib/sessionExpiry.ts` mit Test): `validateSession` schiebt den Ablauf höchstens
+  einmal pro Tag vor — nicht bei jedem Request, sonst schriebe jedes Bild in
+  die DB —, und `hooks.server.ts` muss das Cookie dann mitziehen, sonst verfiele
+  es im Browser trotz gültiger Session. Cookies nur über `setSessionCookie`.
 - **Bilder:** Der Dateityp wird in `server/images.ts` **aus dem Inhalt**
   bestimmt (Signatur der ersten Bytes), nie aus `File.type` oder einem
   `Content-Type` — beides kommt vom Absender und ist frei wählbar, das `accept`

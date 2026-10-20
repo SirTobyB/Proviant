@@ -47,7 +47,8 @@ a troubleshooting FAQ.
   numbers, prices and singular/plural follow the language too. Your own data —
   items, tags, recipes and location names — stays exactly as you typed it.
 - **Login & users** — username + password (scrypt hashing), roles user/admin.
-  Only admins manage users; everyone can change their own password. Every
+  You stay signed in as long as you use the app; only after 30 days without
+  use do you have to sign in again. Only admins manage users; everyone can change their own password. Every
   record carries the creating/modifying user and timestamps (audit). The
   account page shows the app version, build time and commit of the running
   instance under **Version** — handy for checking whether the server really

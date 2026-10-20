@@ -1,10 +1,9 @@
 import { db } from '#lib/server/db/index.js';
 import { users } from '#lib/server/db/schema.js';
 import { hashPassword, verifyPassword } from '#lib/server/password.js';
-import { deleteUserSessions, SESSION_COOKIE, createSession } from '#lib/server/auth.js';
+import { deleteUserSessions, createSession, setSessionCookie } from '#lib/server/auth.js';
 import { clearLocaleCookie, LOCALE_COOKIE, setLocaleCookie } from '#lib/server/locale.js';
 import { isLocale, languageChoice, localeFromHeader, translator, DEFAULT_LOCALE } from '#lib/i18n/index.js';
-import { dev } from '$app/env';
 import * as env from '$app/env/private';
 import { eq } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
@@ -95,13 +94,7 @@ export const actions: Actions = {
 		// Andere Sessions beenden, aktuelle Sitzung erneuern
 		deleteUserSessions(username);
 		const { token, expiresAt } = createSession(username);
-		cookies.set(SESSION_COOKIE, token, {
-			path: '/',
-			httpOnly: true,
-			sameSite: 'lax',
-			secure: !dev,
-			expires: expiresAt
-		});
+		setSessionCookie(cookies, token, expiresAt);
 		return { changed: true };
 	}
 };

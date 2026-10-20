@@ -49,7 +49,8 @@ Picnic-functies en een FAQ voor probleemoplossing.
   mee. Je eigen gegevens — artikelen, tags, recepten en locatienamen — blijven
   precies zoals je ze hebt ingevoerd.
 - **Inloggen & gebruikers** — gebruikersnaam + wachtwoord (scrypt-hashing),
-  rollen gebruiker/beheerder. Alleen beheerders beheren gebruikers; iedereen
+  rollen gebruiker/beheerder. Zolang je de app gebruikt, blijf je ingelogd;
+  pas na 30 dagen zonder gebruik moet je opnieuw inloggen. Alleen beheerders beheren gebruikers; iedereen
   kan zijn eigen wachtwoord wijzigen. Elk record bevat de aanmakende/wijzigende
   gebruiker en tijdstempels (audit). De accountpagina toont onder **Versie** de
   app-versie, het buildmoment en de commit van de draaiende instantie — handig
