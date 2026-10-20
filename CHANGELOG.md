@@ -8,6 +8,12 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.4.1] - 2026-10-20
+
+Die Anmeldung bleibt bestehen, solange die App benutzt wird. Zu tun ist beim
+Aktualisieren nichts: `docker compose pull` genügt; bereits angemeldete Geräte
+werden beim nächsten Aufruf automatisch umgestellt.
+
 ### Geändert
 
 - **Die Anmeldung gleitet jetzt mit.** Bisher endete jede Sitzung genau
@@ -282,7 +288,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.4.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.4.1...HEAD
+[2.4.1]: https://github.com/SirTobyB/Proviant/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/SirTobyB/Proviant/compare/v2.3.1...v2.4.0
 [2.3.1]: https://github.com/SirTobyB/Proviant/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/SirTobyB/Proviant/compare/v2.2.0...v2.3.0
