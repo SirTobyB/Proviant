@@ -86,11 +86,11 @@
 					name="locale"
 					class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 				>
-					<option value="" selected={!data.account?.locale}>
+					<option value="" selected={data.languageChoice === ''}>
 						{t('account.language.system', { name: LOCALE_LABEL[data.systemLocale] })}
 					</option>
 					{#each LOCALES as locale (locale)}
-						<option value={locale} selected={data.account?.locale === locale}>{LOCALE_LABEL[locale]}</option>
+						<option value={locale} selected={data.languageChoice === locale}>{LOCALE_LABEL[locale]}</option>
 					{/each}
 				</select>
 			</div>

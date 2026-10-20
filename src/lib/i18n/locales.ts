@@ -82,3 +82,18 @@ export function resolveLocale(quellen: {
 	if (isLocale(quellen.cookie)) return quellen.cookie;
 	return localeFromHeader(quellen.acceptLanguage) ?? DEFAULT_LOCALE;
 }
+
+/**
+ * Vorauswahl der Sprachauswahl auf der Konto-Seite: die Wahl, die gerade
+ * tatsächlich gilt — `''` steht für „Systemsprache folgen".
+ *
+ * Hat der Benutzer selbst nichts gewählt, kann trotzdem das Cookie die
+ * Sprache bestimmen (etwa nach der Wahl eines anderen Kontos auf demselben
+ * Gerät). Stünde die Auswahl dann auf „Systemsprache", zeigte sie eine
+ * andere Sprache an als die, in der die Seite erscheint.
+ */
+export function languageChoice(quellen: { user?: string | null; cookie?: string | null }): Locale | '' {
+	if (isLocale(quellen.user)) return quellen.user;
+	if (isLocale(quellen.cookie)) return quellen.cookie;
+	return '';
+}

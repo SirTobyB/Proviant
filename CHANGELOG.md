@@ -19,6 +19,17 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   mit „403" abgelehnt worden, auch die Anmeldung.
 - Wer selbst baut, braucht jetzt **Node.js ≥ 22.17**.
 
+### Behoben
+
+- **Bildvorschau nach der EAN-Suche** im Artikelformular blieb leer: Der
+  Browser blockte das Bild von Open Food Facts. Übernommen wurde es beim
+  Speichern trotzdem, nur sah man vorher nichts.
+- **Sprachauswahl auf der Konto-Seite** zeigt jetzt die Sprache, die
+  tatsächlich gilt. Hatte das Konto selbst keine Sprache gewählt, galt aber
+  eine gemerkte Wahl auf dem Gerät (etwa von einem anderen Familienmitglied),
+  stand die Auswahl auf „Systemsprache" — obwohl die Seite in einer anderen
+  Sprache erschien.
+
 ## [2.3.1] - 2026-09-02
 
 Eine kleine Nachbesserung zu 2.3.0. Zu tun ist beim Aktualisieren nichts:

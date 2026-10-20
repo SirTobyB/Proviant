@@ -2,8 +2,8 @@ import { db } from '#lib/server/db/index.js';
 import { users } from '#lib/server/db/schema.js';
 import { hashPassword, verifyPassword } from '#lib/server/password.js';
 import { deleteUserSessions, SESSION_COOKIE, createSession } from '#lib/server/auth.js';
-import { clearLocaleCookie, setLocaleCookie } from '#lib/server/locale.js';
-import { isLocale, localeFromHeader, translator, DEFAULT_LOCALE } from '#lib/i18n/index.js';
+import { clearLocaleCookie, LOCALE_COOKIE, setLocaleCookie } from '#lib/server/locale.js';
+import { isLocale, languageChoice, localeFromHeader, translator, DEFAULT_LOCALE } from '#lib/i18n/index.js';
 import { dev } from '$app/env';
 import * as env from '$app/env/private';
 import { eq } from 'drizzle-orm';
@@ -17,13 +17,15 @@ import type { Actions, PageServerLoad } from './$types';
 
 const releases = parseChangelog(changelogText);
 
-export const load: PageServerLoad = ({ locals, request }) => {
+export const load: PageServerLoad = ({ locals, request, cookies }) => {
 	// locals.user ist durch den Hook garantiert vorhanden
 	return {
 		account: locals.user,
 		// Für die Auswahl „Systemsprache (…)": zeigt, worauf der Browser
 		// derzeit hinausliefe — sonst wählt man blind
 		systemLocale: localeFromHeader(request.headers.get('accept-language')) ?? DEFAULT_LOCALE,
+		// Vorauswahl: was gerade gilt, auch wenn es aus dem Cookie stammt
+		languageChoice: languageChoice({ user: locals.user?.locale, cookie: cookies.get(LOCALE_COOKIE) }),
 		// Herkunft des laufenden Images (im Dockerfile aus Build-Args gesetzt) —
 		// zum Abgleich, ob der Server wirklich den erwarteten Stand fährt
 		version: { app: appVersion, commit: env.GIT_SHA || null, buildTime: env.BUILD_TIME || null },

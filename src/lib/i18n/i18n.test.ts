@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LOCALE, isLocale, localeFromHeader, resolveLocale } from './locales';
+import { DEFAULT_LOCALE, isLocale, languageChoice, localeFromHeader, resolveLocale } from './locales';
 import { translator } from './translate';
 import { en } from './messages/en';
 import { de } from './messages/de';
@@ -54,6 +54,21 @@ describe('resolveLocale', () => {
 
 	it('ignoriert Unsinn in Benutzerwahl und Cookie', () => {
 		expect(resolveLocale({ user: 'klingon', cookie: 'xx', acceptLanguage: 'de' })).toBe('de');
+	});
+});
+
+describe('languageChoice', () => {
+	it('zeigt die eigene Wahl des Benutzers', () => {
+		expect(languageChoice({ user: 'de', cookie: 'nl' })).toBe('de');
+	});
+
+	it('zeigt die Sprache aus dem Cookie, wenn sie gerade gilt', () => {
+		expect(languageChoice({ user: null, cookie: 'nl' })).toBe('nl');
+	});
+
+	it('steht ohne Wahl und Cookie auf „Systemsprache"', () => {
+		expect(languageChoice({ user: null, cookie: null })).toBe('');
+		expect(languageChoice({ user: 'klingon', cookie: 'xx' })).toBe('');
 	});
 });
 

@@ -8,6 +8,7 @@ export {
 	LOCALES,
 	LOCALE_LABEL,
 	isLocale,
+	languageChoice,
 	localeFromHeader,
 	resolveLocale,
 	type Locale

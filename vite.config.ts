@@ -30,8 +30,10 @@ export default defineConfig({
 					// Attribute lassen sich nicht mit einem Nonce versehen.
 					'style-src-attr': ['unsafe-inline'],
 					// blob: für die Bildvorschau vor dem Absenden (createObjectURL),
-					// data: für die in Tailwinds Formular-Styles eingebetteten Icons.
-					'img-src': ['self', 'blob:', 'data:'],
+					// data: für die in Tailwinds Formular-Styles eingebetteten Icons,
+					// Open Food Facts für die Bildvorschau nach der EAN-Suche im
+					// Artikelformular (gespeichert wird das Bild serverseitig).
+					'img-src': ['self', 'blob:', 'data:', 'https://images.openfoodfacts.org'],
 					'connect-src': ['self'],
 					'font-src': ['self'],
 					'object-src': ['none'],
