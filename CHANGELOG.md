@@ -8,6 +8,12 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.4.0] - 2026-10-20
+
+Neuer Unterbau (SvelteKit 3) und zwei kleine Korrekturen. Zu tun ist beim
+Aktualisieren nichts: `docker compose pull` genügt, `ORIGIN` bleibt, wie es
+ist.
+
 ### Geändert
 
 - **Unterbau auf SvelteKit 3 und adapter-node 6 gehoben.** Für Anwender
@@ -268,7 +274,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.3.1...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/SirTobyB/Proviant/compare/v2.3.1...v2.4.0
 [2.3.1]: https://github.com/SirTobyB/Proviant/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/SirTobyB/Proviant/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/SirTobyB/Proviant/compare/v2.1.0...v2.2.0
