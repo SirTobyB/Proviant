@@ -8,6 +8,17 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- **Picnic-Anbindung auf picnic-api 5.3 umgestellt.** Die neue Fassung der
+  Bibliothek liest Warenkorb, Lieferungen und Produktpreise selbst aus; die
+  App nutzt diese Daten jetzt direkt, statt Picnics Rohdaten nachzubauen.
+  Für Anwender ändert sich nichts: Bestellvorschläge, Lieferungs-Check,
+  Preise und Rabatte, Produktsuche und Rezeptimport funktionieren wie
+  bisher (live gegen Picnic geprüft). Die Produktsuche bleibt dabei auch
+  dann verfügbar, wenn Picnic die Suchseite in einem anderen Format
+  ausliefert, als die Bibliothek erwartet.
+
 ## [2.4.1] - 2026-10-20
 
 Die Anmeldung bleibt bestehen, solange die App benutzt wird. Zu tun ist beim

@@ -1,113 +1,52 @@
 import { describe, expect, it } from 'vitest';
-import { crossedOutPrice, lineSavings } from './price';
+import { catalogPrice, lineSavings } from './price';
 
-/**
- * Ausschnitt einer rohen Produktseite, wie Picnic sie für ein **rabattiertes**
- * Produkt liefert (live geprüft an s1021273, Mazola Rapsöl: 3,49 € statt 4,49 €).
- * Verschachtelt, weil der Parser die Knoten in beliebiger Tiefe finden muss.
- */
-const angebotsSeite = {
-	layout: {
-		body: {
-			children: [
-				{
-					pml: {
-						component: {
-							children: [
-								{ type: 'PRICE', price: 349, color: '#b40117', fontSize: 28 },
-								{ type: 'PRICE', price: 449, color: '#c9c6c3', fontSize: 22, isCrossed: true }
-							]
-						}
-					}
-				}
-			]
-		}
-	}
-};
-
-/**
- * Ohne Rabatt gibt es **gar keine** PRICE-Komponente (live geprüft an
- * s1020625) — der Preis steckt dann in einer markdown.props-Struktur.
- */
-const normalSeite = {
-	layout: { body: { children: [{ markdown: { props: { __ep1: { v0: { price: 249 } } } } }] } }
-};
-
-/**
- * Produktseite mit Hauptcontainer: Das Produkt selbst ist **nicht** im
- * Angebot, weiter unten wirbt aber eine Nachbarkachel („Ähnliche Produkte")
- * mit einem Streichpreis. Genau so sieht die Falle aus, die `promotion` aus
- * `extractProductDetails` über die ganze Seite hinweg auslöst.
- */
-const seiteMitFremdemAngebot = {
-	layout: {
-		body: {
-			children: [
-				{
-					id: 'product-details-page-root-main-container',
-					children: [{ markdown: { props: { __ep1: { v0: { price: 249 } } } } }]
-				},
-				{
-					id: 'alternatives-container',
-					children: [
-						{ type: 'PRICE', price: 349 },
-						{ type: 'PRICE', price: 449, isCrossed: true }
-					]
-				}
-			]
-		}
-	}
-};
-
-describe('crossedOutPrice', () => {
-	it('findet den durchgestrichenen Originalpreis', () => {
-		expect(crossedOutPrice(angebotsSeite, 349)).toBe(449);
+describe('catalogPrice', () => {
+	// Live geprüft an s1021273 (Mazola Rapsöl: 3,49 € statt 4,49 €)
+	it('deutet originalPrice als Streichpreis und displayPrice als Aktionspreis', () => {
+		expect(
+			catalogPrice({ displayPrice: 349, originalPrice: 449, promotion: { label: '1 € Rabatt' } })
+		).toEqual({ regularPrice: 449, promoPrice: 349, promoLabel: '1 € Rabatt' });
 	});
 
-	// `extractProductDetails` liest den Preis nur aus dem Hauptcontainer, die
-	// `promotion` dagegen von der ganzen Seite. Suchten wir den Streichpreis
-	// ebenfalls seitenweit, erfände ein Nachbarangebot einen Rabatt mit
-	// überhöhtem „Normalpreis" — der teuerste denkbare Fehler hier.
-	it('ignoriert einen Streichpreis außerhalb des Hauptcontainers', () => {
-		expect(crossedOutPrice(seiteMitFremdemAngebot, 249)).toBeNull();
+	it('meldet ohne Streichpreis keinen Rabatt', () => {
+		expect(catalogPrice({ displayPrice: 249, originalPrice: null, promotion: null })).toEqual({
+			regularPrice: 249,
+			promoPrice: null,
+			promoLabel: null
+		});
 	});
 
-	it('findet den Streichpreis innerhalb des Hauptcontainers weiterhin', () => {
-		const seite = {
-			layout: {
-				body: {
-					children: [
-						{
-							id: 'product-details-page-root-main-container',
-							children: [
-								{ type: 'PRICE', price: 349 },
-								{ type: 'PRICE', price: 449, isCrossed: true }
-							]
-						},
-						{ id: 'alternatives-container', children: [{ type: 'PRICE', price: 999, isCrossed: true }] }
-					]
-				}
-			}
-		};
-		expect(crossedOutPrice(seite, 349)).toBe(449);
-	});
-
-	it('meldet ohne PRICE-Komponente keinen Rabatt', () => {
-		expect(crossedOutPrice(normalSeite, 249)).toBeNull();
+	// Aktion gemeldet, aber kein Streichpreis: lieber kein Rabatt als ein erfundener
+	it('behält bei fehlendem Streichpreis nur die Beschriftung', () => {
+		expect(catalogPrice({ displayPrice: 249, originalPrice: null, promotion: { label: '2 für 1' } })).toEqual({
+			regularPrice: 249,
+			promoPrice: null,
+			promoLabel: '2 für 1'
+		});
 	});
 
 	// Ein Streichpreis unter dem aktuellen Preis wäre ein negativer Rabatt —
 	// eher Datenfehler als Angebot, deshalb lieber nichts melden.
 	it('ignoriert einen Streichpreis, der nicht höher liegt', () => {
-		const seite = { c: [{ type: 'PRICE', price: 349, isCrossed: true }] };
-		expect(crossedOutPrice(seite, 349)).toBeNull();
-		expect(crossedOutPrice({ c: [{ type: 'PRICE', price: 300, isCrossed: true }] }, 349)).toBeNull();
+		expect(catalogPrice({ displayPrice: 349, originalPrice: 349 })?.promoPrice).toBeNull();
+		expect(catalogPrice({ displayPrice: 349, originalPrice: 300 })).toEqual({
+			regularPrice: 349,
+			promoPrice: null,
+			promoLabel: null
+		});
 	});
 
 	it('verkraftet Datenmüll, ohne zu werfen', () => {
-		expect(crossedOutPrice(null, 100)).toBeNull();
-		expect(crossedOutPrice('nope', 100)).toBeNull();
-		expect(crossedOutPrice({ type: 'PRICE', price: 'viel', isCrossed: true }, 100)).toBeNull();
+		expect(catalogPrice(null)).toBeNull();
+		expect(catalogPrice({})).toBeNull();
+		expect(catalogPrice({ displayPrice: 0 })).toBeNull();
+		expect(catalogPrice({ displayPrice: 'viel' })).toBeNull();
+		expect(catalogPrice({ displayPrice: 100, originalPrice: 'viel', promotion: { label: 7 } })).toEqual({
+			regularPrice: 100,
+			promoPrice: null,
+			promoLabel: null
+		});
 	});
 });
 
