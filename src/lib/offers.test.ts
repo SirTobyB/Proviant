@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { offerFromLabel } from './offers';
+import { discountPercent, offerFromLabel, sortOffers } from './offers';
 
 // Beschriftungen wie live auf Picnics Angebotsseite (Picnic DE, November 2026);
 // der Normalpreis ist dort der angezeigte Preis der Kachel.
@@ -42,5 +42,41 @@ describe('offerFromLabel', () => {
 	it('meldet kein Angebot, wenn es keinen Vorteil bringt', () => {
 		expect(offerFromLabel('2 für 9.99€', 249)).toBeNull();
 		expect(offerFromLabel('2 für 4.99€', 0)).toBeNull();
+	});
+});
+
+describe('discountPercent', () => {
+	it('rundet den Rabatt auf ganze Prozent ab', () => {
+		expect(discountPercent({ regularPrice: 349, promoPrice: 222 })).toBe(36);
+		expect(discountPercent({ regularPrice: 300, promoPrice: 150 })).toBe(50);
+	});
+
+	it('meldet ohne Aktion 0', () => {
+		expect(discountPercent({ regularPrice: 300, promoPrice: null })).toBe(0);
+		expect(discountPercent({ regularPrice: 0, promoPrice: 0 })).toBe(0);
+	});
+});
+
+describe('sortOffers', () => {
+	const offer = (name: string, stock: number, minStock: number, regularPrice: number, promoPrice: number) => ({
+		name,
+		stock,
+		minStock,
+		price: { regularPrice, promoPrice }
+	});
+
+	it('stellt Artikel unter Mindestbestand nach vorn, dann den höheren Rabatt', () => {
+		const sorted = sortOffers([
+			offer('Voll, 50 %', 5, 2, 200, 100),
+			offer('Knapp, 10 %', 0, 2, 200, 180),
+			offer('Voll, 20 %', 5, 2, 200, 160),
+			offer('Knapp, 30 %', 1, 2, 200, 140)
+		]);
+		expect(sorted.map((o) => o.name)).toEqual(['Knapp, 30 %', 'Knapp, 10 %', 'Voll, 50 %', 'Voll, 20 %']);
+	});
+
+	it('zählt ohne Mindestbestand nichts als knapp', () => {
+		const sorted = sortOffers([offer('Ohne Mindestbestand', 0, 0, 200, 100), offer('Knapp', 0, 1, 200, 190)]);
+		expect(sorted[0].name).toBe('Knapp');
 	});
 });

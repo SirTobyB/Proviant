@@ -3,6 +3,7 @@
 	import { keepValues } from '#lib/forms.js';
 	import { enhance } from '$app/forms';
 	import { translator } from '#lib/i18n/index.js';
+	import OfferBadge from '#lib/components/OfferBadge.svelte';
 
 	let { data } = $props();
 
@@ -64,6 +65,12 @@
 	>
 		{t('items.filter.noLocation')}
 	</a>
+	<a
+		href={articleFilterHref(data.filters, { offers: !data.filters.offers })}
+		class="rounded-full px-3 py-1 text-sm font-medium {data.filters.offers ? 'bg-green-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'}"
+	>
+		{t('items.filter.offers')}
+	</a>
 </div>
 
 {#if data.allTags.length > 0}
@@ -109,6 +116,11 @@
 							{/if}
 							{#if article.picnicId}
 								<span class="rounded bg-red-50 px-1.5 py-0.5 text-red-600">Picnic</span>
+								{#await data.offers then offers}
+									{#if offers[article.picnicId]}
+										<OfferBadge price={offers[article.picnicId]} locale={data.locale} compact />
+									{/if}
+								{/await}
 							{/if}
 							{#each article.tags.slice(0, 3) as tag (tag)}
 								<span class="rounded-full bg-green-50 px-1.5 py-0.5 text-green-700">{tag}</span>

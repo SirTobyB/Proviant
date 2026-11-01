@@ -63,3 +63,26 @@ export function offerFromLabel(label: string, regularPrice: number): MultiBuyOff
 
 	return null;
 }
+
+/** Rabatt in ganzen Prozent (abgerundet); 0 ohne Aktion. */
+export function discountPercent(price: { regularPrice: number; promoPrice: number | null }): number {
+	if (price.promoPrice == null || price.regularPrice <= 0) return 0;
+	return Math.max(0, Math.floor((1 - price.promoPrice / price.regularPrice) * 100));
+}
+
+/**
+ * Reihenfolge der Angebotsseite: Was ohnehin unter dem Mindestbestand liegt,
+ * kommt zuerst — dort bringt ein Angebot am meisten —, danach der höhere
+ * Rabatt. Ohne Mindestbestand gilt ein Artikel nie als knapp.
+ */
+export function sortOffers<
+	T extends { name: string; stock: number; minStock: number; price: { regularPrice: number; promoPrice: number | null } }
+>(offers: T[]): T[] {
+	const short = (o: T) => (o.minStock > 0 && o.stock < o.minStock ? 0 : 1);
+	return [...offers].sort(
+		(a, b) =>
+			short(a) - short(b) ||
+			discountPercent(b.price) - discountPercent(a.price) ||
+			a.name.localeCompare(b.name, 'de')
+	);
+}

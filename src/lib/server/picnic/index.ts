@@ -13,7 +13,7 @@ import type { Translate } from '#lib/i18n/index.js';
 import { logWarn } from '#lib/server/log.js';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
 import { PicnicAdapterError, picnicErrorKind, type PicnicErrorKind } from './errors';
-import { catalogPrice, type CatalogPrice, type ProductPrice } from './price';
+import { catalogPrice, tilePrice, type CatalogPrice, type ProductPrice } from './price';
 import { extractSearchHits, type ProductSearchHit } from './search';
 import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
 import { mapPicnicRecipe } from './recipeMapping';
@@ -525,4 +525,62 @@ export async function getProductPrices(ids: string[]): Promise<Map<string, Catal
 	const workers = Array.from({ length: Math.min(PRICE_CONCURRENCY, ids.length) }, () => worker());
 	await Promise.all(workers);
 	return prices;
+}
+
+/** Höchstens so viele Aktionsgruppen werden gleichzeitig geladen. */
+const PROMO_GROUP_CONCURRENCY = 6;
+
+/**
+ * Alle Produkte mit Angebot: die Kacheln der Angebotsseite plus die Produkte
+ * jeder Aktionsgruppe („Alpro Milchersatz“, „De Cecco Pasta“ …), die die Seite
+ * nur als Sammelkachel zeigt. Gedeutet über `tilePrice`; übrig bleiben nur
+ * Produkte mit echtem Rabatt. Eine Beschriftung mit Zahl, die sich nicht
+ * deuten ließ, wird geloggt — dann kennt Picnic eine neue Angebotsform.
+ */
+export async function getPromotedProducts(): Promise<Map<string, CatalogPrice>> {
+	await ensureLoggedIn();
+	const { sections } = await getClient().catalog.getPromotions();
+
+	const tiles = sections.flatMap((section) => section.products);
+	const groupIds = [...new Set(sections.flatMap((section) => section.groups.map((group) => group.id)))];
+	for (let i = 0; i < groupIds.length; i += PROMO_GROUP_CONCURRENCY) {
+		const groups = await Promise.all(
+			groupIds.slice(i, i + PROMO_GROUP_CONCURRENCY).map((id) =>
+				getClient()
+					.catalog.getPromotionGroup(id)
+					.catch(() => null)
+			)
+		);
+		for (const group of groups) if (group) tiles.push(...group.products);
+	}
+
+	const result = new Map<string, CatalogPrice>();
+	const unknownLabels = new Set<string>();
+	for (const tile of tiles) {
+		if (result.has(tile.id)) continue;
+		const price = tilePrice(tile);
+		if (price?.promoPrice != null) {
+			result.set(tile.id, price);
+		} else if (tile.originalPrice == null) {
+			for (const label of tile.labels) {
+				const text = label.text;
+				if (text && /\d/.test(text) && !/^jetzt\s/i.test(text)) unknownLabels.add(text);
+			}
+		}
+	}
+	// „jetzt 1.49€“ ohne Streichpreis ist bekannt und bewusst nicht deutbar
+	if (unknownLabels.size > 0) logWarn('Unbekannte Picnic-Angebotsbeschriftungen', { labels: [...unknownLabels].join(' | ') });
+	return result;
+}
+
+/**
+ * Ein Produkt für die Artikelseite: Preis (mit Angebot), Grundpreis und das
+ * vollständige Produkt — für die Produktdaten (Marke, Bio, Nährwerte).
+ */
+export async function getProductDetails(
+	id: string
+): Promise<{ price: CatalogPrice | null; unitPrice: string | null; product: unknown }> {
+	await ensureLoggedIn();
+	const product = await getClient().catalog.getProduct(id);
+	return { price: catalogPrice(product), unitPrice: product.unitPrice ?? null, product };
 }

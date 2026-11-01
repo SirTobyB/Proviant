@@ -120,6 +120,9 @@
 		<p class="mt-1 text-sm text-gray-500">{t('order.subtitle')}</p>
 	</div>
 	<form method="POST" action="?/refreshPrices" use:enhance={keepValues} class="flex flex-wrap gap-2">
+		<a href="/angebote" class="rounded border border-gray-300 px-3 py-1.5 text-sm text-green-700 hover:bg-gray-50">
+			🏷 {t('order.toOffers')}
+		</a>
 		<button type="submit" class="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50">
 			{t('order.refreshPrices')}
 		</button>

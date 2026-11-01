@@ -4,6 +4,7 @@
 	import { sumQuantity } from '#lib/stock.js';
 	import { enhance } from '$app/forms';
 	import { translator } from '#lib/i18n/index.js';
+	import OfferBadge from '#lib/components/OfferBadge.svelte';
 
 	let { data, form } = $props();
 
@@ -20,6 +21,14 @@
 <svelte:head><title>{data.article.name} – Proviant</title></svelte:head>
 
 <h1 class="text-2xl font-bold">{t('item.edit.title')}</h1>
+
+{#await data.picnic then picnic}
+	{#if picnic?.price?.promoPrice != null}
+		<div class="mt-3 max-w-xl">
+			<OfferBadge price={picnic.price} locale={data.locale} />
+		</div>
+	{/if}
+{/await}
 
 {#key data.article.id}
 	<ArticleForm

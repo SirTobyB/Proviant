@@ -14,6 +14,16 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   die keinen (oder einen stillgelegten) Standard-Lagerort haben, und lässt
   sich mit Suche und Tag kombinieren. Der Filter steht in der Adresse und
   kann als Lesezeichen gespeichert werden.
+- **Picnic-Angebote für eure Artikel.** Die neue Seite „Angebote“ (in der
+  Seitenleiste und über die Bestellseite erreichbar) listet alle eigenen
+  Artikel, die bei Picnic gerade im Angebot sind – zuerst die, die ohnehin
+  unter dem Mindestbestand liegen. Die Artikelliste zeigt ein
+  Angebots-Abzeichen und hat einen Filter „Im Angebot“, die Artikelseite
+  nennt das Angebot im Detail. Alle Angebote erscheinen einheitlich als
+  Stückpreis mit Streichpreis: Mehrfachangebote wie „2 für 4.99€“, „2+1
+  gratis“ oder „-50% auf 2. Artikel“ werden umgerechnet („je 2,50 € statt
+  3,29 € · bei 2 Stück“). Bestellvorschläge und Rezeptkosten rechnen solche
+  Angebote nur für volle Bündel an.
 - **Artikelimport aus den Picnic-Favoriten.** Neben den letzten Lieferungen
   bietet der Import jetzt die Favoriten aus der Picnic-App an – alle
   Produkte, die der Haushalt dort kauft, nach Gang gruppiert. Bereits

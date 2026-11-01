@@ -4,14 +4,17 @@ import { articles, stockEntries, storageLocations } from '#lib/server/db/schema.
 import { allArticleTagNames, tagsForArticles } from '#lib/server/articleTags.js';
 import { activeLocations, bookingLocationId } from '#lib/server/locations.js';
 import { bookIn, bookOut } from '#lib/server/stock.js';
+import { currentOffers } from '#lib/server/offers.js';
+import type { CatalogPrice } from '#lib/server/picnic/index.js';
 import { eq, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ url }) => {
+export const load: PageServerLoad = async ({ url }) => {
 	const query = url.searchParams.get('q')?.trim() ?? '';
 	const tagFilter = url.searchParams.get('tag')?.trim() ?? '';
 	const noLocation = url.searchParams.get('ohneLagerort') === '1';
+	const offersOnly = url.searchParams.get('angebot') === '1';
 
 	const rows = db
 		.select({
@@ -50,12 +53,21 @@ export const load: PageServerLoad = ({ url }) => {
 			(!noLocation || r.defaultLocationId == null || !activeIds.has(r.defaultLocationId))
 	);
 
+	// Angebote kommen von Picnic (bei leerem Zwischenspeicher ein paar Sekunden):
+	// nur abwarten, wenn danach gefiltert wird — sonst nachstreamen, damit die
+	// Liste sofort steht und die Abzeichen nachrücken
+	const offers = currentOffers().then((map) => Object.fromEntries(map) as Record<string, CatalogPrice>);
+	const shown = offersOnly
+		? await offers.then((byId) => filtered.filter((r) => r.picnicId && byId[r.picnicId]))
+		: filtered;
+
 	return {
-		articles: filtered,
+		articles: shown,
 		query,
 		tagFilter,
-		filters: { query, tag: tagFilter, noLocation, offers: false },
-		allTags: allArticleTagNames()
+		filters: { query, tag: tagFilter, noLocation, offers: offersOnly },
+		allTags: allArticleTagNames(),
+		offers
 	};
 };
 
