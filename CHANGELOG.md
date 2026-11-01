@@ -8,6 +8,15 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- **Laufzeit auf Node.js 26 angehoben.** Das Image baut jetzt auf
+  `node:26-alpine` statt auf Node 22, das nur noch Sicherheitsfixes bekommt
+  und im April 2027 ausläuft; Node 26 ist LTS und wird bis April 2029
+  unterstützt. Für den Betrieb per Docker ändert sich nichts. Wer lokal
+  entwickelt, braucht jetzt Node.js 26 — `npm ci` bricht mit älteren
+  Versionen ab.
+
 ## [2.4.1] - 2026-10-20
 
 Die Anmeldung bleibt bestehen, solange die App benutzt wird. Zu tun ist beim

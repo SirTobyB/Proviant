@@ -172,7 +172,7 @@ geluid onderdrukken.
 
 ## Ontwikkeling
 
-Vereist **Node.js ≥ 22.17** (SvelteKit 3).
+Vereist **Node.js ≥ 26**.
 
 ```sh
 cp .env.example .env      # waarden aanpassen (zie hieronder)

@@ -24,7 +24,12 @@ npm test              # Vitest (reine Logik-Module), npm run test:watch zum Mitl
 npm run db:generate   # Migration aus dem Schema erzeugen (nach Schema-Änderung)
 ```
 
-Voraussetzung: **Node.js ≥ 22.17** (SvelteKit 3). Verifikation vor dem Commit:
+Voraussetzung: **Node.js ≥ 26** (aktuelle LTS). Die Version steht an drei Stellen,
+die nur gemeinsam angehoben werden: `Dockerfile` (beide Stages), `ci.yml` und
+`engines` in der `package.json` — wegen `engine-strict` in der `.npmrc` bricht
+`npm ci` mit einer älteren Node-Version ab. Beim Anheben prüfen, ob
+`better-sqlite3` vorkompilierte Binaries (`node-v<ABI>-linuxmusl-*`) für die
+neue Version mitbringt, sonst kompiliert der Docker-Build. Verifikation vor dem Commit:
 `npm run check` + `npm test` + `npm run build`; für UI-Änderungen den
 Dev-Server starten und im Browser prüfen — Anmeldung mit
 `ADMIN_USERNAME`/`ADMIN_PASSWORD` aus der `.env` (der Benutzername wird

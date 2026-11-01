@@ -1,7 +1,7 @@
 # ---- Build-Stage ----
 # python3/make/g++ werden nur gebraucht, falls better-sqlite3 kein
 # vorkompiliertes Binary für Alpine (musl) findet und selbst kompiliert.
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN npm run build \
  && npm prune --omit=dev
 
 # ---- Runtime-Stage ----
-FROM node:22-alpine
+FROM node:26-alpine
 
 # Verknüpft das GHCR-Package mit dem GitHub-Repository
 LABEL org.opencontainers.image.source="https://github.com/SirTobyB/Proviant"
