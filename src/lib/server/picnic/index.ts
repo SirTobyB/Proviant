@@ -9,7 +9,10 @@ import PicnicClient from 'picnic-api';
 import * as env from '$app/env/private';
 import fs from 'node:fs';
 import path from 'node:path';
+import type { Translate } from '#lib/i18n/index.js';
+import { logWarn } from '#lib/server/log.js';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
+import { PicnicAdapterError, picnicErrorKind, type PicnicErrorKind } from './errors';
 import { catalogPrice, type ProductPrice } from './price';
 import { extractSearchHits, type ProductSearchHit } from './search';
 import {
@@ -19,7 +22,9 @@ import {
 	type PicnicRecipeTile
 } from './recipeImport';
 
+export { picnicErrorKind };
 export type {
+	PicnicErrorKind,
 	DeliveryChecklistItem,
 	ParsedPicnicRecipe,
 	PicnicRecipeTile,
@@ -31,6 +36,16 @@ type Client = InstanceType<typeof PicnicClient>;
 
 /** Eine Warenkorb-Position: Picnic-Produkt-ID und Anzahl Gebinde. */
 export type CartItem = { productId: string; quantity: number };
+
+/**
+ * Verständliche Meldung zu einem Picnic-Fehler für die Oberfläche; der
+ * Rohfehler landet im Log. `context` sagt dort, wobei es passiert ist.
+ */
+export function describePicnicError(err: unknown, t: Translate, context: string): string {
+	const kind = picnicErrorKind(err);
+	logWarn(`Picnic-Fehler: ${context}`, { art: kind, fehler: err instanceof Error ? err.message : String(err) });
+	return t(`picnic.error.${kind}`);
+}
 
 /** Auth-Key überlebt Neustarts in DATA_DIR (Docker-Volume) */
 function authKeyFile(): string {
@@ -81,11 +96,11 @@ export function getConnectionState(): ConnectionState {
 export async function ensureLoggedIn(): Promise<void> {
 	if (isLoggedIn()) return;
 	if (!hasCredentials()) {
-		throw new Error('Keine Picnic-Zugangsdaten konfiguriert (PICNIC_USERNAME/PICNIC_PASSWORD)');
+		throw new PicnicAdapterError('notConfigured');
 	}
 	const { needs2FA } = await login();
 	if (needs2FA) {
-		throw new Error('Picnic verlangt eine 2FA-Bestätigung — bitte zuerst den SMS-Code eingeben');
+		throw new PicnicAdapterError('needs2FA');
 	}
 }
 
@@ -95,7 +110,7 @@ export async function ensureLoggedIn(): Promise<void> {
  */
 export async function login(): Promise<{ needs2FA: boolean }> {
 	if (!hasCredentials()) {
-		throw new Error('PICNIC_USERNAME und PICNIC_PASSWORD sind nicht gesetzt');
+		throw new PicnicAdapterError('notConfigured');
 	}
 	const result = await getClient().auth.login(env.PICNIC_USERNAME!, env.PICNIC_PASSWORD!);
 	persistAuthKey();
@@ -346,7 +361,10 @@ export async function listOrderedProducts(deliveryLimit = 10): Promise<OrderedPr
 async function getFusionPage(pageId: string): Promise<unknown> {
 	const page = await getClient().app.getPage(pageId);
 	if (page.format !== 'fusion') {
-		throw new Error(`Picnic liefert die Seite ${pageId.split('?')[0]} in einem unbekannten Format (${page.format})`);
+		throw new PicnicAdapterError(
+			'unexpectedFormat',
+			`Picnic liefert die Seite ${pageId.split('?')[0]} in einem unbekannten Format (${page.format})`
+		);
 	}
 	return page.page;
 }

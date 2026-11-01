@@ -5,7 +5,7 @@ import { getRecipeIngredients, loadRecipeOr404 } from '#lib/server/recipeData.js
 import { tagsForRecipe } from '#lib/server/tags.js';
 import { auditEdit } from '#lib/server/audit.js';
 import { deleteImage } from '#lib/server/images.js';
-import { addToCart, getConnectionState } from '#lib/server/picnic/index.js';
+import { addToCart, describePicnicError, getConnectionState } from '#lib/server/picnic/index.js';
 import { defaultPortions } from '#lib/server/settings.js';
 import { pricesFor, refreshPrices } from '#lib/server/prices.js';
 import { coverageMulti, scaleAmount } from '#lib/units.js';
@@ -81,7 +81,7 @@ export const actions: Actions = {
 		try {
 			await addToCart(items);
 		} catch (err) {
-			return fail(502, { message: err instanceof Error ? err.message : 'Warenkorb-Übergabe fehlgeschlagen' });
+			return fail(502, { message: describePicnicError(err, t, 'Warenkorb befüllen') });
 		}
 
 		// Bestellt = gekocht: Zeitpunkt für die 2-Wochen-Sperre merken

@@ -2,7 +2,7 @@ import { db } from '#lib/server/db/index.js';
 import { translator } from '#lib/i18n/index.js';
 import { articles } from '#lib/server/db/schema.js';
 import { activeLocation, activeLocations } from '#lib/server/locations.js';
-import { getConnectionState, getDeliveryChecklist } from '#lib/server/picnic/index.js';
+import { describePicnicError, getConnectionState, getDeliveryChecklist } from '#lib/server/picnic/index.js';
 import { importArticleFromPicnic } from '#lib/server/articleImport.js';
 import {
 	assignedLocationId,
@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	try {
 		checklist = await getDeliveryChecklist(params.id);
 	} catch (err) {
-		throw error(502, err instanceof Error ? err.message : t('msg.notConnected'));
+		throw error(502, describePicnicError(err, t, 'Lieferungsdetails'));
 	}
 
 	// Picnic-Produkte mit unserem Artikelstamm verknüpfen (über picnicId)

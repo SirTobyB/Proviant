@@ -18,6 +18,12 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   bisher (live gegen Picnic geprüft). Die Produktsuche bleibt dabei auch
   dann verfügbar, wenn Picnic die Suchseite in einem anderen Format
   ausliefert, als die Bibliothek erwartet.
+- **Verständliche Meldungen bei Picnic-Fehlern.** Statt technischer
+  Fehlertexte nennt die App jetzt den Grund in der eingestellten Sprache –
+  etwa eine abgelaufene Anmeldung, falsche Zugangsdaten oder einen
+  ungültigen SMS-Code, ein nicht mehr erhältliches Produkt oder dass Picnic
+  gerade nicht erreichbar ist bzw. Anfragen bremst. Die Details landen
+  weiterhin im Server-Log.
 
 ## [2.4.1] - 2026-10-20
 

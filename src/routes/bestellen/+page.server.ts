@@ -9,7 +9,8 @@ import {
 	login,
 	request2FACode,
 	verify2FA,
-	addToCart
+	addToCart,
+	describePicnicError
 } from '#lib/server/picnic/index.js';
 import { pricesFor, refreshPrices } from '#lib/server/prices.js';
 import { fail } from '@sveltejs/kit';
@@ -110,21 +111,21 @@ export const actions: Actions = {
 	},
 
 	// Picnic-Verbindung herstellen (env-Credentials)
-	connect: async () => {
+	connect: async ({ locals }) => {
 		try {
 			const { needs2FA } = await login();
 			return { connection: getConnectionState(), needs2FA };
 		} catch (err) {
-			return fail(400, { message: err instanceof Error ? err.message : 'Login fehlgeschlagen' });
+			return fail(400, { message: describePicnicError(err, translator(locals.locale), 'Anmeldung') });
 		}
 	},
 
-	send2FACode: async () => {
+	send2FACode: async ({ locals }) => {
 		try {
 			await request2FACode();
 			return { codeSent: true };
 		} catch (err) {
-			return fail(400, { message: err instanceof Error ? err.message : 'SMS-Versand fehlgeschlagen' });
+			return fail(400, { message: describePicnicError(err, translator(locals.locale), 'SMS-Code anfordern') });
 		}
 	},
 
@@ -136,7 +137,7 @@ export const actions: Actions = {
 			await verify2FA(code);
 			return { connection: getConnectionState() };
 		} catch (err) {
-			return fail(400, { message: err instanceof Error ? err.message : '2FA-Prüfung fehlgeschlagen' });
+			return fail(400, { message: describePicnicError(err, t, '2FA-Prüfung') });
 		}
 	},
 
@@ -173,7 +174,7 @@ export const actions: Actions = {
 		try {
 			await addToCart(items);
 		} catch (err) {
-			return fail(502, { message: err instanceof Error ? err.message : 'Warenkorb-Übergabe fehlgeschlagen' });
+			return fail(502, { message: describePicnicError(err, t, 'Warenkorb befüllen') });
 		}
 
 		// Gegenprobe: Picnic quittiert auch Produkt-IDs, die es nicht (mehr) kennt,

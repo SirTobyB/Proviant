@@ -3,6 +3,7 @@ import { translator } from '#lib/i18n/index.js';
 import { articles } from '#lib/server/db/schema.js';
 import { activeLocations } from '#lib/server/locations.js';
 import {
+	describePicnicError,
 	getConnectionState,
 	listOrderedProducts,
 	type OrderedProduct
@@ -13,7 +14,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 const DELIVERY_LIMIT = 10;
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const connection = getConnectionState();
 	const locations = activeLocations();
 	if (connection !== 'connected') {
@@ -37,7 +38,7 @@ export const load: PageServerLoad = async () => {
 			products: [] as OrderedProduct[],
 			linkedIds,
 			locations,
-			error: err instanceof Error ? err.message : 'Bestellte Produkte konnten nicht geladen werden'
+			error: describePicnicError(err, translator(locals.locale), 'Bestellte Produkte laden')
 		};
 	}
 };

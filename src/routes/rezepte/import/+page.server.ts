@@ -2,6 +2,7 @@ import { db } from '#lib/server/db/index.js';
 import { translator } from '#lib/i18n/index.js';
 import { recipes, recipeIngredients } from '#lib/server/db/schema.js';
 import {
+	describePicnicError,
 	getConnectionState,
 	getPicnicRecipeDetail,
 	listPicnicRecipes,
@@ -13,7 +14,7 @@ import { sql } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const connection = getConnectionState();
 	if (connection !== 'connected') {
 		return {
@@ -40,7 +41,7 @@ export const load: PageServerLoad = async () => {
 			connection,
 			tiles: [],
 			existingNames,
-			error: err instanceof Error ? err.message : 'Picnic-Rezepte konnten nicht geladen werden'
+			error: describePicnicError(err, translator(locals.locale), 'Rezeptliste laden')
 		};
 	}
 };
@@ -58,7 +59,7 @@ export const actions: Actions = {
 			parsed = await getPicnicRecipeDetail(id, name);
 		} catch (err) {
 			return fail(502, {
-				message: err instanceof Error ? err.message : 'Rezept konnte nicht geladen werden'
+				message: describePicnicError(err, t, 'Rezept laden')
 			});
 		}
 		if (parsed.ingredients.length === 0 && parsed.steps.length === 0) {
