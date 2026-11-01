@@ -53,6 +53,8 @@ export function picnicErrorKind(err: unknown): PicnicErrorKind {
 		const code = field(err, 'code');
 		if (code === 'AUTH_INVALID_CRED') return 'invalidCredentials';
 		if (code === 'OTP_NOT_VALID') return 'invalidCode';
+		// Live: unbekannte Produkt-ID beim Hinzufügen („selling unit … was not found“)
+		if (status === 404 && code === 'NOT_FOUND') return 'productNotFound';
 		if (status === 401) return 'sessionExpired';
 		if (status === 429 || (status === 403 && code == null)) return 'rateLimited';
 		if (status >= 500) return 'unreachable';

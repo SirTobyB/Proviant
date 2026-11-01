@@ -38,6 +38,11 @@ describe('picnicErrorKind', () => {
 		);
 	});
 
+	// Live (picnic-api 5.3): unbekannte Produkt-ID beim Hinzufügen zum Warenkorb
+	it('wertet 404 NOT_FOUND als nicht mehr erhältliches Produkt', () => {
+		expect(picnicErrorKind(apiError(404, 'NOT_FOUND'))).toBe('productNotFound');
+	});
+
 	it('übernimmt die Art aus eigenen Adapterfehlern', () => {
 		expect(picnicErrorKind(new PicnicAdapterError('needs2FA'))).toBe('needs2FA');
 		expect(picnicErrorKind(new PicnicAdapterError('notConfigured'))).toBe('notConfigured');

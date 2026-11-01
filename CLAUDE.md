@@ -261,9 +261,11 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     `ARTICLE_DELIVERY_FAILURES`) — deshalb `deliveryIssues()` in
     `picnic/checklist.ts` **defensiv** halten: im Zweifel nichts melden, sonst
     verschwindet eine bestellte Position fälschlich aus der Prüfung.
-  - **Unbekannte Produkt-IDs quittiert Picnic ohne Fehler** — es landet
-    nichts im Warenkorb, die App meldete trotzdem Erfolg. Nach dem Befüllen
-    deshalb gegenprüfen (siehe `notInCart` auf der Bestellseite). Dasselbe
+  - **Unbekannte Produkt-IDs quittierte Picnic früher ohne Fehler** — es
+    landete nichts im Warenkorb, die App meldete trotzdem Erfolg. Seit
+    picnic-api 5.3 kommt dafür ein 404 `NOT_FOUND` (live geprüft, wird zu
+    `productNotFound`); die Gegenprobe nach jedem Befüllen bleibt trotzdem
+    (siehe `notInCart` und `server/cartActions.ts`). Dasselbe
     Produkt existiert im Katalog teils unter mehreren IDs.
   - **Preise und Rabatte folgen zwei gegenläufigen Regeln** (live geprüft):
     An der **ORDER_LINE** ist `line.price` der **Streichpreis** und der
