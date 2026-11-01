@@ -14,6 +14,9 @@
 		picnicId?: string | null;
 		minStock?: number | null;
 		defaultLocationId?: number | null;
+		brand?: string | null;
+		origin?: string | null;
+		organic?: boolean | null;
 		imagePath?: string | null;
 		tags?: string[];
 	};
@@ -59,6 +62,9 @@
 	let picnicId = $state(initial.picnicId ?? '');
 	let minStock = $state(initial.minStock ?? 0);
 	let defaultLocationId = $state(initial.defaultLocationId != null ? String(initial.defaultLocationId) : '');
+	let brand = $state(initial.brand ?? '');
+	let origin = $state(initial.origin ?? '');
+	let organic = $state(initial.organic ?? false);
 	let articleTagList = $state<string[]>([...(initial.tags ?? [])]);
 
 	// Bildquelle aus Lookups (Server lädt beim Speichern herunter)
@@ -296,6 +302,39 @@
 			</select>
 		</div>
 	</div>
+
+	<!-- Marke, Herkunft, Bio (beim Picnic-Import vorbelegt) -->
+	<div class="grid grid-cols-2 gap-3">
+		<div>
+			<label for="brand" class="block text-sm font-medium text-gray-700">{t('form.brand')}</label>
+			<input
+				id="brand"
+				name="brand"
+				type="text"
+				bind:value={brand}
+				class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
+			/>
+		</div>
+		<div>
+			<label for="origin" class="block text-sm font-medium text-gray-700">{t('form.origin')}</label>
+			<input
+				id="origin"
+				name="origin"
+				type="text"
+				bind:value={origin}
+				class="mt-1 block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
+			/>
+		</div>
+	</div>
+	<label class="flex items-center gap-2 text-sm font-medium text-gray-700">
+		<input
+			type="checkbox"
+			name="organic"
+			bind:checked={organic}
+			class="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-600"
+		/>
+		{t('form.organic')}
+	</label>
 
 	<!-- Tags -->
 	<div>

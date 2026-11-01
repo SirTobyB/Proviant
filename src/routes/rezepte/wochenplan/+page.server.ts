@@ -5,8 +5,8 @@ import { getRecipe, getRecipeIngredients, isRecipeCookable } from '#lib/server/r
 import { allTagNames } from '#lib/server/tags.js';
 import { auditEdit, auditNew } from '#lib/server/audit.js';
 import { planWeekShoppingList } from '#lib/server/mealPlan.js';
-import { effectivePrice, oldestFetchedAt, pricesFor, savingsOf } from '#lib/server/prices.js';
-import { addToCart, getConnectionState } from '#lib/server/picnic/index.js';
+import { oldestFetchedAt, pricesFor, savingsFor, totalFor } from '#lib/server/prices.js';
+import { addToCart, describePicnicError, getConnectionState } from '#lib/server/picnic/index.js';
 import { eligible, pickWeighted, type SuggestCandidate } from '#lib/suggest.js';
 import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
@@ -101,8 +101,8 @@ export const load: PageServerLoad = () => {
 				acc.complete = false;
 				return acc;
 			}
-			acc.total += effectivePrice(price) * item.quantity;
-			acc.savings += savingsOf(price) * item.quantity;
+			acc.total += totalFor(price, item.quantity);
+			acc.savings += savingsFor(price, item.quantity);
 			return acc;
 		},
 		{ total: 0, savings: 0, complete: true }
@@ -290,7 +290,7 @@ export const actions: Actions = {
 		try {
 			await addToCart(items);
 		} catch (err) {
-			return fail(502, { message: err instanceof Error ? err.message : 'Warenkorb-Übergabe fehlgeschlagen' });
+			return fail(502, { message: describePicnicError(err, t, 'Warenkorb befüllen') });
 		}
 
 		const recipeIds = [...new Set(entries.map((e) => e.recipeId))];

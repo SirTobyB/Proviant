@@ -8,6 +8,60 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Filter „Ohne Standard-Lagerort“ in der Artikelliste.** Zeigt nur Artikel,
+  die keinen (oder einen stillgelegten) Standard-Lagerort haben, und lässt
+  sich mit Suche und Tag kombinieren. Der Filter steht in der Adresse und
+  kann als Lesezeichen gespeichert werden.
+- **Der Picnic-Warenkorb in Proviant.** Die Bestellseite zeigt den
+  Warenkorb als aufklappbaren Block über den Vorschlägen: Inhalt mit Menge
+  und Preis, Mengen mit − und + ändern, Produkte entfernen. Nicht lieferbare
+  Produkte stehen rot markiert oben, mit Picnics Ersatzvorschlägen und einem
+  „Tauschen“-Knopf. Dazu kommen das gewählte Lieferfenster, der Abstand zum
+  Mindestbestellwert und – wenn eine Lieferung unterwegs ist – die
+  voraussichtliche Ankunftszeit. Bestellt wird weiterhin nur in der
+  Picnic-App, auch das Lieferfenster wird dort geändert. Jede Änderung prüft
+  Proviant anschließend nach und meldet, wenn Picnic sie nicht übernommen
+  hat.
+- **Artikel direkt in den Picnic-Warenkorb legen.** Artikelseite,
+  Angebotsseite und (ab Tablet-Breite) die Artikelliste haben einen Knopf
+  „🛒 +1“ und zeigen, wie viele Packungen schon im Warenkorb liegen.
+- **Hinweis auf Mengenrabatte.** Fehlt genau eine Packung bis zu einer
+  günstigeren Preisstaffel („ab 3 Stück je 2,19 €“) oder einem
+  Mehrfachangebot, schlägt die Bestellseite das mit den Mehrkosten vor („1
+  mehr kostet nur 1,99 € extra“); ein Klick erhöht die Menge. Von selbst
+  ändert sich keine Menge. Summen rechnen Staffelpreise jetzt mit ein.
+- **Picnic-Angebote für eure Artikel.** Die neue Seite „Angebote“ (in der
+  Seitenleiste und über die Bestellseite erreichbar) listet alle eigenen
+  Artikel, die bei Picnic gerade im Angebot sind – zuerst die, die ohnehin
+  unter dem Mindestbestand liegen. Die Artikelliste zeigt ein
+  Angebots-Abzeichen und hat einen Filter „Im Angebot“, die Artikelseite
+  nennt das Angebot im Detail. Alle Angebote erscheinen einheitlich als
+  Stückpreis mit Streichpreis: Mehrfachangebote wie „2 für 4.99€“, „2+1
+  gratis“ oder „-50% auf 2. Artikel“ werden umgerechnet („je 2,50 € statt
+  3,29 € · bei 2 Stück“). Bestellvorschläge und Rezeptkosten rechnen solche
+  Angebote nur für volle Bündel an.
+- **Mehr Produktdaten am Artikel: Marke, Herkunft, Bio und Nährwerte.**
+  Beim Import aus Picnic werden sie gleich mit übernommen; bei schon
+  verknüpften Artikeln holt sie der Knopf „Daten von Picnic aktualisieren“
+  auf der Artikelseite nach. Marke, Herkunft und Bio lassen sich im
+  Artikelformular auch von Hand pflegen. Die Artikelseite zeigt dazu den
+  aktuellen Grundpreis (z.B. „€2.99/kg“) und die Nährwerttabelle. Die
+  Herkunft gibt Picnic nur bei frischer Ware an (Obst, Gemüse); bei
+  verarbeiteten Produkten bleibt das Feld leer.
+- **Artikelimport aus den Picnic-Favoriten.** Neben den letzten Lieferungen
+  bietet der Import jetzt die Favoriten aus der Picnic-App an – alle
+  Produkte, die der Haushalt dort kauft, nach Gang gruppiert. Bereits
+  angelegte Artikel sind markiert und werden nicht doppelt importiert.
+- **Rezeptimport: gespeicherte und eigene Picnic-Rezepte.** Die Importseite
+  hat drei Reiter – Picnics Rezeptseite, die in der Picnic-App gespeicherten
+  und die selbst angelegten Rezepte.
+- **Rezeptimport verknüpft Zutaten mit vorhandenen Artikeln.** Wird das
+  Picnic-Produkt einer Zutat schon als Artikel geführt, ist es gleich als
+  Zutat hinterlegt und zählt bei „Kochbar?“ mit. Vorratszutaten wie Salz, Öl
+  oder Zwiebeln nennt der Zubereitungstext unter „Aus dem Vorrat“.
+
 ### Geändert
 
 - **Picnic-Anbindung auf picnic-api 5.3 umgestellt.** Die neue Fassung der
@@ -18,6 +72,22 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   bisher (live gegen Picnic geprüft). Die Produktsuche bleibt dabei auch
   dann verfügbar, wenn Picnic die Suchseite in einem anderen Format
   ausliefert, als die Bibliothek erwartet.
+- **Verständliche Meldungen bei Picnic-Fehlern.** Statt technischer
+  Fehlertexte nennt die App jetzt den Grund in der eingestellten Sprache –
+  etwa eine abgelaufene Anmeldung, falsche Zugangsdaten oder einen
+  ungültigen SMS-Code, ein nicht mehr erhältliches Produkt oder dass Picnic
+  gerade nicht erreichbar ist bzw. Anfragen bremst. Die Details landen
+  weiterhin im Server-Log.
+
+### Behoben
+
+- **Rezeptimport mit falschen Mengen.** Picnic zeigt ein Rezept mit der
+  Portionenzahl, die zuletzt in der App gewählt war. Der Import las die
+  Portionen aber aus dem Zubereitungstext – so wurden etwa Mengen für 3
+  Portionen als 4-Portionen-Rezept gespeichert. Jetzt stammen Portionen und
+  Mengen aus Picnics strukturierten Rezeptdaten und passen immer zu den
+  Standardportionen des Rezepts. Bereits importierte Rezepte bleiben
+  unverändert.
 
 ## [2.4.1] - 2026-10-20
 

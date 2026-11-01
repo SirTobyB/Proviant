@@ -2,7 +2,10 @@
 	import { keepValues } from '#lib/forms.js';
 	import { translator } from '#lib/i18n/index.js';
 	import { packageSize, formatPrice } from '#lib/format.js';
-	import { effectivePrice, savingsOf } from '#lib/prices.js';
+	import { savingsFor, totalFor } from '#lib/prices.js';
+	import { priceTiers, tierHint } from '#lib/priceTiers.js';
+	import CartPanel from '#lib/components/CartPanel.svelte';
+	import { BCP47 } from '#lib/i18n/index.js';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -88,8 +91,8 @@
 			(acc, s) => {
 				const quantity = orderedQuantity(s);
 				if (!s.price || quantity === 0) return acc;
-				acc.total += effectivePrice(s.price) * quantity;
-				acc.savings += savingsOf(s.price) * quantity;
+				acc.total += totalFor(s.price, quantity);
+				acc.savings += savingsFor(s.price, quantity);
 				return acc;
 			},
 			{ total: 0, savings: 0 }
@@ -107,6 +110,23 @@
 	 * auslöst — sonst nennt der Knopf eine Zahl, die die Summe daneben
 	 * widerlegt.
 	 */
+	/** Mengenrabatt-Hinweis zur aktuell eingetragenen Menge (nur Hinweis, ändert nichts). */
+	function suggestionHint(item: (typeof data.suggestions)[number]) {
+		if (!item.price) return null;
+		const unit =
+			item.price.promoMinQuantity && item.price.promoMinQuantity > 1
+				? item.price.regularPrice
+				: (item.price.promoPrice ?? item.price.regularPrice);
+		return tierHint(lineQuantity(item.id), unit, priceTiers(item.price));
+	}
+
+	function etaText(eta: { eta: string | null; windowStart: string | null; windowEnd: string | null }): string {
+		const time = (iso: string) =>
+			new Date(iso).toLocaleTimeString(BCP47[data.locale], { hour: '2-digit', minute: '2-digit' });
+		if (eta.eta) return time(eta.eta);
+		return eta.windowStart && eta.windowEnd ? `${time(eta.windowStart)}–${time(eta.windowEnd)}` : '';
+	}
+
 	const orderableCount = $derived(
 		data.suggestions.filter((s) => orderedQuantity(s) > 0).length
 	);
@@ -120,6 +140,9 @@
 		<p class="mt-1 text-sm text-gray-500">{t('order.subtitle')}</p>
 	</div>
 	<form method="POST" action="?/refreshPrices" use:enhance={keepValues} class="flex flex-wrap gap-2">
+		<a href="/angebote" class="rounded border border-gray-300 px-3 py-1.5 text-sm text-green-700 hover:bg-gray-50">
+			🏷 {t('order.toOffers')}
+		</a>
 		<button type="submit" class="rounded border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50">
 			{t('order.refreshPrices')}
 		</button>
@@ -204,6 +227,22 @@
 	</div>
 {/if}
 
+{#if data.eta}
+	<div class="mt-4 max-w-2xl rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">
+		🚚 {t('order.eta', { time: etaText(data.eta) })}
+	</div>
+{/if}
+
+{#if data.cart}
+	<CartPanel
+		cart={data.cart}
+		replacements={data.replacements}
+		articleIds={data.articleIds}
+		locale={data.locale}
+		message={form && 'cartMessage' in form ? (form.cartMessage ?? null) : null}
+	/>
+{/if}
+
 <!-- Vorschlagsliste -->
 {#if data.suggestions.length === 0}
 	<div class="mt-6 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
@@ -266,10 +305,10 @@
 							{#if item.price}
 								{@const lineUnits = lineQuantity(item.id)}
 								<span class="text-sm text-gray-700">
-									{formatPrice(effectivePrice(item.price) * lineUnits, data.locale)}
+									{formatPrice(totalFor(item.price, lineUnits), data.locale)}
 								</span>
-								{#if item.price.promoPrice !== null}
-									{@const savingAmount = formatPrice(savingsOf(item.price) * lineUnits, data.locale)}
+								{#if savingsFor(item.price, lineUnits) > 0}
+									{@const savingAmount = formatPrice(savingsFor(item.price, lineUnits), data.locale)}
 									<span
 										class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700"
 										title={t('order.saving', { amount: savingAmount })}
@@ -281,6 +320,17 @@
 								<span class="text-sm text-gray-400">{t('order.noPrice')}</span>
 							{/if}
 						</div>
+						{#if selected[item.id] && item.picnicId}
+							{@const hint = suggestionHint(item)}
+							{#if hint}
+								<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-green-800">
+									<span>{t('order.tierHint', { n: hint.fromQuantity, price: formatPrice(hint.unitPrice, data.locale), extra: formatPrice(hint.extraCost, data.locale) })}</span>
+									<button type="button" onclick={() => (quantities[item.id] = hint.fromQuantity)} class="rounded border border-green-600 px-2 py-0.5 font-medium text-green-700 hover:bg-green-50">
+										{t('order.tierRaise', { n: hint.fromQuantity })}
+									</button>
+								</div>
+							{/if}
+						{/if}
 					</div>
 					<input
 						type="number"

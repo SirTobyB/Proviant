@@ -2,15 +2,20 @@ import { db } from '#lib/server/db/index.js';
 import { translator } from '#lib/i18n/index.js';
 import { articles, stockEntries, storageLocations } from '#lib/server/db/schema.js';
 import { allArticleTagNames, tagsForArticles } from '#lib/server/articleTags.js';
-import { bookingLocationId } from '#lib/server/locations.js';
+import { activeLocations, bookingLocationId } from '#lib/server/locations.js';
 import { bookIn, bookOut } from '#lib/server/stock.js';
+import { currentOffers } from '#lib/server/offers.js';
+import { addToCartAction, cartQuantitiesForPage } from '#lib/server/cartButton.js';
+import type { CatalogPrice } from '#lib/server/picnic/index.js';
 import { eq, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ url }) => {
+export const load: PageServerLoad = async ({ url }) => {
 	const query = url.searchParams.get('q')?.trim() ?? '';
 	const tagFilter = url.searchParams.get('tag')?.trim() ?? '';
+	const noLocation = url.searchParams.get('ohneLagerort') === '1';
+	const offersOnly = url.searchParams.get('angebot') === '1';
 
 	const rows = db
 		.select({
@@ -40,9 +45,36 @@ export const load: PageServerLoad = ({ url }) => {
 	// sum(quantity) mit der Tag-Anzahl multiplizieren
 	const tagMap = tagsForArticles(rows.map((r) => r.id));
 	const tagged = rows.map((r) => ({ ...r, tags: tagMap.get(r.id) ?? [] }));
-	const filtered = tagFilter ? tagged.filter((r) => r.tags.includes(tagFilter)) : tagged;
+	// Ein stillgelegter Lagerort gilt als keiner: Für den Anwender ist er wie
+	// gelöscht, der Artikel hat also faktisch kein Zuhause mehr
+	const activeIds = new Set(activeLocations().map((location) => location.id));
+	const filtered = tagged.filter(
+		(r) =>
+			(!tagFilter || r.tags.includes(tagFilter)) &&
+			(!noLocation || r.defaultLocationId == null || !activeIds.has(r.defaultLocationId))
+	);
 
-	return { articles: filtered, query, tagFilter, allTags: allArticleTagNames() };
+	// Angebote kommen von Picnic (bei leerem Zwischenspeicher ein paar Sekunden):
+	// nur abwarten, wenn danach gefiltert wird — sonst nachstreamen, damit die
+	// Liste sofort steht und die Abzeichen nachrücken
+	const offersResult = currentOffers();
+	const offers = offersResult.then(({ offers }) => Object.fromEntries(offers) as Record<string, CatalogPrice>);
+	const offersUnavailable = offersOnly ? (await offersResult).unavailable : false;
+	const shown = offersOnly
+		? await offers.then((byId) => filtered.filter((r) => r.picnicId && byId[r.picnicId]))
+		: filtered;
+
+	return {
+		articles: shown,
+		query,
+		tagFilter,
+		filters: { query, tag: tagFilter, noLocation, offers: offersOnly },
+		offersUnavailable,
+		allTags: allArticleTagNames(),
+		offers,
+		// Nachgestreamt wie die Angebote: die Liste wartet nicht auf Picnic
+		cart: cartQuantitiesForPage()
+	};
 };
 
 function getArticle(formData: FormData) {
@@ -58,6 +90,8 @@ function parseQuantity(formData: FormData): number {
 }
 
 export const actions: Actions = {
+	addToCart: ({ request, locals }) => addToCartAction(request, locals.locale),
+
 	// Schnell einbuchen: in den Standard-Lagerort (oder ersten Lagerort), ohne MHD
 	bookIn: async ({ request, locals }) => {
 		const t = translator(locals.locale);

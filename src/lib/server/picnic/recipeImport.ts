@@ -12,8 +12,12 @@ export type PicnicRecipeTile = { id: string; name: string };
 export type ParsedPicnicIngredient = {
 	name: string;
 	amount: number | null;
-	/** Einheit wie geliefert (g, ml, Stk., TL, EL, Bund …) */
+	/** Einheit wie geliefert (g, ml, TL, EL, Pck. …), Stückangaben als „Stück“ */
 	unit: string | null;
+	/** Picnic-Produkt-ID der Zutat, `null` bei ausgelaufenen Produkten */
+	picnicId: string | null;
+	/** Vorratszutat (Salz, Öl, Zwiebeln …), die Picnic nicht vorauswählt */
+	pantry: boolean;
 };
 
 export type ParsedPicnicRecipe = {
@@ -27,7 +31,7 @@ export type ParsedPicnicRecipe = {
 };
 
 /** Entfernt PML-Farbcodes (#(#333333)) und Fett-Marker. */
-function cleanText(text: string): string {
+export function cleanText(text: string): string {
 	return text
 		.replace(/#\(#[0-9a-f]{6}\)/gi, '')
 		.replace(/\*\*/g, '')
@@ -91,78 +95,6 @@ export function extractRecipeTiles(page: unknown): PicnicRecipeTile[] {
 	const byId = new Map<string, PicnicRecipeTile>();
 	for (const tile of tiles) if (!byId.has(tile.id)) byId.set(tile.id, tile);
 	return [...byId.values()];
-}
-
-/** Zerlegt eine Zutatenzeile wie „**Pitas** 6 Stk." oder „**Feta** 113 g". */
-function parseIngredientLine(line: string): ParsedPicnicIngredient | null {
-	const match = line.match(/^\*\*(.+?)\*\*\s*(.*)$/);
-	if (!match) return null;
-	const name = cleanText(match[1]);
-	const rest = cleanText(match[2]);
-	if (!name) return null;
-	const qty = rest.match(/^([\d.,]+)\s*(.+)?$/);
-	if (!qty) return { name, amount: null, unit: rest || null };
-	const amount = parseFloat(qty[1].replace(',', '.'));
-	let unit = qty[2]?.trim() ?? null;
-	if (unit && /^stk\.?$|^stück$/i.test(unit)) unit = 'Stück';
-	return { name, amount: Number.isNaN(amount) ? null : amount, unit };
-}
-
-/** Parst die Detailseite eines Rezepts (Zutaten, Portionen, Schritte, Tipp). */
-export function parseRecipeDetail(page: unknown, recipeName?: string): ParsedPicnicRecipe {
-	const md = collectMarkdown(page);
-
-	// Beschreibung: der Text direkt nach dem ersten Auftreten des Rezeptnamens
-	let description: string | null = null;
-	if (recipeName) {
-		const nameIndex = md.findIndex((t) => cleanText(t) === cleanText(recipeName));
-		const candidate = nameIndex >= 0 ? cleanText(md[nameIndex + 1] ?? '') : '';
-		if (candidate.length > 20 && !candidate.includes('min')) description = candidate;
-	}
-
-	// Portionen: „3 Portionen"
-	let servings: number | null = null;
-	for (const text of md) {
-		const match = cleanText(text).match(/^(\d+)\s+Portionen?$/);
-		if (match) {
-			servings = Number(match[1]);
-			break;
-		}
-	}
-
-	// Zutatenblock: nach der Überschrift „Zutaten" bis „So wird's gemacht"
-	const ingredients: ParsedPicnicIngredient[] = [];
-	const extraLines: string[] = [];
-	const start = md.findIndex((t) => cleanText(t) === 'Zutaten');
-	if (start >= 0) {
-		for (let i = start + 1; i < md.length; i++) {
-			const raw = md[i];
-			const clean = cleanText(raw);
-			if (/^So wird/i.test(clean)) break;
-			if (/^(Eigene Zutaten|Du benötigst)/i.test(clean)) {
-				extraLines.push(clean);
-				continue;
-			}
-			const ingredient = parseIngredientLine(raw);
-			if (ingredient) ingredients.push(ingredient);
-		}
-	}
-
-	// Schritte: Paare „Schritt N" → Folgetext; danach optional „Tipp" → Folgetext
-	const steps: string[] = [];
-	let tip: string | null = null;
-	for (let i = 0; i < md.length; i++) {
-		const clean = cleanText(md[i]);
-		if (/^Schritt \d+$/.test(clean) && md[i + 1]) {
-			steps.push(cleanText(md[i + 1]));
-			i++;
-		} else if (clean === 'Tipp' && md[i + 1] && tip === null && steps.length > 0) {
-			tip = cleanText(md[i + 1]);
-			i++;
-		}
-	}
-
-	return { description, servings, ingredients, extraLines, steps, tip };
 }
 
 /** Baut aus dem geparsten Rezept den Zubereitungstext für unsere DB. */

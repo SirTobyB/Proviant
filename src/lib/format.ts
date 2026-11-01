@@ -55,3 +55,23 @@ export function tagFilterHref(
 	const queryString = params.toString();
 	return `${basePath}${queryString ? `?${queryString}` : ''}`;
 }
+
+/** Die Filter der Artikelliste, wie sie in der URL stehen. */
+export type ArticleFilters = { query: string; tag: string; noLocation: boolean; offers: boolean };
+
+/**
+ * Link auf die Artikelliste mit geänderten Filtern; alle übrigen bleiben
+ * erhalten, damit sich Suche, Tag und Schalter frei kombinieren lassen. Ein
+ * Klick auf den schon aktiven Tag schaltet ihn ab (wie `tagFilterHref`).
+ */
+export function articleFilterHref(current: ArticleFilters, change: Partial<ArticleFilters>): string {
+	const next = { ...current, ...change };
+	if (change.tag !== undefined && change.tag === current.tag) next.tag = '';
+	const params = new URLSearchParams();
+	if (next.query) params.set('q', next.query);
+	if (next.tag) params.set('tag', next.tag);
+	if (next.noLocation) params.set('ohneLagerort', '1');
+	if (next.offers) params.set('angebot', '1');
+	const queryString = params.toString();
+	return `/artikel${queryString ? `?${queryString}` : ''}`;
+}

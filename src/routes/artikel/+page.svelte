@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { packageSize, tagFilterHref } from '#lib/format.js';
+	import { articleFilterHref, packageSize } from '#lib/format.js';
 	import { keepValues } from '#lib/forms.js';
 	import { enhance } from '$app/forms';
 	import { translator } from '#lib/i18n/index.js';
+	import OfferBadge from '#lib/components/OfferBadge.svelte';
+	import CartButton from '#lib/components/CartButton.svelte';
 
-	let { data } = $props();
+	let { data, form } = $props();
 
 	const t = $derived(translator(data.locale));
 
@@ -17,8 +19,8 @@
 	}
 
 
-	const tagHref = (tag: string) =>
-		tagFilterHref('/artikel', tag, { query: data.query, activeTag: data.tagFilter });
+	const tagHref = (tag: string) => articleFilterHref(data.filters, { tag });
+	const anyFilter = $derived(Boolean(data.query || data.filters.tag || data.filters.noLocation || data.filters.offers));
 </script>
 
 <svelte:head><title>{t('items.title')} – Proviant</title></svelte:head>
@@ -53,7 +55,24 @@
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	/>
 	{#if data.tagFilter}<input type="hidden" name="tag" value={data.tagFilter} />{/if}
+	{#if data.filters.noLocation}<input type="hidden" name="ohneLagerort" value="1" />{/if}
+	{#if data.filters.offers}<input type="hidden" name="angebot" value="1" />{/if}
 </form>
+
+<div class="mt-3 flex max-w-2xl flex-wrap gap-1.5">
+	<a
+		href={articleFilterHref(data.filters, { noLocation: !data.filters.noLocation })}
+		class="rounded-full px-3 py-1 text-sm font-medium {data.filters.noLocation ? 'bg-green-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'}"
+	>
+		{t('items.filter.noLocation')}
+	</a>
+	<a
+		href={articleFilterHref(data.filters, { offers: !data.filters.offers })}
+		class="rounded-full px-3 py-1 text-sm font-medium {data.filters.offers ? 'bg-green-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'}"
+	>
+		{t('items.filter.offers')}
+	</a>
+</div>
 
 {#if data.allTags.length > 0}
 	<div class="mt-3 flex max-w-2xl flex-wrap gap-1.5">
@@ -68,9 +87,17 @@
 	</div>
 {/if}
 
+{#if data.offersUnavailable}
+	<div class="mt-4 max-w-2xl rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">{t('offers.unavailable')}</div>
+{/if}
+
+{#if form && 'cartMessage' in form && form.cartMessage}
+	<div class="mt-4 max-w-2xl rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{form.cartMessage}</div>
+{/if}
+
 {#if data.articles.length === 0}
 	<div class="mt-8 rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-		{data.query ? t('items.emptyFiltered') : t('items.empty')}
+		{anyFilter ? t('items.emptyFiltered') : t('items.empty')}
 	</div>
 {:else}
 	<ul class="mt-4 max-w-2xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
@@ -98,6 +125,11 @@
 							{/if}
 							{#if article.picnicId}
 								<span class="rounded bg-red-50 px-1.5 py-0.5 text-red-600">Picnic</span>
+								{#await data.offers then offers}
+									{#if offers[article.picnicId]}
+										<OfferBadge price={offers[article.picnicId]} locale={data.locale} compact />
+									{/if}
+								{/await}
 							{/if}
 							{#each article.tags.slice(0, 3) as tag (tag)}
 								<span class="rounded-full bg-green-50 px-1.5 py-0.5 text-green-700">{tag}</span>
@@ -105,6 +137,17 @@
 						</span>
 					</span>
 				</a>
+				<!-- Warenkorb-Knopf erst ab Tablet-Breite: auf 375 px kürzte er die Namen
+				     bis zur Unlesbarkeit; auf dem Handy liegt er auf der Artikelseite -->
+				{#if article.picnicId}
+					<div class="hidden sm:block">
+					{#await data.cart}
+						<CartButton articleId={article.id} inCart={null} {t} compact />
+					{:then cart}
+						<CartButton articleId={article.id} inCart={cart ? (cart[article.picnicId] ?? 0) : null} {t} compact />
+					{/await}
+					</div>
+				{/if}
 				<!-- Schnell-Bestandskorrektur: Menge (Default 1) wirkt auf − und + -->
 				<!-- reset: false — sonst verliert das versteckte Mengenfeld nach dem ersten Klick seinen Wert -->
 				<form method="POST" action="?/bookOut" use:enhance={keepValues}>

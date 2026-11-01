@@ -10,10 +10,10 @@
  * und springt bei kleinen Portionszahlen; das ist die ehrliche Zahl für
  * „was kostet mich das heute".
  */
-import { effectivePrice, savingsOf, type PriceParts } from '#lib/prices.js';
+import { savingsFor, totalFor, type PriceWithOffer } from '#lib/prices.js';
 import { coverageMulti, scaleAmount, type IngredientArticleStock } from '#lib/units.js';
 
-export type CostPrice = PriceParts;
+export type CostPrice = PriceWithOffer;
 
 export type CostArticle = IngredientArticleStock & { name: string };
 
@@ -47,8 +47,8 @@ function emptyAccumulator(): Accumulator {
 // Ein Vorzeichenfehler verbucht einen Rabatt als Aufschlag, und dieser Fehler
 // darf nur an einer einzigen Stelle möglich sein.
 function add(accumulator: Accumulator, price: CostPrice, packages: number): void {
-	accumulator.total += effectivePrice(price) * packages;
-	accumulator.savings += savingsOf(price) * packages;
+	accumulator.total += totalFor(price, packages);
+	accumulator.savings += savingsFor(price, packages);
 }
 
 function toBlock(accumulator: Accumulator, portions: number): CostBlock {

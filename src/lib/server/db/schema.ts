@@ -87,6 +87,14 @@ export const articles = sqliteTable('articles', {
 	/** Mindestbestand (Anzahl Gebinde); 0 = kein Bestellvorschlag */
 	minStock: integer('min_stock').notNull().default(0),
 	defaultLocationId: integer('default_location_id').references(() => storageLocations.id),
+	/** Marke, z.B. „Weihenstephan“ (von Picnic oder von Hand) */
+	brand: text('brand'),
+	/** Herkunftsland, z.B. „Frankreich“ (bei Picnic nur für frische Ware angegeben) */
+	origin: text('origin'),
+	/** Bio-Siegel vorhanden */
+	organic: integer('organic', { mode: 'boolean' }).notNull().default(false),
+	/** Nährwerttabelle von Picnic als JSON (`NutritionRow[]`), nicht von Hand pflegbar */
+	nutrition: text('nutrition'),
 	...auditFull()
 });
 
@@ -300,6 +308,10 @@ export const picnicPrices = sqliteTable('picnic_prices', {
 	regularPrice: integer('regular_price').notNull(),
 	promoPrice: integer('promo_price'),
 	promoLabel: text('promo_label'),
+	/** Mehrfachangebot: `promoPrice` ist Stückpreis ab dieser Menge; null = ab 1 */
+	promoMinQuantity: integer('promo_min_quantity'),
+	/** Preisstaffeln als JSON (`PriceTier[]`), null = keine */
+	priceRanges: text('price_ranges'),
 	fetchedAt: integer('fetched_at', { mode: 'timestamp' })
 		.notNull()
 		.default(sql`(unixepoch())`)

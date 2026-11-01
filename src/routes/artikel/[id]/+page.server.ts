@@ -7,6 +7,17 @@ import { allArticleTagNames, setArticleTags, tagsForArticle } from '#lib/server/
 import { auditEdit } from '#lib/server/audit.js';
 import { deleteImage } from '#lib/server/images.js';
 import { moveStockEntryFromForm, updateStockEntryFromForm } from '#lib/server/stock.js';
+import {
+	describePicnicError,
+	getConnectionState,
+	getProductDetails,
+	type CatalogPrice,
+	type NutritionRow
+} from '#lib/server/picnic/index.js';
+import { applyProductFacts } from '#lib/server/articleImport.js';
+import { addToCartAction, cartQuantitiesForPage } from '#lib/server/cartButton.js';
+import { storePrices } from '#lib/server/prices.js';
+import { logWarn } from '#lib/server/log.js';
 import { eq } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -17,6 +28,40 @@ function getArticle(id: string, t: Translate) {
 	const article = db.select().from(articles).where(eq(articles.id, articleId)).get();
 	if (!article) throw error(404, t('msg.articleNotFound'));
 	return article;
+}
+
+/**
+ * Live-Daten von Picnic für die Artikelseite (Preis mit Angebot, Grundpreis).
+ * Wird nachgestreamt: Die Seite steht sofort, der Picnic-Teil rückt nach und
+ * fehlt einfach, wenn Picnic nicht antwortet. Der Preis landet nebenbei im
+ * Cache, damit Liste und Bestellseite denselben Stand zeigen.
+ */
+async function picnicDetails(
+	picnicId: string | null
+): Promise<{ price: CatalogPrice | null; unitPrice: string | null } | null> {
+	if (!picnicId || getConnectionState() !== 'connected') return null;
+	try {
+		const { price, unitPrice } = await getProductDetails(picnicId);
+		if (price) storePrices(new Map([[picnicId, price]]));
+		return { price, unitPrice };
+	} catch (err) {
+		logWarn('Picnic-Produkt für Artikelseite nicht abrufbar', {
+			picnicId,
+			fehler: err instanceof Error ? err.message : String(err)
+		});
+		return null;
+	}
+}
+
+/** Gespeicherte Nährwerttabelle; Unlesbares zählt als „keine“. */
+function parseNutrition(raw: string | null): NutritionRow[] | null {
+	if (!raw) return null;
+	try {
+		const rows: unknown = JSON.parse(raw);
+		return Array.isArray(rows) && rows.length > 0 ? (rows as NutritionRow[]) : null;
+	} catch {
+		return null;
+	}
 }
 
 export const load: PageServerLoad = ({ params, locals }) => {
@@ -50,6 +95,9 @@ export const load: PageServerLoad = ({ params, locals }) => {
 
 	return {
 		article,
+		nutrition: parseNutrition(article.nutrition),
+		picnic: picnicDetails(article.picnicId),
+		cart: article.picnicId ? cartQuantitiesForPage() : Promise.resolve(null),
 		tags: tagsForArticle(article.id),
 		stock: [...byLocation.values()],
 		locations: activeLocations(),
@@ -86,6 +134,22 @@ export const actions: Actions = {
 		if (imagePath !== undefined && article.imagePath) deleteImage(article.imagePath);
 
 		redirect(303, '/artikel');
+	},
+
+	addToCart: ({ request, locals }) => addToCartAction(request, locals.locale),
+
+	// Marke, Herkunft, Bio und Nährwerte neu von Picnic übernehmen (überschreibt)
+	refreshFromPicnic: async ({ params, locals }) => {
+		const t = translator(locals.locale);
+		const article = getArticle(params.id, t);
+		if (!article.picnicId) return fail(400, { factsMessage: t('item.facts.notLinked') });
+		try {
+			const { facts } = await getProductDetails(article.picnicId);
+			applyProductFacts(article.id, facts, locals.user?.username ?? null);
+			return { factsRefreshed: true };
+		} catch (err) {
+			return fail(502, { factsMessage: describePicnicError(err, t, 'Produktdaten aktualisieren') });
+		}
 	},
 
 	delete: ({ params, locals }) => {

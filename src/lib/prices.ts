@@ -21,3 +21,33 @@ export function effectivePrice(price: PriceParts): number {
 export function savingsOf(price: PriceParts): number {
 	return price.promoPrice == null ? 0 : Math.max(0, price.regularPrice - price.promoPrice);
 }
+
+/** Preis mit optionalem Mehrfachangebot und Staffeln (Aktionspreis gilt je volles Bündel). */
+export type PriceWithOffer = PriceParts & {
+	promoMinQuantity?: number | null;
+	priceRanges?: { fromQuantity: number; unitPrice: number }[] | null;
+};
+
+/**
+ * Gesamtpreis für `quantity` Packungen. Ein Mehrfachangebot („2 für …“) gilt
+ * nur für volle Bündel, der Rest kostet den Normalpreis — `effectivePrice *
+ * Menge` verspräche sonst schon bei einer Packung den Bündelpreis. Eine
+ * Preisstaffel („ab 3 Stück je …“) gilt für alle Packungen, sobald die Menge
+ * erreicht ist; es zählt der günstigere Weg.
+ */
+export function totalFor(price: PriceWithOffer, quantity: number): number {
+	if (quantity <= 0) return 0;
+	const tierUnit = (price.priceRanges ?? [])
+		.filter((tier) => tier.fromQuantity <= quantity)
+		.reduce((best, tier) => Math.min(best, tier.unitPrice), price.regularPrice);
+	const byTier = tierUnit * quantity;
+	if (price.promoPrice == null) return byTier;
+	const bundle = Math.max(1, price.promoMinQuantity ?? 1);
+	const discounted = Math.floor(quantity / bundle) * bundle;
+	return Math.min(byTier, discounted * price.promoPrice + (quantity - discounted) * tierUnit);
+}
+
+/** Ersparnis gegenüber dem Normalpreis für `quantity` Packungen. */
+export function savingsFor(price: PriceWithOffer, quantity: number): number {
+	return Math.max(0, price.regularPrice * Math.max(0, quantity) - totalFor(price, quantity));
+}

@@ -9,17 +9,24 @@ import PicnicClient from 'picnic-api';
 import * as env from '$app/env/private';
 import fs from 'node:fs';
 import path from 'node:path';
+import type { Translate } from '#lib/i18n/index.js';
+import { logWarn } from '#lib/server/log.js';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
-import { catalogPrice, type ProductPrice } from './price';
+import { PicnicAdapterError, picnicErrorKind, type PicnicErrorKind } from './errors';
+import { catalogPrice, tilePrice, type CatalogPrice, type ProductPrice } from './price';
+import { priceTiers } from '#lib/priceTiers.js';
+import type { PriceTier } from '#lib/offers.js';
 import { extractSearchHits, type ProductSearchHit } from './search';
-import {
-	extractRecipeTiles,
-	parseRecipeDetail,
-	type ParsedPicnicRecipe,
-	type PicnicRecipeTile
-} from './recipeImport';
+import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
+import { mapPicnicRecipe } from './recipeMapping';
+import { extractProductFacts, type NutritionRow, type ProductFacts } from './productFacts';
 
+export { picnicErrorKind };
 export type {
+	PicnicErrorKind,
+	CatalogPrice,
+	NutritionRow,
+	ProductFacts,
 	DeliveryChecklistItem,
 	ParsedPicnicRecipe,
 	PicnicRecipeTile,
@@ -31,6 +38,16 @@ type Client = InstanceType<typeof PicnicClient>;
 
 /** Eine Warenkorb-Position: Picnic-Produkt-ID und Anzahl Gebinde. */
 export type CartItem = { productId: string; quantity: number };
+
+/**
+ * Verständliche Meldung zu einem Picnic-Fehler für die Oberfläche; der
+ * Rohfehler landet im Log. `context` sagt dort, wobei es passiert ist.
+ */
+export function describePicnicError(err: unknown, t: Translate, context: string): string {
+	const kind = picnicErrorKind(err);
+	logWarn(`Picnic-Fehler: ${context}`, { art: kind, fehler: err instanceof Error ? err.message : String(err) });
+	return t(`picnic.error.${kind}`);
+}
 
 /** Auth-Key überlebt Neustarts in DATA_DIR (Docker-Volume) */
 function authKeyFile(): string {
@@ -81,11 +98,11 @@ export function getConnectionState(): ConnectionState {
 export async function ensureLoggedIn(): Promise<void> {
 	if (isLoggedIn()) return;
 	if (!hasCredentials()) {
-		throw new Error('Keine Picnic-Zugangsdaten konfiguriert (PICNIC_USERNAME/PICNIC_PASSWORD)');
+		throw new PicnicAdapterError('notConfigured');
 	}
 	const { needs2FA } = await login();
 	if (needs2FA) {
-		throw new Error('Picnic verlangt eine 2FA-Bestätigung — bitte zuerst den SMS-Code eingeben');
+		throw new PicnicAdapterError('needs2FA');
 	}
 }
 
@@ -95,7 +112,7 @@ export async function ensureLoggedIn(): Promise<void> {
  */
 export async function login(): Promise<{ needs2FA: boolean }> {
 	if (!hasCredentials()) {
-		throw new Error('PICNIC_USERNAME und PICNIC_PASSWORD sind nicht gesetzt');
+		throw new PicnicAdapterError('notConfigured');
 	}
 	const result = await getClient().auth.login(env.PICNIC_USERNAME!, env.PICNIC_PASSWORD!);
 	persistAuthKey();
@@ -176,6 +193,129 @@ export async function addToCart(items: CartItem[]): Promise<void> {
  * Zählen der Vorkommen immer 1 ergab. Defensiv bleibt es trotzdem: die API ist
  * unoffiziell, unplausible Zeilen werden übersprungen.
  */
+/** Eine Zeile des Picnic-Warenkorbs, so wie Proviant sie anzeigt. */
+export type CartLine = {
+	productId: string;
+	name: string;
+	unitQuantity: string;
+	imageId: string | null;
+	quantity: number;
+	maxCount: number;
+	/** Preis der **Zeile** in Cent (nach Rabatt) */
+	linePrice: number;
+	/** Zeilenpreis vor Rabatt, `null` ohne Rabatt */
+	lineOriginalPrice: number | null;
+	/** Staffeln und Mehrfachangebot als Stufen (für den Mengenrabatt-Hinweis) */
+	tiers: PriceTier[];
+	labels: string[];
+	isUnavailable: boolean;
+	unavailableReason: string | null;
+};
+
+export type CartView = {
+	lines: CartLine[];
+	totalCount: number;
+	/** Zu zahlen inkl. Pfand und Gebühren, in Cent */
+	totalPrice: number;
+	/** Mindestbestellwert des gewählten Lieferfensters, `null` = keiner bekannt */
+	minimumOrderValue: number | null;
+	/** Gewähltes Lieferfenster; `explicit` = selbst gewählt, sonst von Picnic vorbelegt */
+	slot: { start: string; end: string; explicit: boolean } | null;
+};
+
+/**
+ * Der Warenkorb zum Anzeigen. Nicht Lieferbares steht vorn, damit es auffällt.
+ * Die Ersatzprodukte der Cart-Antwort sind Platzhalter (Name „irrelevant“,
+ * Preis 0) — die echten liefert `getReplacements`.
+ */
+export async function getCartView(): Promise<CartView> {
+	await ensureLoggedIn();
+	const cart = await getClient().cart.getCart();
+	const lines: CartLine[] = cart.items
+		.filter((item) => item.productId && item.quantity > 0)
+		.map((item) => {
+			const labels = item.labels.map((label) => label.text).filter(Boolean);
+			const unitRegular = item.quantity > 0 ? Math.round((item.originalPrice ?? item.displayPrice) / item.quantity) : 0;
+			const tilePriced = tilePrice({
+				displayPrice: unitRegular,
+				originalPrice: null,
+				labels: labels.map((text) => ({ text })),
+				priceRanges: item.priceRanges
+			});
+			return {
+				productId: item.productId,
+				name: item.name,
+				unitQuantity: item.unitQuantity,
+				imageId: item.imageId,
+				quantity: item.quantity,
+				maxCount: item.maxCount,
+				linePrice: item.displayPrice,
+				lineOriginalPrice: item.originalPrice != null && item.originalPrice > item.displayPrice ? item.originalPrice : null,
+				tiers: priceTiers(tilePriced),
+				labels,
+				isUnavailable: item.isUnavailable,
+				unavailableReason: item.unavailableReason
+			};
+		})
+		.sort((a, b) => Number(b.isUnavailable) - Number(a.isUnavailable));
+	const slot = cart.selectedSlot;
+	return {
+		lines,
+		totalCount: cart.totalCount,
+		totalPrice: cart.totalPrice,
+		minimumOrderValue: cart.minimumOrderValue,
+		slot:
+			slot?.windowStart && slot.windowEnd
+				? { start: slot.windowStart, end: slot.windowEnd, explicit: slot.isExplicitSelection }
+				: null
+	};
+}
+
+/** Ein Ersatzvorschlag für ein nicht lieferbares Produkt. */
+export type CartReplacement = { id: string; name: string; unitQuantity: string; imageId: string | null; price: number };
+
+/** Picnics Ersatzvorschläge für ein nicht lieferbares Produkt (mit echten Namen und Preisen). */
+export async function getReplacements(productId: string): Promise<CartReplacement[]> {
+	await ensureLoggedIn();
+	const { replacements } = await getClient().cart.getReplacements(productId);
+	return replacements
+		.filter((tile) => tile.id && tile.name && !tile.isUnavailable)
+		.map((tile) => ({
+			id: tile.id,
+			name: tile.name,
+			unitQuantity: tile.unitQuantity,
+			imageId: tile.imageId,
+			price: tile.displayPrice
+		}));
+}
+
+/** Nimmt `count` Packungen eines Produkts aus dem Warenkorb. */
+export async function removeFromCart(productId: string, count: number): Promise<void> {
+	await ensureLoggedIn();
+	await getClient().cart.removeProductFromCart(productId, count);
+}
+
+/**
+ * Ankunftszeit der nächsten offenen Lieferung, wie die Picnic-App sie zeigt.
+ * `null`, wenn keine Lieferung unterwegs ist oder Picnic (noch) keine Zeit
+ * kennt — die gibt es meist erst am Liefertag.
+ */
+export async function getDeliveryEta(): Promise<{
+	eta: string | null;
+	windowStart: string | null;
+	windowEnd: string | null;
+} | null> {
+	await ensureLoggedIn();
+	const open = (await getClient().delivery.getDeliverySummaries()).find(
+		(delivery) => delivery.status !== 'COMPLETED' && delivery.status !== 'CANCELLED'
+	);
+	if (!open) return null;
+	const position = await getClient().delivery.getDeliveryPosition(open.id);
+	const eta = position.eta != null ? new Date(position.eta).toISOString() : null;
+	if (!eta && !position.etaWindowStart) return null;
+	return { eta, windowStart: position.etaWindowStart, windowEnd: position.etaWindowEnd };
+}
+
 export async function getCartQuantities(): Promise<Map<string, number>> {
 	await ensureLoggedIn();
 	const cart = await getClient().cart.getCart();
@@ -346,7 +486,10 @@ export async function listOrderedProducts(deliveryLimit = 10): Promise<OrderedPr
 async function getFusionPage(pageId: string): Promise<unknown> {
 	const page = await getClient().app.getPage(pageId);
 	if (page.format !== 'fusion') {
-		throw new Error(`Picnic liefert die Seite ${pageId.split('?')[0]} in einem unbekannten Format (${page.format})`);
+		throw new PicnicAdapterError(
+			'unexpectedFormat',
+			`Picnic liefert die Seite ${pageId.split('?')[0]} in einem unbekannten Format (${page.format})`
+		);
 	}
 	return page.page;
 }
@@ -357,13 +500,81 @@ export async function listPicnicRecipes(): Promise<PicnicRecipeTile[]> {
 	return extractRecipeTiles(await getFusionPage('meals-page-root'));
 }
 
-/** Detaildaten eines Picnic-Rezepts (Zutaten, Portionen, Schritte). */
-export async function getPicnicRecipeDetail(id: string, name?: string): Promise<ParsedPicnicRecipe> {
+/** Ein Gang der Picnic-Favoriten mit seinen Produkten (Quelle für den Artikelimport). */
+export type FavoriteAisle = {
+	id: string;
+	title: string;
+	products: { productId: string; name: string; unitQuantity: string; imageId: string | null }[];
+};
+
+/** Höchstens so viele Gänge werden gleichzeitig nachgeladen. */
+const AISLE_CONCURRENCY = 4;
+
+/**
+ * Die Produkte, die der Haushalt bei Picnic kauft, nach Gang gruppiert
+ * (Reiter „Favoriten“ der App). Lange Gänge liefert die Übersicht nur
+ * angeschnitten (`complete: false`) — die werden einzeln nachgeladen. Ein
+ * Produkt steht nur im ersten Gang, in dem es vorkommt; leere Gänge fallen weg.
+ */
+export async function listFavoriteProducts(): Promise<FavoriteAisle[]> {
 	await ensureLoggedIn();
-	const page = await getFusionPage(
-		`selling-group-details-page?selling_group_id=${encodeURIComponent(id)}`
-	);
-	return parseRecipeDetail(page, name);
+	const { aisles } = await getClient().catalog.getFavorites();
+
+	const tilesByAisle = new Map(aisles.map((aisle) => [aisle.id, aisle.products]));
+	const incomplete = aisles.filter((aisle) => !aisle.complete);
+	for (let i = 0; i < incomplete.length; i += AISLE_CONCURRENCY) {
+		await Promise.all(
+			incomplete.slice(i, i + AISLE_CONCURRENCY).map(async (aisle) => {
+				try {
+					tilesByAisle.set(aisle.id, await getClient().catalog.getFavoritesInAisle(aisle.id));
+				} catch {
+					// dann eben nur der angeschnittene Teil
+				}
+			})
+		);
+	}
+
+	const seen = new Set<string>();
+	const result: FavoriteAisle[] = [];
+	for (const aisle of aisles) {
+		const products = (tilesByAisle.get(aisle.id) ?? [])
+			.filter((tile) => tile.id && tile.name && !seen.has(tile.id))
+			.map((tile) => {
+				seen.add(tile.id);
+				return { productId: tile.id, name: tile.name, unitQuantity: tile.unitQuantity, imageId: tile.imageId };
+			});
+		if (products.length > 0) result.push({ id: aisle.id, title: aisle.title, products });
+	}
+	return result;
+}
+
+/**
+ * Ein Picnic-Rezept, umgerechnet auf seine **Standardportionen**.
+ *
+ * Ohne Angabe liefert Picnic das Rezept für die Portionenzahl, die zuletzt in
+ * der App gewählt war (live: 3 statt 4). Weicht sie ab, wird mit den
+ * Standardportionen neu geladen — sonst passten gespeicherte Portionen und
+ * Mengen nicht zusammen.
+ */
+export async function getPicnicRecipe(id: string): Promise<ParsedPicnicRecipe> {
+	await ensureLoggedIn();
+	let recipe = await getClient().recipe.getRecipe(id);
+	if (recipe.defaultPortions > 0 && recipe.portions !== recipe.defaultPortions) {
+		recipe = await getClient().recipe.getRecipe(id, { portions: recipe.defaultPortions });
+	}
+	return mapPicnicRecipe(recipe);
+}
+
+/** In der Picnic-App gespeicherte Rezepte. */
+export async function listSavedPicnicRecipes(): Promise<PicnicRecipeTile[]> {
+	await ensureLoggedIn();
+	return (await getClient().recipe.getSavedRecipes()).map((r) => ({ id: r.id, name: r.name }));
+}
+
+/** In der Picnic-App selbst angelegte Rezepte. */
+export async function listOwnPicnicRecipes(): Promise<PicnicRecipeTile[]> {
+	await ensureLoggedIn();
+	return (await getClient().recipe.getUserDefinedRecipes()).map((r) => ({ id: r.id, name: r.name }));
 }
 
 /**
@@ -376,7 +587,7 @@ export async function getPicnicRecipeDetail(id: string, name?: string): Promise<
  * in `catalogPrice()`; ein Parserfehler der Bibliothek wird in
  * `getProductPrices` zu „kein Preis", lieber das als ein kaputter.
  */
-async function fetchProductPrice(id: string): Promise<ProductPrice | null> {
+async function fetchProductPrice(id: string): Promise<CatalogPrice | null> {
 	return catalogPrice(await getClient().catalog.getProduct(id));
 }
 
@@ -426,9 +637,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
  * Abgearbeitet wird die Liste als Warteschlange durch wenige Arbeiter, statt
  * alle IDs gleichzeitig loszuschicken.
  */
-export async function getProductPrices(ids: string[]): Promise<Map<string, ProductPrice>> {
+export async function getProductPrices(ids: string[]): Promise<Map<string, CatalogPrice>> {
 	await ensureLoggedIn();
-	const prices = new Map<string, ProductPrice>();
+	const prices = new Map<string, CatalogPrice>();
 
 	let next = 0;
 	async function worker(): Promise<void> {
@@ -442,4 +653,62 @@ export async function getProductPrices(ids: string[]): Promise<Map<string, Produ
 	const workers = Array.from({ length: Math.min(PRICE_CONCURRENCY, ids.length) }, () => worker());
 	await Promise.all(workers);
 	return prices;
+}
+
+/** Höchstens so viele Aktionsgruppen werden gleichzeitig geladen. */
+const PROMO_GROUP_CONCURRENCY = 6;
+
+/**
+ * Alle Produkte mit Angebot: die Kacheln der Angebotsseite plus die Produkte
+ * jeder Aktionsgruppe („Alpro Milchersatz“, „De Cecco Pasta“ …), die die Seite
+ * nur als Sammelkachel zeigt. Gedeutet über `tilePrice`; übrig bleiben nur
+ * Produkte mit echtem Rabatt. Eine Beschriftung mit Zahl, die sich nicht
+ * deuten ließ, wird geloggt — dann kennt Picnic eine neue Angebotsform.
+ */
+export async function getPromotedProducts(): Promise<Map<string, CatalogPrice>> {
+	await ensureLoggedIn();
+	const { sections } = await getClient().catalog.getPromotions();
+
+	const tiles = sections.flatMap((section) => section.products);
+	const groupIds = [...new Set(sections.flatMap((section) => section.groups.map((group) => group.id)))];
+	for (let i = 0; i < groupIds.length; i += PROMO_GROUP_CONCURRENCY) {
+		const groups = await Promise.all(
+			groupIds.slice(i, i + PROMO_GROUP_CONCURRENCY).map((id) =>
+				getClient()
+					.catalog.getPromotionGroup(id)
+					.catch(() => null)
+			)
+		);
+		for (const group of groups) if (group) tiles.push(...group.products);
+	}
+
+	const result = new Map<string, CatalogPrice>();
+	const unknownLabels = new Set<string>();
+	for (const tile of tiles) {
+		if (result.has(tile.id)) continue;
+		const price = tilePrice(tile);
+		if (price?.promoPrice != null) {
+			result.set(tile.id, price);
+		} else if (tile.originalPrice == null) {
+			for (const label of tile.labels) {
+				const text = label.text;
+				if (text && /\d/.test(text) && !/^jetzt\s/i.test(text)) unknownLabels.add(text);
+			}
+		}
+	}
+	// „jetzt 1.49€“ ohne Streichpreis ist bekannt und bewusst nicht deutbar
+	if (unknownLabels.size > 0) logWarn('Unbekannte Picnic-Angebotsbeschriftungen', { labels: [...unknownLabels].join(' | ') });
+	return result;
+}
+
+/**
+ * Ein Produkt für die Artikelseite: Preis (mit Angebot), Grundpreis und die
+ * Produktdaten (Marke, Herkunft, Bio, Nährwerte) — alles aus einem Abruf.
+ */
+export async function getProductDetails(
+	id: string
+): Promise<{ price: CatalogPrice | null; unitPrice: string | null; facts: ProductFacts }> {
+	await ensureLoggedIn();
+	const product = await getClient().catalog.getProduct(id);
+	return { price: catalogPrice(product), unitPrice: product.unitPrice ?? null, facts: extractProductFacts(product) };
 }

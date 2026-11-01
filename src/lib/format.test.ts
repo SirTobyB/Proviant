@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPrice, packageSize, tagFilterHref, unitLabel } from './format';
+import { articleFilterHref, formatPrice, packageSize, tagFilterHref, unitLabel } from './format';
 import { translator } from './i18n';
 
 /** Intl setzt vor das Euro-Zeichen ein geschuetztes Leerzeichen. */
@@ -76,5 +76,31 @@ describe('tagFilterHref', () => {
 			'/inventur?q=milch'
 		);
 		expect(tagFilterHref('/inventur', 'Tiefkühl', { activeTag: 'Tiefkühl' })).toBe('/inventur');
+	});
+});
+
+describe('articleFilterHref', () => {
+	const none = { query: '', tag: '', noLocation: false, offers: false };
+
+	it('setzt einen Schalter und behält die übrigen Filter', () => {
+		expect(articleFilterHref({ ...none, query: 'milch', tag: 'Kühl' }, { noLocation: true })).toBe(
+			'/artikel?q=milch&tag=K%C3%BChl&ohneLagerort=1'
+		);
+	});
+
+	it('nimmt einen gesetzten Schalter wieder heraus', () => {
+		expect(articleFilterHref({ ...none, noLocation: true, offers: true }, { noLocation: false })).toBe(
+			'/artikel?angebot=1'
+		);
+	});
+
+	it('schaltet den aktiven Tag beim zweiten Klick ab', () => {
+		expect(articleFilterHref({ ...none, tag: 'Kühl', noLocation: true }, { tag: 'Kühl' })).toBe(
+			'/artikel?ohneLagerort=1'
+		);
+	});
+
+	it('liefert ohne Filter die nackte Liste', () => {
+		expect(articleFilterHref(none, {})).toBe('/artikel');
 	});
 });
