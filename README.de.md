@@ -156,7 +156,10 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   Portionen, Zutatenmengen und Schritten (*Rezepte → Picnic-Import*). Die
   Mengen passen immer zu den Standardportionen des Rezepts; Zutaten, deren
   Picnic-Produkt schon als Artikel geführt wird, sind gleich verknüpft, und
-  Vorratszutaten (Salz, Öl …) nennt der Zubereitungstext.
+  Vorratszutaten (Salz, Öl …) nennt der Zubereitungstext. **Alle
+  importieren** holt jedes noch fehlende Rezept einer Liste nacheinander mit
+  kurzer Pause, damit Picnic nicht überflutet wird — mit Fortschritt und
+  Abbrechen-Knopf. Rezeptfotos stellt Picnic nicht zur Verfügung.
 - **Wochenplan** — Gerichte für die nächsten 7 Tage planen: Tage auswählen und
   Vorschläge würfeln (ohne Rezept-Wiederholung in der Woche), Tage manuell
   belegen, Portionen anpassen — und die fehlenden Zutaten **aller** geplanten

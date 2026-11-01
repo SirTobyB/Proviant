@@ -8,6 +8,24 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **„Alle importieren“ beim Rezeptimport.** Holt alle angezeigten Rezepte
+  der gewählten Liste, die es noch nicht gibt (die Suche schränkt die Auswahl
+  ein), mit Fortschrittsanzeige und Abbrechen-Knopf. Die Rezepte werden
+  nacheinander abgerufen; der Server hält zwischen zwei Picnic-Rezeptabrufen
+  zusätzlich eine Pause ein – auch wenn mehrere Familienmitglieder
+  gleichzeitig importieren. Sperrt Picnic wegen zu vieler Anfragen oder läuft
+  die Anmeldung ab, hört der Import sofort auf, statt weiter anzufragen.
+  Bereits vorhandene Rezepte werden übersprungen, ein zweiter Durchlauf setzt
+  also einfach fort.
+
+### Geändert
+
+- **„Rezept löschen“ steht jetzt oben** neben „Bearbeiten“, statt ganz am
+  Ende der Rezeptseite unterzugehen; die Rückfrage erscheint direkt
+  darunter.
+
 ## [2.5.0] - 2026-11-01
 
 Proviant zeigt jetzt den Picnic-Warenkorb, aktuelle Angebote und

@@ -19,6 +19,7 @@ import type { PriceTier } from '#lib/offers.js';
 import { extractSearchHits, type ProductSearchHit } from './search';
 import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
 import { mapPicnicRecipe } from './recipeMapping';
+import { createThrottle } from './throttle';
 import { extractProductFacts, type NutritionRow, type ProductFacts } from './productFacts';
 
 export { picnicErrorKind };
@@ -494,6 +495,12 @@ async function getFusionPage(pageId: string): Promise<unknown> {
 	return page.page;
 }
 
+/**
+ * Prozessweite Drossel für Rezeptabrufe (siehe `throttle.ts`): „Alle
+ * importieren" holt Dutzende Rezeptseiten am Stück, jede gut 1 MB groß.
+ */
+const recipeThrottle = createThrottle(1500);
+
 /** Rezepte der Picnic-Rezeptseite (Kacheln mit ID und Name). */
 export async function listPicnicRecipes(): Promise<PicnicRecipeTile[]> {
 	await ensureLoggedIn();
@@ -558,9 +565,10 @@ export async function listFavoriteProducts(): Promise<FavoriteAisle[]> {
  */
 export async function getPicnicRecipe(id: string): Promise<ParsedPicnicRecipe> {
 	await ensureLoggedIn();
-	let recipe = await getClient().recipe.getRecipe(id);
+	let recipe = await recipeThrottle(() => getClient().recipe.getRecipe(id));
 	if (recipe.defaultPortions > 0 && recipe.portions !== recipe.defaultPortions) {
-		recipe = await getClient().recipe.getRecipe(id, { portions: recipe.defaultPortions });
+		const portions = recipe.defaultPortions;
+		recipe = await recipeThrottle(() => getClient().recipe.getRecipe(id, { portions }));
 	}
 	return mapPicnicRecipe(recipe);
 }

@@ -166,7 +166,10 @@ Picnic-functies en een FAQ voor probleemoplossing.
   (*Recepten → Picnic-import*). De hoeveelheden passen altijd bij de
   standaardporties van het recept; ingrediënten waarvan het Picnic-product al
   een artikel is, worden meteen gekoppeld, en voorraadingrediënten (zout,
-  olie …) noemt de bereidingstekst.
+  olie …) noemt de bereidingstekst. **Alles importeren** haalt elk recept
+  uit een lijst dat er nog niet is na elkaar op, met een korte pauze zodat
+  Picnic niet overspoeld raakt — met voortgang en een stopknop. Receptfoto's
+  stelt Picnic niet beschikbaar.
 - **Weekplanning** — maaltijden plannen voor de komende 7 dagen: dagen kiezen
   en suggesties dobbelen (geen recept twee keer in dezelfde week), dagen
   handmatig invullen, porties aanpassen — en de ontbrekende ingrediënten van

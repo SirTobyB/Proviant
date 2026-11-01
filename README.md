@@ -151,6 +151,9 @@ a troubleshooting FAQ.
   (*Recipes → Picnic import*). Amounts always match the recipe's default
   portions; ingredients whose Picnic product is already an item are linked
   straight away, and pantry staples (salt, oil …) are named in the method.
+  **Import all** fetches every recipe of a list that isn't there yet, one
+  after another with a short pause so Picnic isn't flooded — with progress
+  and a stop button. Picnic doesn't make recipe photos available.
 - **Weekly meal plan** — plan meals for the next 7 days: pick the days and roll
   suggestions (no recipe twice in one week), fill days manually, adjust
   portions — and put the missing ingredients for **all** planned days into the
