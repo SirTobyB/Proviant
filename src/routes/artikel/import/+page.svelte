@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { translator, BCP47 } from '#lib/i18n/index.js';
+	import { picnicImageSrc } from '#lib/format.js';
 	import { refreshAll } from '$app/navigation';
 
 	let { data, form } = $props();
@@ -124,7 +125,7 @@
 					class="h-5 w-5 shrink-0 rounded border-gray-300 text-green-600 focus:ring-green-600 disabled:opacity-40"
 				/>
 				{#if product.imageId}
-					<img src={`/api/picnic/image/${product.imageId}`} alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
+					<img src={picnicImageSrc(product.imageId)} alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
 				{:else}
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">📦</div>
 				{/if}

@@ -5,7 +5,7 @@
 import { db } from '#lib/server/db/index.js';
 import { articles } from '#lib/server/db/schema.js';
 import { auditEdit, auditNew } from '#lib/server/audit.js';
-import { saveImageFromDataUri } from '#lib/server/images.js';
+import { saveImageFromBytes } from '#lib/server/images.js';
 import { getProductDetails, getProductImage, type ProductFacts } from '#lib/server/picnic/index.js';
 import { logWarn } from '#lib/server/log.js';
 import { parseUnitQuantity } from '#lib/server/picnic/unitQuantity.js';
@@ -42,7 +42,7 @@ export async function importArticleFromPicnic(
 	let imagePath: string | null = null;
 	if (product.imageId) {
 		try {
-			imagePath = saveImageFromDataUri(await getProductImage(product.imageId));
+			imagePath = saveImageFromBytes((await getProductImage(product.imageId)).bytes);
 		} catch {
 			// ohne Bild importieren
 		}

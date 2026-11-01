@@ -1,7 +1,7 @@
 /**
  * Gemeinsame Auswertung des Artikelformulars (Neuanlage und Bearbeitung).
  */
-import { saveImageFromUpload, saveImageFromUrl, saveImageFromDataUri } from '#lib/server/images.js';
+import { saveImageFromUpload, saveImageFromUrl, saveImageFromBytes } from '#lib/server/images.js';
 import type { Translate } from '#lib/i18n/index.js';
 import { ensureLoggedIn, getProductImage } from '#lib/server/picnic/index.js';
 
@@ -82,7 +82,7 @@ export async function parseArticleForm(
 			imagePath = await saveImageFromUrl(imageUrl);
 		} else if (picnicImageId) {
 			await ensureLoggedIn();
-			imagePath = saveImageFromDataUri(await getProductImage(picnicImageId));
+			imagePath = saveImageFromBytes((await getProductImage(picnicImageId)).bytes);
 		}
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Bild konnte nicht gespeichert werden';

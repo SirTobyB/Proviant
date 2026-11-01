@@ -2,6 +2,7 @@ node_modules
 build
 .svelte-kit
 data
+picnic-images
 local.db*
 .env
 .env.*

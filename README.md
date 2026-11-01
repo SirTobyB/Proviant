@@ -237,7 +237,7 @@ and the recipe basket do not work.
 | Variable          | Description                                            | Default (container)           |
 | ----------------- | ------------------------------------------------------ | ----------------------------- |
 | `DATABASE_URL`    | Path to the SQLite file                                | `/data/lebensmittelkumpel.db` |
-| `DATA_DIR`        | Directory for images and the Picnic auth key           | `/data`                       |
+| `DATA_DIR`        | Directory for images, Picnic image cache and auth key  | `/data`                       |
 | `ORIGIN`          | Public URL of the app (adapter-node CSRF protection)   | —                             |
 | `ADMIN_USERNAME`  | First admin (only on first start with no users)        | —                             |
 | `ADMIN_PASSWORD`  | Password of the first admin                            | —                             |
