@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { articleFilterHref, formatPrice, packageSize, tagFilterHref, unitLabel } from './format';
+import { articleFilterHref, formatPrice, packageSize, picnicImageSrc, tagFilterHref, unitLabel } from './format';
 import { translator } from './i18n';
 
 /** Intl setzt vor das Euro-Zeichen ein geschuetztes Leerzeichen. */
@@ -102,5 +102,11 @@ describe('articleFilterHref', () => {
 
 	it('liefert ohne Filter die nackte Liste', () => {
 		expect(articleFilterHref(none, {})).toBe('/artikel');
+	});
+});
+
+describe('picnicImageSrc', () => {
+	it('hängt die Bildendung an, damit CrowdSec den Abruf als statisch wertet', () => {
+		expect(picnicImageSrc('a1b2c3')).toBe('/api/picnic/image/a1b2c3.png');
 	});
 });

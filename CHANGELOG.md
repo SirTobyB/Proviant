@@ -35,6 +35,18 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   Ende der Rezeptseite unterzugehen; die Rückfrage erscheint direkt
   darunter.
 
+### Behoben
+
+- **Die Favoriten-Liste im Artikelimport sperrte die eigene IP aus.** Die
+  Liste zeigt alle Favoriten – gut 500 Produkte – mit je einem Picnic-Bild.
+  Ein vorgeschalteter CrowdSec wertete die vielen Bildabrufe ohne Dateiendung
+  als Crawler und sperrte die IP für vier Stunden; die App war von dort aus
+  nicht mehr erreichbar. Picnic-Bilder tragen jetzt die Endung `.png` und
+  gelten damit als statische Dateien. Außerdem holt Proviant jedes Bild nur
+  noch einmal bei Picnic (höchstens vier gleichzeitig), legt es unter
+  `DATA_DIR/picnic-images` ab und liefert es danach von dort aus; der Browser
+  hält es zusätzlich ein Jahr vor.
+
 ## [2.5.0] - 2026-11-01
 
 Proviant zeigt jetzt den Picnic-Warenkorb, aktuelle Angebote und

@@ -21,9 +21,11 @@ import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } fr
 import { mapPicnicRecipe } from './recipeMapping';
 import { createThrottle } from './throttle';
 import { extractProductFacts, type NutritionRow, type ProductFacts } from './productFacts';
+import { createImageCache, isValidImageId, type CachedImage } from './imageCache';
 
-export { picnicErrorKind };
+export { picnicErrorKind, isValidImageId };
 export type {
+	CachedImage,
 	PicnicErrorKind,
 	CatalogPrice,
 	NutritionRow,
@@ -166,9 +168,25 @@ export async function searchProducts(query: string): Promise<ProductSearchHit[]>
 	return [...hits.values()];
 }
 
-/** Produktbild als Data-URI, z.B. zur Übernahme in den Artikelstamm */
-export async function getProductImage(imageId: string): Promise<string> {
-	return getClient().catalog.getImageAsDataUri(imageId, 'medium');
+/**
+ * Produktbilder über den Plattencache (`imageCache.ts`) — einmal geholt,
+ * danach von der Platte. `getImageAsDataUri` der Bibliothek bleibt bewusst
+ * ungenutzt: sie baut das Bild Byte für Byte zu einem String zusammen und
+ * erklärt jedes Bild zum PNG.
+ */
+const productImages = createImageCache({
+	dir: path.join(env.DATA_DIR ?? '.', 'picnic-images'),
+	// Anmelden erst beim echten Abruf — Gecachtes geht auch ohne Picnic-Verbindung
+	fetchImage: async (imageId) => {
+		await ensureLoggedIn();
+		return new Uint8Array(await getClient().catalog.getImage(imageId, 'medium'));
+	},
+	maxConcurrent: 4
+});
+
+/** Produktbild (Inhalt + Typ), für die Vorschau und zur Übernahme in den Artikelstamm */
+export async function getProductImage(imageId: string): Promise<CachedImage> {
+	return productImages(imageId);
 }
 
 /**

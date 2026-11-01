@@ -3,7 +3,7 @@
 	import { deserialize } from '$app/forms';
 	import { refreshAll } from '$app/navigation';
 	import { translator } from '#lib/i18n/index.js';
-	import { formatPrice } from '#lib/format.js';
+	import { formatPrice, picnicImageSrc } from '#lib/format.js';
 	import { savingsOf } from '#lib/prices.js';
 	import { missingLocationNames, newItemsNeedingLocation } from '#lib/deliveryNewItems.js';
 
@@ -58,7 +58,7 @@
 	// Bildquelle: eigenes Artikelbild bevorzugt, sonst das Picnic-Produktbild
 	function itemImage(item: Item): string | null {
 		if (item.imagePath) return `/api/images/${item.imagePath}`;
-		if (item.imageId) return `/api/picnic/image/${item.imageId}`;
+		if (item.imageId) return picnicImageSrc(item.imageId);
 		return null;
 	}
 

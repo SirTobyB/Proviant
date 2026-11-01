@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatPrice, UNITS, unitLabel } from '#lib/format.js';
+	import { formatPrice, picnicImageSrc, UNITS, unitLabel } from '#lib/format.js';
 	import { page } from '$app/state';
 	import { translator } from '#lib/i18n/index.js';
 	import { enhance } from '$app/forms';
@@ -91,7 +91,7 @@
 	const previewSrc = $derived(
 		uploadPreview ||
 			imageUrl ||
-			(picnicImageId ? `/api/picnic/image/${picnicImageId}` : '') ||
+			(picnicImageId ? picnicImageSrc(picnicImageId) : '') ||
 			(article.imagePath ? `/api/images/${article.imagePath}` : '')
 	);
 
@@ -388,7 +388,7 @@
 								class="flex w-full items-center gap-3 bg-white px-3 py-2 text-left hover:bg-green-50"
 							>
 								<img
-									src={`/api/picnic/image/${result.imageId}`}
+									src={picnicImageSrc(result.imageId)}
 									alt=""
 									loading="lazy"
 									class="h-10 w-10 shrink-0 rounded object-contain"
