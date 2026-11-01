@@ -79,11 +79,16 @@ a troubleshooting FAQ.
   search and item tags.
 - **Item catalogue** — name, picture, pack size with unit, EAN, optional Picnic
   product ID (via search or entered directly), minimum stock, default location
-  and free-form tags (with filters in the item list and stocktake). Create
+  and free-form tags (with filters in the item list and stocktake; the item
+  list can also show only items *without a default location* or *on offer*).
+  Brand, country of origin and an organic flag are taken over from Picnic
+  (editable by hand); the item page adds Picnic's unit price and nutrition
+  table, and a "🛒 +1" button puts the item into the Picnic basket. Create
   items by barcode scan, pre-filled from Open Food Facts and the Picnic product
   search. The item page lists all batches across every location, editable and
   movable in place. **Import from orders:** pulls products out of recent Picnic
-  deliveries including picture, pack size and the link (one by one while
+  deliveries — or from your **Picnic favourites**, grouped by aisle —
+  including picture, pack size, product data and the link (one by one while
   unpacking, or in bulk under *Items → Picnic import*; Picnic does not supply
   EANs).
 - **Order suggestions** — items below their minimum stock appear on the
@@ -95,7 +100,15 @@ a troubleshooting FAQ.
   the remaining shortfall (or not at all). Lines Picnic has cancelled do not
   count as on their way, so they are suggested again instead of quietly
   disappearing until the next delivery. All suggestions can be selected and
-  deselected with one click.
+  deselected with one click. If a single extra pack would reach a cheaper
+  price tier or multi-buy offer, the suggestion says so ("one more costs only
+  €1.99 extra") and offers to raise the quantity — it never changes on its own.
+- **Picnic basket** — the order page shows the current basket: change
+  quantities, remove products, and swap products Picnic cannot deliver for one
+  of its suggested replacements. It also shows the chosen delivery slot, how
+  far the basket is from the minimum order value and, while a delivery is on
+  its way, the expected arrival time. Every change is read back from Picnic and
+  reported if it did not stick; the slot is only changed in the Picnic app.
 - **Prices and offers** — order suggestions, recipes, the recipe list, the
   meal plan and the delivery check show what things cost, based on cached
   Picnic prices (one HTTP call per product — Picnic has no bulk lookup, so a
@@ -104,7 +117,11 @@ a troubleshooting FAQ.
   prices" button on the order page forces a full refresh; the recipe list and
   meal plan read the cache only and name the date of the oldest price they
   show. Running Picnic offers are shown with the
-  euro amount saved, per item, per serving and in total; if an ingredient
+  euro amount saved, per item, per serving and in total. Multi-buy offers
+  ("2 for €4.99", "2+1 free", "-50% on the 2nd item") are converted into a
+  unit price with the regular price struck through and only count for full
+  bundles. The **Offers** page lists every item of yours that is on offer
+  right now, items below their minimum stock first; if an ingredient
   has no linked product or no cached price yet, totals are shown as a lower
   bound ("from €…") rather than a silent zero, and the unpriced ingredients
   are named.
@@ -129,8 +146,11 @@ a troubleshooting FAQ.
   cook today?"), portion scaling and "missing ingredients into the Picnic
   basket" (rounded up to pack sizes). Random recipe suggestion with a two-week
   cooldown for anything cooked recently, optionally filtered by tag. **Import
-  from Picnic:** pulls recipes off the Picnic recipe pages including portions,
-  ingredients, steps and tip (*Recipes → Picnic import*).
+  from Picnic:** pulls Picnic recipes — from the recipe pages, your saved
+  recipes or your own — with portions, ingredient amounts and steps
+  (*Recipes → Picnic import*). Amounts always match the recipe's default
+  portions; ingredients whose Picnic product is already an item are linked
+  straight away, and pantry staples (salt, oil …) are named in the method.
 - **Weekly meal plan** — plan meals for the next 7 days: pick the days and roll
   suggestions (no recipe twice in one week), fill days manually, adjust
   portions — and put the missing ingredients for **all** planned days into the
