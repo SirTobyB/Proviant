@@ -35,7 +35,7 @@ Formatierung von Hand am Stil der Datei ausrichten (Tabs).
 reinen Logik-Module ab: `units.ts`, `suggest.ts`, `mhd.ts`, `format.ts`,
 `journal.ts`, `i18n/` (Sprachaushandlung, Plurale, Vollständigkeit der
 Wörterbücher), `picnic/unitQuantity.ts`, `picnic/checklist.ts`,
-`deliveryNewItems.ts`. Genau dort steckten die
+`picnic/price.ts`, `picnic/search.ts`, `deliveryNewItems.ts`. Genau dort steckten die
 schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 **mit Test**, nicht in eine Route.
 
@@ -51,7 +51,8 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     Rest der App importiert Picnic **nur von hier**. Reine, eigenständig
     testbare Untermodule (ohne SvelteKit-Import): `checklist.ts`
     (Lieferdaten-Normalisierung), `recipeImport.ts` (Parser für die
-    undokumentierten PML-/Fusion-Rezeptseiten), `unitQuantity.ts`
+    undokumentierten PML-/Fusion-Rezeptseiten), `search.ts` (Produkttreffer
+    der Fusion-Suchseite), `price.ts` (Preisdeutung), `unitQuantity.ts`
     (Gebindegrößen wie „6er Pack", „2 x 125g").
   - `auth.ts` / `password.ts` – Sessions (DB-gestützt, httpOnly-Cookie) und
     scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder. `log.ts` –
@@ -179,16 +180,28 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   (S3 403) — Produktbilder dagegen schon. Die Rezept-/Übersichtsseiten sind
   dynamische PML-Strukturen; Parser dafür heuristisch und **defensiv** halten
   (lieber leer zurückgeben als Datenmüll importieren).
+- **picnic-api ab 5.x** liefert fertige camelCase-Modelle (`Cart`, `Delivery`,
+  `Product`, `Recipe`) statt Picnics Roh-JSON; die rohen Seitenabrufe der
+  Dienste sind `private`, Deep-Imports (`lib/domains/…/helpers`) gibt es
+  nicht mehr. Roh geht es nur noch über `app.getPage(pageId)` (gibt
+  `{ format: 'fusion' | 'rsc' }` zurück — **immer das Format prüfen**, Picnic
+  stellt Seiten nach und nach auf RSC um) und `sendRequest()`. Zwei Stellen
+  bleiben bewusst roh: die **Lieferungsdetails** (das Modell lässt
+  `delivery.decorators` weg, also die Stornos, siehe unten) und die
+  **Rezeptseiten** (unsere Parser). Die **Suche** ist in 5.2 und 5.3 RSC-only, Picnic
+  DE liefert sie aber noch als Fusion (live geprüft, Oktober 2026) — deshalb
+  die Format-Weiche in `searchProducts` mit eigenem Parser (`search.ts`).
 - **Picnic-Datenstrukturen** (alle live geprüft, sparen viel Rätselraten):
   - **Mengen stehen im `QUANTITY`-Decorator**, nie in der Länge von `items`:
     ein Produkt taucht je Zeile genau **einmal** auf. Vorkommen zählen ergibt
     also immer 1 — genau dieser Fehler steckte im ersten Warenkorb-Abgleich.
     `lineQuantity()` in `picnic/checklist.ts` macht es richtig.
-  - **Warenkorb:** `analytics_context_data.items_list` (`product_id` +
-    `quantity`) ist die bequemste Quelle, fehlt aber bei leerem Warenkorb —
-    deshalb zusätzlich der Decorator-Weg als Fallback (`getCartQuantities`).
-  - **Lieferungsliste enthält keine Positionen** (`orders[].items` fehlt), die
-    kommen erst per `getDelivery(id)`. Offene Lieferungen deshalb per
+  - **Warenkorb:** Seit picnic-api 5 trägt `cart.getCart()` je Zeile
+    `productId` + `quantity` (aus dem Decorator gelesen, Overrides
+    eingerechnet) — die frühere Auswertung von `analytics_context_data` bzw.
+    der Decorators entfällt.
+  - **Lieferungsliste enthält keine Positionen** (`getDeliverySummaries()`),
+    die kommen erst per Detailabruf (bei uns roh, siehe oben). Offene Lieferungen deshalb per
     Ausschluss bestimmen (nicht `COMPLETED`/`CANCELLED`) und je Lieferung
     einzeln nachladen; auch Teilbestellungen können `CANCELLED` sein.
   - **Storno einzelner Positionen steht an der Lieferung, nicht an der
@@ -213,12 +226,14 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     `PRICE`-Decorator (`display_price`) der tatsächlich gezahlte Preis, dazu
     ein `PROMO`-Decorator mit Beschriftung. Auf der **Katalogseite** ist es
     umgekehrt: `displayPrice` ist der **rabattierte** Preis, der Streichpreis
-    steckt ausschließlich als PML-Knoten `{ type: "PRICE", isCrossed: true }`
-    in der rohen `getProductDetailsPage()`. Wer eine Regel auf die andere
-    Quelle anwendet, verbucht den Rabatt als Aufschlag. Deshalb liegen sie in
-    `picnic/price.ts` als **zwei getrennte Funktionen** nebeneinander.
-    Weiteres: `getProductDetails()` kennt den Streichpreis gar nicht (nur ein
-    `promotion.label`), `search()` liefert **leere** `decorators` und ist für
+    steht seit picnic-api 5 als `originalPrice` an `catalog.getProduct()`
+    (die Bibliothek liest ihn nur aus dem Hauptcontainer — vorher erfand ein
+    Nachbarangebot „Ähnliche Produkte" sonst einen Rabatt). `originalPrice`
+    ohne `promotion` kommt vor (live: Putenschnitzel 6,49 statt 8,49 €).
+    Wer eine Regel auf die andere Quelle anwendet, verbucht den Rabatt als
+    Aufschlag. Deshalb liegen sie in `picnic/price.ts` als **zwei getrennte
+    Funktionen** (`lineSavings`, `catalogPrice`) nebeneinander.
+    Weiteres: Die Fusion-Suchseite liefert **leere** `decorators` und ist für
     Rabatte unbrauchbar, und `ORDER_ARTICLE.price` ist ein Sentinel-Müllwert
     (`432199`) — der echte Preis steht an der Line. `line.price` ist zudem der
     **Zeilen**-Gesamtpreis, nicht der Stückpreis.

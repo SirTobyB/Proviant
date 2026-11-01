@@ -12,16 +12,8 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	try {
 		await ensureLoggedIn();
-		const units = await searchProducts(query);
-		return Response.json({
-			results: units.slice(0, 15).map((unit) => ({
-				id: unit.id,
-				name: unit.name,
-				unitQuantity: unit.unit_quantity,
-				price: unit.display_price,
-				imageId: unit.image_id
-			}))
-		});
+		const hits = await searchProducts(query);
+		return Response.json({ results: hits.slice(0, 15) });
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Picnic-Suche fehlgeschlagen';
 		return Response.json({ error: message }, { status: 502 });

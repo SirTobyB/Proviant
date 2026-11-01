@@ -6,19 +6,13 @@
  * geprüft, siehe CLAUDE.md):
  *
  *   ORDER_LINE:    line.price = Streichpreis, PRICE-Decorator = gezahlter Preis
- *   Katalogseite:  displayPrice = gezahlter Preis, PRICE-Knoten mit
- *                  isCrossed = Streichpreis
+ *   Katalogseite:  displayPrice = gezahlter Preis, originalPrice =
+ *                  Streichpreis (aus `catalog.getProduct()`)
  *
  * Die beiden Funktionen bleiben deshalb bewusst getrennt statt hinter einer
  * gemeinsamen Abstraktion — eine Zusammenlegung lüde genau zu der
  * Verwechslung ein, die hier der teuerste Fehler wäre (Rabatt als Aufschlag).
  */
-// Deep import wie in `picnic/index.ts`: Bewusst **dieselbe** Suchfunktion wie
-// die Bibliothek, damit unser Streichpreis exakt in dem Bereich gesucht wird,
-// aus dem `extractProductDetails` auch den aktuellen Preis liest. Eine eigene
-// Nachbildung könnte hier auseinanderdriften, und genau das wäre der Bug.
-import { findById } from 'picnic-api/lib/domains/catalog/helpers';
-
 export type ProductPrice = {
 	/** Normalpreis in Cent (der Streichpreis). */
 	regularPrice: number;
@@ -28,73 +22,40 @@ export type ProductPrice = {
 	promoLabel: string | null;
 };
 
-type PriceNode = { price: number; isCrossed: boolean };
-
 /**
- * Sammelt alle `{ type: "PRICE", price: number }`-Knoten der Seite in
- * Dokumentreihenfolge. Tiefenbegrenzt, weil die PML-Strukturen dynamisch sind
- * und wir uns nicht auf ihre Form verlassen können.
+ * Der Ausschnitt von `catalog.getProduct()`, den die Preisdeutung braucht.
+ * Bewusst schmal und mit `unknown`-tauglichen Feldern: die Bibliothek parst
+ * dynamische PML-Strukturen, ein Feld kann also auch einmal fehlen.
  */
-function priceNodes(node: unknown, out: PriceNode[] = [], depth = 0): PriceNode[] {
-	if (depth > 40 || node == null || typeof node !== 'object') return out;
-	if (Array.isArray(node)) {
-		for (const value of node) priceNodes(value, out, depth + 1);
-		return out;
-	}
-	const record = node as Record<string, unknown>;
-	if (record.type === 'PRICE' && typeof record.price === 'number') {
-		out.push({ price: record.price, isCrossed: record.isCrossed === true });
-	}
-	for (const value of Object.values(record)) priceNodes(value, out, depth + 1);
-	return out;
-}
+export type CatalogProductPrices = {
+	displayPrice?: unknown;
+	originalPrice?: unknown;
+	promotion?: { label?: unknown } | null;
+};
 
 /**
- * Container, auf den `extractProductDetails` seine **Preis**-Auswertung
- * beschränkt (siehe node_modules/picnic-api/lib/domains/catalog/helpers.js).
- */
-const MAIN_CONTAINER_ID = 'product-details-page-root-main-container';
-
-/**
- * Der Seitenbereich, der wirklich zum angefragten Produkt gehört.
+ * Preis eines Produkts von der **Katalogseite**: `displayPrice` ist der
+ * gezahlte (ggf. rabattierte) Preis, `originalPrice` der Streichpreis.
  *
- * Nötig, weil `extractProductDetails` den Preis auf diesen Container begrenzt,
- * die `promotion` aber über die **ganze** Seite sucht: Ein Angebot einer
- * Nachbarkachel („Ähnliche Produkte") kann die Aktionsprüfung also auslösen,
- * obwohl das Produkt selbst nicht rabattiert ist. Suchten wir den Streichpreis
- * dann seitenweit, entstünde ein erfundener Rabatt mit überhöhtem Normalpreis.
- *
- * Fehlt der Container, bleibt es bei der ganzen Seite — dieselbe Wahl trifft
- * die Bibliothek, und ein leeres Ergebnis wäre hier schlechter als ein
- * unscharfes.
+ * Seit picnic-api 5 liest die Bibliothek beides selbst aus dem Hauptcontainer
+ * der Produktseite — vorher lag genau diese Eingrenzung hier, weil ein
+ * Nachbarangebot („Ähnliche Produkte") sonst einen erfundenen Rabatt erzeugte.
+ * Geblieben ist die Plausibilitätsprüfung: Nur ein echt **höherer**
+ * Streichpreis ist ein Rabatt, alles andere wäre ein Datenfehler.
  */
-function priceScope(page: unknown): unknown {
-	const body = (page as { layout?: { body?: unknown } } | null)?.layout?.body;
-	if (body == null) return page;
-	try {
-		return findById(body, MAIN_CONTAINER_ID) ?? page;
-	} catch {
-		// Die PML-Struktur ist dynamisch — im Zweifel lieber die ganze Seite
-		return page;
-	}
-}
+export function catalogPrice(product: CatalogProductPrices | null | undefined): ProductPrice | null {
+	const current = product?.displayPrice;
+	if (typeof current !== 'number' || !Number.isFinite(current) || current <= 0) return null;
 
-/**
- * Durchgestrichener Originalpreis eines rabattierten Produkts aus der **rohen**
- * Produktseite. `getProductDetails()` kennt ihn nicht, `search()` liefert
- * leere Decorators — diese Seite ist die einzige Quelle.
- *
- * Gesucht wird nur im Hauptcontainer des Produkts (siehe `priceScope`), dort
- * der erste Treffer in Dokumentreihenfolge. Ohne Rabatt gibt es gar keine
- * PRICE-Komponente — dann `null`.
- */
-export function crossedOutPrice(page: unknown, currentPrice: number): number | null {
-	if (!Number.isFinite(currentPrice) || currentPrice <= 0) return null;
-	for (const node of priceNodes(priceScope(page))) {
-		// Nur ein echt höherer Streichpreis ist ein Rabatt
-		if (node.isCrossed && node.price > currentPrice) return node.price;
-	}
-	return null;
+	const label = typeof product?.promotion?.label === 'string' ? product.promotion.label : null;
+	const original = product?.originalPrice;
+	const regular = typeof original === 'number' && original > current ? original : null;
+
+	// Aktion gemeldet, aber kein Streichpreis: Beschriftung behalten, Ersparnis
+	// weglassen. Lieber kein Rabatt als ein erfundener.
+	return regular == null
+		? { regularPrice: current, promoPrice: null, promoLabel: label }
+		: { regularPrice: regular, promoPrice: current, promoLabel: label };
 }
 
 /**

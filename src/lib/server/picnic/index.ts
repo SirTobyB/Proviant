@@ -6,18 +6,12 @@
  * nur den Warenkorb, bestellt wird immer manuell in der Picnic-App.
  */
 import PicnicClient from 'picnic-api';
-// Deep import bewusst: `getClient().catalog.getProductDetails()` holt intern
-// dieselbe rohe Seite wie `getProductDetailsPage()` und parst sie sofort
-// (siehe node_modules/picnic-api/lib/domains/catalog/service.js) — es gibt
-// dort keine Möglichkeit, an die rohe Seite *und* die geparsten Felder zu
-// kommen, ohne die Seite zweimal zu laden. `picnic-api` hat keine `exports`-
-// Sperre im package.json, der Deep-Import auf den Parser ist also erlaubt.
-import { extractProductDetails } from 'picnic-api/lib/domains/catalog/helpers';
 import * as env from '$app/env/private';
 import fs from 'node:fs';
 import path from 'node:path';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
-import { crossedOutPrice, type ProductPrice } from './price';
+import { catalogPrice, type ProductPrice } from './price';
+import { extractSearchHits, type ProductSearchHit } from './search';
 import {
 	extractRecipeTiles,
 	parseRecipeDetail,
@@ -25,11 +19,18 @@ import {
 	type PicnicRecipeTile
 } from './recipeImport';
 
-export type { DeliveryChecklistItem, ParsedPicnicRecipe, PicnicRecipeTile, ProductPrice };
+export type {
+	DeliveryChecklistItem,
+	ParsedPicnicRecipe,
+	PicnicRecipeTile,
+	ProductPrice,
+	ProductSearchHit
+};
 
 type Client = InstanceType<typeof PicnicClient>;
-type AddProductsItems = Parameters<Client['cart']['addProductsToCart']>[0];
-type SellingUnits = Awaited<ReturnType<Client['catalog']['search']>>;
+
+/** Eine Warenkorb-Position: Picnic-Produkt-ID und Anzahl Gebinde. */
+export type CartItem = { productId: string; quantity: number };
 
 /** Auth-Key überlebt Neustarts in DATA_DIR (Docker-Volume) */
 function authKeyFile(): string {
@@ -98,7 +99,7 @@ export async function login(): Promise<{ needs2FA: boolean }> {
 	}
 	const result = await getClient().auth.login(env.PICNIC_USERNAME!, env.PICNIC_PASSWORD!);
 	persistAuthKey();
-	pending2FA = Boolean(result?.second_factor_authentication_required);
+	pending2FA = Boolean(result?.secondFactorAuthenticationRequired);
 	return { needs2FA: pending2FA };
 }
 
@@ -113,9 +114,38 @@ export async function verify2FA(code: string): Promise<void> {
 	pending2FA = false;
 }
 
-/** Produktsuche, z.B. zur Verknüpfung von Artikeln mit Picnic-IDs */
-export async function searchProducts(query: string): Promise<SellingUnits> {
-	return getClient().catalog.search(query);
+/**
+ * Produktsuche, z.B. zur Verknüpfung von Artikeln mit Picnic-IDs.
+ *
+ * Eine Weiche nach Seitenformat: `catalog.getSearchResults()` aus picnic-api 5
+ * versteht nur die RSC-Fassung der Suchseite, Picnic DE liefert aber noch
+ * Fusion — dann wirft die Bibliothek (live geprüft). Deshalb erst die Seite
+ * holen und nachsehen: Fusion werten wir selbst aus (`search.ts`), bei RSC
+ * übernimmt die Bibliothek. Stellt Picnic DE um, läuft die Suche ohne
+ * Codeänderung weiter.
+ */
+export async function searchProducts(query: string): Promise<ProductSearchHit[]> {
+	const pageId = `search-page-results?search_term=${encodeURIComponent(query)}`;
+	const page = await getClient().app.getPage(pageId);
+	if (page.format === 'fusion') return extractSearchHits(page.page);
+
+	// RSC: Treffer kommen in Abschnitten („Schon mal gekauft", je Produktgruppe
+	// einer), dasselbe Produkt kann in mehreren stehen
+	const results = await getClient().catalog.getSearchResults(query);
+	const hits = new Map<string, ProductSearchHit>();
+	for (const section of results.products?.sections ?? []) {
+		for (const tile of section.products) {
+			if (hits.has(tile.id)) continue;
+			hits.set(tile.id, {
+				id: tile.id,
+				name: tile.name,
+				unitQuantity: tile.unitQuantity,
+				price: tile.displayPrice,
+				imageId: tile.imageId
+			});
+		}
+	}
+	return [...hits.values()];
 }
 
 /** Produktbild als Data-URI, z.B. zur Übernahme in den Artikelstamm */
@@ -127,65 +157,64 @@ export async function getProductImage(imageId: string): Promise<string> {
  * Legt Produkte in den Picnic-Warenkorb (Bestellvorschläge, „Rezept bestellen“).
  * Mengen sind Gebinde-Anzahlen — Aufrunden auf Gebindegrößen passiert vorher.
  */
-export async function addToCart(items: AddProductsItems): Promise<void> {
-	await getClient().cart.addProductsToCart(items);
-}
-
-/** Rohdaten des Warenkorbs — nur intern; nach außen gehen die Mengen-Maps. */
-async function getCart() {
-	return getClient().cart.getCart();
+export async function addToCart(items: CartItem[]): Promise<void> {
+	// picnic-api 5 kennt nur noch das Einzel-Hinzufügen. Bewusst nacheinander:
+	// jeder Aufruf antwortet mit dem ganzen Warenkorb, parallel liefen also
+	// konkurrierende Änderungen desselben Korbs gegen eine fremde Schnittstelle.
+	for (const item of items) {
+		await getClient().cart.addProductToCart(item.productId, item.quantity);
+	}
 }
 
 /**
  * Aktuelle Warenkorb-Mengen je Produkt-ID (für den Abgleich der
- * Bestellvorschläge). Defensiv gehalten: die API ist unoffiziell — bei
- * unerwarteter Antwortstruktur lieber leere Map als Fehler.
+ * Bestellvorschläge).
+ *
+ * Seit picnic-api 5 liest die Bibliothek die Menge selbst aus dem
+ * QUANTITY-Decorator (inkl. `decorator_overrides`) — früher stand hier genau
+ * diese Auswertung, weil ein Produkt je Zeile nur **einmal** auftaucht und
+ * Zählen der Vorkommen immer 1 ergab. Defensiv bleibt es trotzdem: die API ist
+ * unoffiziell, unplausible Zeilen werden übersprungen.
  */
 export async function getCartQuantities(): Promise<Map<string, number>> {
 	await ensureLoggedIn();
-	const cart = await getCart();
+	const cart = await getClient().cart.getCart();
 	const quantities = new Map<string, number>();
-
-	// Primäre Quelle: analytics_context_data.items_list trägt explizite Mengen
-	const analyticsItems = cart?.analytics_context_data?.items_list;
-	if (Array.isArray(analyticsItems)) {
-		for (const item of analyticsItems) {
-			const id = typeof item?.product_id === 'string' ? item.product_id : null;
-			const qty = Number(item?.quantity);
-			if (id && Number.isFinite(qty) && qty > 0) {
-				quantities.set(id, (quantities.get(id) ?? 0) + qty);
-			}
-		}
-	}
-	if (quantities.size > 0) return quantities;
-
-	// Fallback: Menge steht im QUANTITY-Decorator der Warenkorb-Zeile — ein
-	// Produkt taucht dort nur EINMAL auf, egal wie oft es bestellt wurde
-	// (live geprüft), Zählen der Vorkommen ergäbe also immer 1.
-	if (Array.isArray(cart?.items)) {
-		for (const line of cart.items) {
-			if (!Array.isArray(line?.items)) continue;
-			for (const article of line.items) {
-				const id = typeof article?.id === 'string' ? article.id : null;
-				if (!id) continue;
-				const decorator = Array.isArray(article?.decorators)
-					? article.decorators.find((d: { type?: string }) => d?.type === 'QUANTITY')
-					: undefined;
-				const qty = Number((decorator as { quantity?: number } | undefined)?.quantity);
-				quantities.set(id, (quantities.get(id) ?? 0) + (Number.isFinite(qty) && qty > 0 ? qty : 1));
-			}
+	for (const line of cart?.items ?? []) {
+		const id = typeof line?.productId === 'string' && line.productId ? line.productId : null;
+		const qty = Number(line?.quantity);
+		if (id && Number.isFinite(qty) && qty > 0) {
+			quantities.set(id, (quantities.get(id) ?? 0) + qty);
 		}
 	}
 	return quantities;
 }
 
+type ChecklistOrders = NonNullable<Parameters<typeof aggregateChecklist>[0]>;
+
+/** Rohe Lieferung, soweit `checklist.ts` sie liest. */
+type RawDelivery = { orders?: unknown; decorators?: unknown };
+
 /**
- * Decorators der Lieferung — dort meldet Picnic nicht gelieferte Positionen
- * (`ARTICLE_DELIVERY_ISSUES`). Das Feld fehlt in den Typen der `picnic-api`,
- * deshalb hier einmal zentral herausgereicht statt an jeder Fundstelle gecastet.
+ * Lieferung im **Rohformat** von Picnic.
+ *
+ * Bewusst nicht `delivery.getDelivery()`: Das aufbereitete Modell von
+ * picnic-api 5 lässt die Decorators der Lieferung weg — und genau dort meldet
+ * Picnic nicht gelieferte Positionen (`ARTICLE_DELIVERY_ISSUES`, siehe
+ * `checklist.ts`). Ohne sie hielte die Prüfung eine stornierte Position für
+ * erwartet. `sendRequest` ist der dafür vorgesehene, öffentliche Weg.
  */
-function deliveryDecorators(detail: unknown): unknown {
-	return (detail as { decorators?: unknown } | null)?.decorators;
+async function getRawDelivery(deliveryId: string): Promise<RawDelivery> {
+	const raw = await getClient().sendRequest<null, RawDelivery | null>(
+		'GET',
+		`/deliveries/${encodeURIComponent(deliveryId)}`
+	);
+	return raw ?? {};
+}
+
+/** Bestellungen einer rohen Lieferung; defensiv, das Format ist unoffiziell. */
+function rawOrders(detail: RawDelivery): ChecklistOrders {
+	return (Array.isArray(detail.orders) ? detail.orders : []) as ChecklistOrders;
 }
 
 /**
@@ -199,7 +228,7 @@ function deliveryDecorators(detail: unknown): unknown {
  */
 export async function getOpenOrderQuantities(): Promise<Map<string, number>> {
 	await ensureLoggedIn();
-	const deliveries = await getClient().delivery.getDeliveries();
+	const deliveries = await getClient().delivery.getDeliverySummaries();
 	// Bewusst per Ausschluss statt per Positivliste: ein künftiger
 	// Zwischenstatus von Picnic soll als „noch nicht geliefert" zählen
 	const open = deliveries
@@ -208,16 +237,16 @@ export async function getOpenOrderQuantities(): Promise<Map<string, number>> {
 
 	const quantities = new Map<string, number>();
 	for (const delivery of open) {
-		const detail = await getClient().delivery.getDelivery(delivery.delivery_id);
+		const detail = await getRawDelivery(delivery.id);
 		// Stornierte Teilbestellungen kommen nicht mehr — die zählen nicht mit
-		const orders = (detail.orders ?? []).filter(
-			(order) => (order as { status?: string }).status !== 'CANCELLED'
+		const orders = rawOrders(detail).filter(
+			(order) => (order as { status?: string } | null)?.status !== 'CANCELLED'
 		);
 		// Einzelne stornierte Positionen ebenso: `aggregateChecklist` zieht sie
 		// anhand der Lieferungs-Decorators ab. Ohne das gälte ein Artikel, den
 		// Picnic gar nicht liefert, weiter als „unterwegs" und würde nie wieder
 		// vorgeschlagen.
-		for (const item of aggregateChecklist(orders, deliveryDecorators(detail))) {
+		for (const item of aggregateChecklist(orders, detail.decorators)) {
 			if (item.quantity < 1) continue;
 			quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
 		}
@@ -236,17 +265,14 @@ export type DeliverySummary = {
 /** Jüngste Lieferungen als schlanke Zusammenfassung für die Übersicht. */
 export async function getRecentDeliveries(limit = 10): Promise<DeliverySummary[]> {
 	await ensureLoggedIn();
-	const deliveries = await getClient().delivery.getDeliveries();
+	const deliveries = await getClient().delivery.getDeliverySummaries();
 	return deliveries.slice(0, limit).map((delivery) => ({
-		id: delivery.delivery_id,
-		creationTime: delivery.creation_time,
-		deliveryStart: delivery.delivery_time?.start ?? delivery.eta2?.start ?? null,
+		id: delivery.id,
+		creationTime: delivery.creationTime,
+		deliveryStart: delivery.windowStart,
 		status: delivery.status,
-		// Summe der Bestellwerte der (Teil-)Bestellungen dieser Lieferung
-		totalPrice: (delivery.orders ?? []).reduce(
-			(sum, order) => sum + ((order as { total_price?: number }).total_price ?? 0),
-			0
-		)
+		// Summe der Bestellwerte der (Teil-)Bestellungen — rechnet die Bibliothek
+		totalPrice: delivery.totalPrice
 	}));
 }
 
@@ -256,8 +282,8 @@ export async function getRecentDeliveries(limit = 10): Promise<DeliverySummary[]
  */
 export async function getDeliveryChecklist(deliveryId: string): Promise<DeliveryChecklistItem[]> {
 	await ensureLoggedIn();
-	const detail = await getClient().delivery.getDelivery(deliveryId);
-	return aggregateChecklist(detail.orders, deliveryDecorators(detail));
+	const detail = await getRawDelivery(deliveryId);
+	return aggregateChecklist(rawOrders(detail), detail.decorators);
 }
 
 export type OrderedProduct = {
@@ -309,17 +335,34 @@ export async function listOrderedProducts(deliveryLimit = 10): Promise<OrderedPr
 	);
 }
 
+/**
+ * Rohe Fusion-Seite für unsere eigenen Parser in `recipeImport.ts`.
+ *
+ * picnic-api 5 hat die Seitenabrufe der Rezepte privat gemacht; `app.getPage`
+ * ist der öffentliche Ersatz. Picnic stellt Seiten nach und nach auf RSC um —
+ * kommt eine als RSC, verstehen unsere Parser sie nicht. Dann lieber eine
+ * klare Meldung als ein still leerer Import.
+ */
+async function getFusionPage(pageId: string): Promise<unknown> {
+	const page = await getClient().app.getPage(pageId);
+	if (page.format !== 'fusion') {
+		throw new Error(`Picnic liefert die Seite ${pageId.split('?')[0]} in einem unbekannten Format (${page.format})`);
+	}
+	return page.page;
+}
+
 /** Rezepte der Picnic-Rezeptseite (Kacheln mit ID und Name). */
 export async function listPicnicRecipes(): Promise<PicnicRecipeTile[]> {
 	await ensureLoggedIn();
-	const page = await getClient().recipe.getRecipesPage();
-	return extractRecipeTiles(page);
+	return extractRecipeTiles(await getFusionPage('meals-page-root'));
 }
 
 /** Detaildaten eines Picnic-Rezepts (Zutaten, Portionen, Schritte). */
 export async function getPicnicRecipeDetail(id: string, name?: string): Promise<ParsedPicnicRecipe> {
 	await ensureLoggedIn();
-	const page = await getClient().recipe.getRecipeDetailsPage(id);
+	const page = await getFusionPage(
+		`selling-group-details-page?selling_group_id=${encodeURIComponent(id)}`
+	);
 	return parseRecipeDetail(page, name);
 }
 
@@ -327,40 +370,14 @@ export async function getPicnicRecipeDetail(id: string, name?: string): Promise<
  * Preis je Produkt-ID. Es gibt **keinen Bulk-Lookup** — ein Call pro Produkt,
  * deshalb ist die Menge vom Aufrufer zu deckeln (siehe `server/prices.ts`).
  *
- * Genau **ein** HTTP-Call, ob im Angebot oder nicht: `getProductDetails()`
- * holt intern dieselbe rohe Seite, die auch `getProductDetailsPage()` liefert,
- * und wirft sie danach weg — ein zweiter Aufruf würde also nur dieselbe URL
- * doppelt laden. Stattdessen wird die rohe Seite hier **einmal** geholt und
- * zweimal ausgewertet: einmal über `extractProductDetails()` (aktueller
- * Preis + `promotion`), bei laufender Aktion zusätzlich über
- * `crossedOutPrice()` (Streichpreis) auf derselben Seite.
+ * `catalog.getProduct()` lädt die Produktseite genau **einmal** und liefert
+ * seit picnic-api 5 auch den Streichpreis (`originalPrice`) — vorher musste
+ * die rohe Seite dafür ein zweites Mal ausgewertet werden. Die Deutung liegt
+ * in `catalogPrice()`; ein Parserfehler der Bibliothek wird in
+ * `getProductPrices` zu „kein Preis", lieber das als ein kaputter.
  */
 async function fetchProductPrice(id: string): Promise<ProductPrice | null> {
-	const page = await getClient().catalog.getProductDetailsPage(id);
-
-	// `extractProductDetails` parst dynamische PML-Strukturen und ist laut
-	// picnic-api selbst "experimental" — lieber null als ein kaputtes Ergebnis.
-	let details: ReturnType<typeof extractProductDetails>;
-	try {
-		details = extractProductDetails(id, page);
-	} catch {
-		return null;
-	}
-
-	const current = details.displayPrice;
-	if (typeof current !== 'number' || current <= 0) return null;
-
-	const promotion = details.promotion;
-	if (!promotion) return { regularPrice: current, promoPrice: null, promoLabel: null };
-
-	const label = typeof promotion.label === 'string' ? promotion.label : null;
-	const regular = crossedOutPrice(page, current);
-
-	// Aktion gemeldet, aber kein Streichpreis auffindbar: Beschriftung
-	// behalten, Ersparnis weglassen. Lieber kein Rabatt als ein erfundener.
-	return regular == null
-		? { regularPrice: current, promoPrice: null, promoLabel: label }
-		: { regularPrice: regular, promoPrice: current, promoLabel: label };
+	return catalogPrice(await getClient().catalog.getProduct(id));
 }
 
 /**
