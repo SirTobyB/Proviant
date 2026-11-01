@@ -87,6 +87,10 @@
 	</div>
 {/if}
 
+{#if data.offersUnavailable}
+	<div class="mt-4 max-w-2xl rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">{t('offers.unavailable')}</div>
+{/if}
+
 {#if form && 'cartMessage' in form && form.cartMessage}
 	<div class="mt-4 max-w-2xl rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{form.cartMessage}</div>
 {/if}

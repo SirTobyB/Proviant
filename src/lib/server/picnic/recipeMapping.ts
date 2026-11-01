@@ -61,10 +61,13 @@ function mapIngredient(raw: unknown): ParsedPicnicIngredient | null {
 	const name = text(ing.name);
 	if (!name) return null;
 	const pantry = PANTRY_TYPES.has(String(ing.type));
-	const { amount, unit } = parseNeededText(text(ing.neededText));
-	// Ohne Mengenangabe gehört eine Zutat nur als Vorrat ins Grundrezept,
-	// sonst ist sie Teil einer Abwandlung
-	if (ing.type === 'VARIATION' || (amount === null && !pantry)) return null;
+	const neededText = text(ing.neededText);
+	const { amount, unit } = parseNeededText(neededText);
+	// Ganz ohne Mengenangabe gehört eine Zutat nur als Vorrat ins Grundrezept,
+	// sonst ist sie Teil einer Abwandlung. Eine vorhandene, aber nicht lesbare
+	// Angabe („½ Bund“, „1-2 Stk.“) ist dagegen eine echte Zutat — die kommt
+	// mit, nur ohne Menge, statt still zu verschwinden.
+	if (ing.type === 'VARIATION' || (neededText === null && !pantry)) return null;
 	return { name: cleanText(name), amount, unit, picnicId: text(ing.sellingUnitId), pantry };
 }
 

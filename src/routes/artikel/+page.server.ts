@@ -57,7 +57,9 @@ export const load: PageServerLoad = async ({ url }) => {
 	// Angebote kommen von Picnic (bei leerem Zwischenspeicher ein paar Sekunden):
 	// nur abwarten, wenn danach gefiltert wird — sonst nachstreamen, damit die
 	// Liste sofort steht und die Abzeichen nachrücken
-	const offers = currentOffers().then((map) => Object.fromEntries(map) as Record<string, CatalogPrice>);
+	const offersResult = currentOffers();
+	const offers = offersResult.then(({ offers }) => Object.fromEntries(offers) as Record<string, CatalogPrice>);
+	const offersUnavailable = offersOnly ? (await offersResult).unavailable : false;
 	const shown = offersOnly
 		? await offers.then((byId) => filtered.filter((r) => r.picnicId && byId[r.picnicId]))
 		: filtered;
@@ -67,6 +69,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		query,
 		tagFilter,
 		filters: { query, tag: tagFilter, noLocation, offers: offersOnly },
+		offersUnavailable,
 		allTags: allArticleTagNames(),
 		offers,
 		// Nachgestreamt wie die Angebote: die Liste wartet nicht auf Picnic

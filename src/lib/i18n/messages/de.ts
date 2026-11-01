@@ -244,6 +244,7 @@ export const de: Messages = {
 	'offers.title': 'Angebote',
 	'offers.subtitle': 'Eure Artikel, die bei Picnic gerade im Angebot sind',
 	'offers.empty': 'Gerade ist keiner eurer Artikel im Angebot.',
+	'offers.unavailable': 'Die Picnic-Angebote lassen sich gerade nicht abrufen – bitte später erneut versuchen.',
 	'offers.badge': 'Angebot −{percent} %',
 	'offers.onOffer': 'Im Angebot:',
 	'offers.unitPrice': 'je {price} statt {regular}',

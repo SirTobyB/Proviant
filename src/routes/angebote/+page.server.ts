@@ -10,7 +10,7 @@ import type { Actions, PageServerLoad } from './$types';
 /** Alle eigenen Artikel, die bei Picnic gerade im Angebot sind. */
 export const load: PageServerLoad = async () => {
 	const connection = getConnectionState();
-	const offers = await currentOffers();
+	const { offers, unavailable } = await currentOffers();
 
 	const rows = db
 		.select({
@@ -36,7 +36,7 @@ export const load: PageServerLoad = async () => {
 		})
 	);
 
-	return { connection, items, cart: await cartQuantitiesForPage() };
+	return { connection, items, unavailable, cart: await cartQuantitiesForPage() };
 };
 
 export const actions: Actions = {

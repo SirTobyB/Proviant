@@ -255,6 +255,7 @@ export const en = {
 	'offers.title': 'Offers',
 	'offers.subtitle': 'Your items that are currently on offer at Picnic',
 	'offers.empty': 'None of your items is on offer right now.',
+	'offers.unavailable': 'Picnic offers cannot be fetched right now – please try again later.',
 	'offers.badge': 'Offer −{percent} %',
 	'offers.onOffer': 'On offer:',
 	'offers.unitPrice': '{price} each instead of {regular}',

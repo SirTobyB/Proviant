@@ -3,7 +3,8 @@
  *
  * Die Angebotsseite samt Aktionsgruppen kostet gut drei Dutzend Anfragen; sie
  * wird deshalb höchstens einmal je Stunde geholt, danach im Hintergrund
- * aufgefrischt, während noch der alte Stand gilt. Der Zwischenspeicher liegt bewusst
+ * aufgefrischt, während noch der alte Stand gilt — längstens einen Tag
+ * (Regel in `offerCache.ts`). Der Zwischenspeicher liegt bewusst
  * auf Modulebene: Er enthält nur sprachunabhängige Picnic-Daten und gilt für
  * alle Anfragen gleichermaßen — **niemals** etwas Anfrage- oder
  * Sprachbezogenes hier ablegen (siehe CLAUDE.md, Mehrsprachigkeit).
@@ -14,32 +15,60 @@
 import { db } from '#lib/server/db/index.js';
 import { articles } from '#lib/server/db/schema.js';
 import { getConnectionState, getPromotedProducts, type CatalogPrice } from '#lib/server/picnic/index.js';
-import { storePrices } from '#lib/server/prices.js';
+import { pricesFor, storePrices } from '#lib/server/prices.js';
 import { logWarn } from '#lib/server/log.js';
+import { mergeOffers, offerCacheState } from '#lib/server/offerCache.js';
 import { isNotNull } from 'drizzle-orm';
-
-const MAX_AGE_MS = 60 * 60 * 1000;
 
 let cache: { at: number; data: Map<string, CatalogPrice> } | null = null;
 let inflight: Promise<Map<string, CatalogPrice>> | null = null;
 
-async function promotedProducts(): Promise<Map<string, CatalogPrice>> {
-	// Gleichzeitige Aufrufe teilen sich einen Abruf, statt Picnic doppelt zu fragen
-	const refresh = () =>
-		(inflight ??= getPromotedProducts()
-			.then((data) => {
-				cache = { at: Date.now(), data };
-				return data;
-			})
-			.finally(() => {
-				inflight = null;
-			}));
+/** Picnic-IDs, die als Artikel geführt werden. */
+function ownPicnicIds(): string[] {
+	return db
+		.select({ picnicId: articles.picnicId })
+		.from(articles)
+		.where(isNotNull(articles.picnicId))
+		.all()
+		.map((row) => row.picnicId)
+		.filter((id): id is string => Boolean(id));
+}
 
-	if (!cache) return refresh();
+function ownOffers(promoted: Map<string, CatalogPrice>): Map<string, CatalogPrice> {
+	const offers = new Map<string, CatalogPrice>();
+	for (const picnicId of ownPicnicIds()) {
+		const price = promoted.get(picnicId);
+		if (price) offers.set(picnicId, price);
+	}
+	return offers;
+}
+
+/**
+ * Holt die Angebote neu. Nur hier landen sie im Preis-Cache — mit dem
+ * Zeitpunkt des Abrufs, damit ein alter Stand nie als frisch gilt.
+ * Gleichzeitige Aufrufe teilen sich einen Abruf.
+ */
+function refresh(): Promise<Map<string, CatalogPrice>> {
+	return (inflight ??= getPromotedProducts()
+		.then((data) => {
+			cache = { at: Date.now(), data };
+			storePrices(ownOffers(data), new Date(cache.at));
+			return data;
+		})
+		.finally(() => {
+			inflight = null;
+		}));
+}
+
+async function promotedProducts(): Promise<Map<string, CatalogPrice>> {
+	const state = offerCacheState(cache?.at ?? null, Date.now());
+	// Ohne oder mit abgelaufenem Stand muss gewartet werden; scheitert das,
+	// gibt es eben keine Angebote statt veralteter
+	if (state === 'missing' || state === 'expired' || !cache) return refresh();
 	// Veraltet: sofort den alten Stand zeigen und im Hintergrund auffrischen.
 	// Ein Abruf dauert live über zehn Sekunden (jede Aktionsgruppe einzeln) —
-	// darauf soll höchstens der allererste Seitenaufruf warten.
-	if (Date.now() - cache.at >= MAX_AGE_MS) {
+	// darauf soll höchstens der erste Seitenaufruf warten.
+	if (state === 'stale') {
 		refresh().catch((err) =>
 			logWarn('Picnic-Angebote nicht auffrischbar', { fehler: err instanceof Error ? err.message : String(err) })
 		);
@@ -48,29 +77,17 @@ async function promotedProducts(): Promise<Map<string, CatalogPrice>> {
 }
 
 /**
- * Angebote je Picnic-ID, beschränkt auf eigene Artikel. Ohne Verbindung oder
- * bei einem Fehler leer — die Seiten zeigen dann eben keine Angebote.
+ * Angebote je Picnic-ID, beschränkt auf eigene Artikel. `unavailable`, wenn
+ * Picnic verbunden ist, die Angebote aber nicht abrufbar waren — die Seiten
+ * sagen das dann, statt „nichts im Angebot“ zu behaupten.
  */
-export async function currentOffers(): Promise<Map<string, CatalogPrice>> {
-	if (getConnectionState() !== 'connected') return new Map();
-	let promoted: Map<string, CatalogPrice>;
+export async function currentOffers(): Promise<{ offers: Map<string, CatalogPrice>; unavailable: boolean }> {
+	if (getConnectionState() !== 'connected') return { offers: new Map(), unavailable: false };
 	try {
-		promoted = await promotedProducts();
+		const promoted = ownOffers(await promotedProducts());
+		return { offers: mergeOffers(promoted, pricesFor(ownPicnicIds()), Date.now()), unavailable: false };
 	} catch (err) {
 		logWarn('Picnic-Angebote nicht abrufbar', { fehler: err instanceof Error ? err.message : String(err) });
-		return new Map();
+		return { offers: new Map(), unavailable: true };
 	}
-
-	const own = db
-		.select({ picnicId: articles.picnicId })
-		.from(articles)
-		.where(isNotNull(articles.picnicId))
-		.all();
-	const offers = new Map<string, CatalogPrice>();
-	for (const { picnicId } of own) {
-		const price = picnicId ? promoted.get(picnicId) : undefined;
-		if (picnicId && price) offers.set(picnicId, price);
-	}
-	storePrices(offers);
-	return offers;
 }

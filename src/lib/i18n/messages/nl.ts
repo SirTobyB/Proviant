@@ -245,6 +245,7 @@ export const nl: Messages = {
 	'offers.title': 'Aanbiedingen',
 	'offers.subtitle': 'Jullie artikelen die nu in de aanbieding zijn bij Picnic',
 	'offers.empty': 'Op dit moment is geen van jullie artikelen in de aanbieding.',
+	'offers.unavailable': 'De Picnic-aanbiedingen kunnen nu niet worden opgehaald – probeer het later opnieuw.',
 	'offers.badge': 'Aanbieding −{percent} %',
 	'offers.onOffer': 'In de aanbieding:',
 	'offers.unitPrice': '{price} per stuk in plaats van {regular}',

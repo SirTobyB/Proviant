@@ -83,6 +83,21 @@ describe('mapPicnicRecipe', () => {
 		expect(names).not.toContain('Mühlen Chunks natur vegan');
 	});
 
+	// Review: eine vorhandene, aber nicht lesbare Mengenangabe ist eine echte Zutat
+	it('behält Zutaten mit unlesbarer Mengenangabe, nur ohne Menge', () => {
+		const odd = mapPicnicRecipe({
+			...gyros,
+			ingredients: [
+				{ name: 'Petersilie', sellingUnitId: 's7', type: 'CORE', neededText: '(½ Bund benötigt)' },
+				{ name: 'Tomaten', sellingUnitId: 's8', type: 'CORE', neededText: '(1-2 Stk. benötigt)' }
+			]
+		});
+		expect(odd.ingredients).toEqual([
+			{ name: 'Petersilie', amount: null, unit: null, picnicId: 's7', pantry: false },
+			{ name: 'Tomaten', amount: null, unit: null, picnicId: 's8', pantry: false }
+		]);
+	});
+
 	it('behält ausgelaufene Produkte ohne ID und verwirft namenlose', () => {
 		expect(mapped.ingredients.find((ing) => ing.name === 'Altes Produkt')).toMatchObject({ picnicId: null });
 		expect(mapped.ingredients).toHaveLength(6);

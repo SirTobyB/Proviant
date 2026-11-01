@@ -26,6 +26,10 @@
 			{t('recipeImport.connectBefore')}<a href="/bestellen" class="text-green-700 underline">{t('nav.order')}</a>{t('recipeImport.connectAfter')}
 		</p>
 	</div>
+{:else if data.unavailable}
+	<div class="mt-6 max-w-2xl rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
+		{t('offers.unavailable')}
+	</div>
 {:else if data.items.length === 0}
 	<div class="mt-6 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
 		{t('offers.empty')}

@@ -126,7 +126,8 @@ export async function refreshPrices(
 }
 
 /**
- * Legt Preise im Cache ab (Upsert, Zeitstempel jetzt) und gibt zurück, wie
+ * Legt Preise im Cache ab (Upsert; Zeitstempel = Abrufzeitpunkt, Standard
+ * jetzt) und gibt zurück, wie
  * viele es geschafft haben. Genutzt von der Auffrischung, dem Angebotsabgleich
  * und dem Live-Abruf der Artikelseite — so zeigen alle Seiten denselben Stand.
  *
@@ -136,8 +137,8 @@ export async function refreshPrices(
  * Preis schlägt eine Fehlerseite. Stumm bleibt es trotzdem nicht, sonst bliebe
  * ein echtes Datenbankproblem unbemerkt.
  */
-export function storePrices(prices: Map<string, CatalogPrice>): number {
-	const now = new Date();
+export function storePrices(prices: Map<string, CatalogPrice>, fetchedAt: Date = new Date()): number {
+	const now = fetchedAt;
 	let stored = 0;
 	for (const [picnicId, price] of prices) {
 		const values = {

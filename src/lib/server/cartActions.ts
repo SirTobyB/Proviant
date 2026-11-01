@@ -48,9 +48,15 @@ export async function swapCartLine(productId: string, replacementId: string): Pr
 	const replacementBefore = quantities.get(replacementId) ?? 0;
 
 	await removeFromCart(productId, count);
-	await addToCart([{ productId: replacementId, quantity: count }]);
-	const after = await getCartQuantities();
-	if ((after.get(replacementId) ?? 0) >= replacementBefore + count) return 'ok';
+	try {
+		await addToCart([{ productId: replacementId, quantity: count }]);
+		const after = await getCartQuantities();
+		if ((after.get(replacementId) ?? 0) >= replacementBefore + count) return 'ok';
+	} catch (err) {
+		// Auch bei einem Fehler mittendrin: erst das Original zurück, dann melden
+		await addToCart([{ productId, quantity: count }]);
+		throw err;
+	}
 
 	await addToCart([{ productId, quantity: count }]);
 	return 'notApplied';
