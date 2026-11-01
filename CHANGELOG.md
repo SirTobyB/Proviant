@@ -24,6 +24,14 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   gratis“ oder „-50% auf 2. Artikel“ werden umgerechnet („je 2,50 € statt
   3,29 € · bei 2 Stück“). Bestellvorschläge und Rezeptkosten rechnen solche
   Angebote nur für volle Bündel an.
+- **Mehr Produktdaten am Artikel: Marke, Herkunft, Bio und Nährwerte.**
+  Beim Import aus Picnic werden sie gleich mit übernommen; bei schon
+  verknüpften Artikeln holt sie der Knopf „Daten von Picnic aktualisieren“
+  auf der Artikelseite nach. Marke, Herkunft und Bio lassen sich im
+  Artikelformular auch von Hand pflegen. Die Artikelseite zeigt dazu den
+  aktuellen Grundpreis (z.B. „€2.99/kg“) und die Nährwerttabelle. Die
+  Herkunft gibt Picnic nur bei frischer Ware an (Obst, Gemüse); bei
+  verarbeiteten Produkten bleibt das Feld leer.
 - **Artikelimport aus den Picnic-Favoriten.** Neben den letzten Lieferungen
   bietet der Import jetzt die Favoriten aus der Picnic-App an – alle
   Produkte, die der Haushalt dort kauft, nach Gang gruppiert. Bereits

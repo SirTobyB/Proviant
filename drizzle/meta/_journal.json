@@ -85,6 +85,13 @@
       "when": 1793537058413,
       "tag": "0011_tiny_randall_flagg",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1793537562841,
+      "tag": "0012_brave_the_renegades",
+      "breakpoints": true
     }
   ]
 }

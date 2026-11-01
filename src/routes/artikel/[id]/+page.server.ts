@@ -7,7 +7,14 @@ import { allArticleTagNames, setArticleTags, tagsForArticle } from '#lib/server/
 import { auditEdit } from '#lib/server/audit.js';
 import { deleteImage } from '#lib/server/images.js';
 import { moveStockEntryFromForm, updateStockEntryFromForm } from '#lib/server/stock.js';
-import { getConnectionState, getProductDetails, type CatalogPrice } from '#lib/server/picnic/index.js';
+import {
+	describePicnicError,
+	getConnectionState,
+	getProductDetails,
+	type CatalogPrice,
+	type NutritionRow
+} from '#lib/server/picnic/index.js';
+import { applyProductFacts } from '#lib/server/articleImport.js';
 import { storePrices } from '#lib/server/prices.js';
 import { logWarn } from '#lib/server/log.js';
 import { eq } from 'drizzle-orm';
@@ -45,6 +52,17 @@ async function picnicDetails(
 	}
 }
 
+/** Gespeicherte Nährwerttabelle; Unlesbares zählt als „keine“. */
+function parseNutrition(raw: string | null): NutritionRow[] | null {
+	if (!raw) return null;
+	try {
+		const rows: unknown = JSON.parse(raw);
+		return Array.isArray(rows) && rows.length > 0 ? (rows as NutritionRow[]) : null;
+	} catch {
+		return null;
+	}
+}
+
 export const load: PageServerLoad = ({ params, locals }) => {
 	const t = translator(locals.locale);
 	const article = getArticle(params.id, t);
@@ -76,6 +94,7 @@ export const load: PageServerLoad = ({ params, locals }) => {
 
 	return {
 		article,
+		nutrition: parseNutrition(article.nutrition),
 		picnic: picnicDetails(article.picnicId),
 		tags: tagsForArticle(article.id),
 		stock: [...byLocation.values()],
@@ -113,6 +132,20 @@ export const actions: Actions = {
 		if (imagePath !== undefined && article.imagePath) deleteImage(article.imagePath);
 
 		redirect(303, '/artikel');
+	},
+
+	// Marke, Herkunft, Bio und Nährwerte neu von Picnic übernehmen (überschreibt)
+	refreshFromPicnic: async ({ params, locals }) => {
+		const t = translator(locals.locale);
+		const article = getArticle(params.id, t);
+		if (!article.picnicId) return fail(400, { factsMessage: t('item.facts.notLinked') });
+		try {
+			const { facts } = await getProductDetails(article.picnicId);
+			applyProductFacts(article.id, facts, locals.user?.username ?? null);
+			return { factsRefreshed: true };
+		} catch (err) {
+			return fail(502, { factsMessage: describePicnicError(err, t, 'Produktdaten aktualisieren') });
+		}
 	},
 
 	delete: ({ params, locals }) => {

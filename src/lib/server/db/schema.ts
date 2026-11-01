@@ -87,6 +87,14 @@ export const articles = sqliteTable('articles', {
 	/** Mindestbestand (Anzahl Gebinde); 0 = kein Bestellvorschlag */
 	minStock: integer('min_stock').notNull().default(0),
 	defaultLocationId: integer('default_location_id').references(() => storageLocations.id),
+	/** Marke, z.B. „Weihenstephan“ (von Picnic oder von Hand) */
+	brand: text('brand'),
+	/** Herkunftsland, z.B. „Frankreich“ (bei Picnic nur für frische Ware angegeben) */
+	origin: text('origin'),
+	/** Bio-Siegel vorhanden */
+	organic: integer('organic', { mode: 'boolean' }).notNull().default(false),
+	/** Nährwerttabelle von Picnic als JSON (`NutritionRow[]`), nicht von Hand pflegbar */
+	nutrition: text('nutrition'),
 	...auditFull()
 });
 

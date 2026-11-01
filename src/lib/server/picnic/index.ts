@@ -17,11 +17,14 @@ import { catalogPrice, tilePrice, type CatalogPrice, type ProductPrice } from '.
 import { extractSearchHits, type ProductSearchHit } from './search';
 import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
 import { mapPicnicRecipe } from './recipeMapping';
+import { extractProductFacts, type NutritionRow, type ProductFacts } from './productFacts';
 
 export { picnicErrorKind };
 export type {
 	PicnicErrorKind,
 	CatalogPrice,
+	NutritionRow,
+	ProductFacts,
 	DeliveryChecklistItem,
 	ParsedPicnicRecipe,
 	PicnicRecipeTile,
@@ -574,13 +577,13 @@ export async function getPromotedProducts(): Promise<Map<string, CatalogPrice>> 
 }
 
 /**
- * Ein Produkt für die Artikelseite: Preis (mit Angebot), Grundpreis und das
- * vollständige Produkt — für die Produktdaten (Marke, Bio, Nährwerte).
+ * Ein Produkt für die Artikelseite: Preis (mit Angebot), Grundpreis und die
+ * Produktdaten (Marke, Herkunft, Bio, Nährwerte) — alles aus einem Abruf.
  */
 export async function getProductDetails(
 	id: string
-): Promise<{ price: CatalogPrice | null; unitPrice: string | null; product: unknown }> {
+): Promise<{ price: CatalogPrice | null; unitPrice: string | null; facts: ProductFacts }> {
 	await ensureLoggedIn();
 	const product = await getClient().catalog.getProduct(id);
-	return { price: catalogPrice(product), unitPrice: product.unitPrice ?? null, product };
+	return { price: catalogPrice(product), unitPrice: product.unitPrice ?? null, facts: extractProductFacts(product) };
 }

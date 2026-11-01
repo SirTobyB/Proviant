@@ -4,9 +4,10 @@
  */
 import { db } from '#lib/server/db/index.js';
 import { articles } from '#lib/server/db/schema.js';
-import { auditNew } from '#lib/server/audit.js';
+import { auditEdit, auditNew } from '#lib/server/audit.js';
 import { saveImageFromDataUri } from '#lib/server/images.js';
-import { getProductImage } from '#lib/server/picnic/index.js';
+import { getProductDetails, getProductImage, type ProductFacts } from '#lib/server/picnic/index.js';
+import { logWarn } from '#lib/server/log.js';
 import { parseUnitQuantity } from '#lib/server/picnic/unitQuantity.js';
 import { eq } from 'drizzle-orm';
 
@@ -62,5 +63,31 @@ export async function importArticleFromPicnic(
 		.returning({ id: articles.id })
 		.get().id;
 
+	// Produktdaten nachziehen; scheitert das, bleibt der Artikel eben ohne —
+	// sie lassen sich später auf der Artikelseite von Picnic nachladen
+	try {
+		const { facts } = await getProductDetails(product.productId);
+		applyProductFacts(articleId, facts, user);
+	} catch (err) {
+		logWarn('Produktdaten beim Import nicht abrufbar', {
+			picnicId: product.productId,
+			fehler: err instanceof Error ? err.message : String(err)
+		});
+	}
+
 	return { articleId, created: true };
+}
+
+/** Schreibt Marke, Herkunft, Bio und Nährwerte von Picnic an den Artikel (überschreibt). */
+export function applyProductFacts(articleId: number, facts: ProductFacts, user: string | null): void {
+	db.update(articles)
+		.set({
+			brand: facts.brand,
+			origin: facts.origin,
+			organic: facts.organic,
+			nutrition: facts.nutrition ? JSON.stringify(facts.nutrition) : null,
+			...auditEdit(user)
+		})
+		.where(eq(articles.id, articleId))
+		.run();
 }

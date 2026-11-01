@@ -30,7 +30,51 @@
 	{/if}
 {/await}
 
-{#key data.article.id}
+<!-- Produktdaten: gespeichert (Marke, Herkunft, Bio, Nährwerte), Grundpreis live -->
+{#if data.article.picnicId || data.article.brand || data.article.origin || data.article.organic}
+	<div class="mt-3 max-w-xl rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm">
+		<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+			{#if data.article.brand}<span><span class="text-gray-500">{t('form.brand')}:</span> {data.article.brand}</span>{/if}
+			{#if data.article.origin}<span><span class="text-gray-500">{t('form.origin')}:</span> {data.article.origin}</span>{/if}
+			{#if data.article.organic}<span class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700">{t('form.organic')}</span>{/if}
+			{#await data.picnic then picnic}
+				{#if picnic?.unitPrice}<span><span class="text-gray-500">{t('item.facts.unitPrice')}:</span> {picnic.unitPrice}</span>{/if}
+			{/await}
+		</div>
+		{#if data.nutrition}
+			<details class="mt-2">
+				<summary class="cursor-pointer text-gray-600">{t('item.facts.nutrition')}</summary>
+				<table class="mt-2 w-full text-xs">
+					<tbody>
+						{#each data.nutrition as row, index (index)}
+							<tr class="border-t border-gray-100">
+								<td class="py-1 {row.isCategory ? 'font-medium' : 'pl-3 text-gray-500'}">{row.label}</td>
+								<td class="py-1 text-right">{row.value ?? ''}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</details>
+		{/if}
+		{#if data.article.picnicId}
+			<form method="POST" action="?/refreshFromPicnic" use:enhance class="mt-2">
+				<button type="submit" class="text-sm font-medium text-green-700 underline hover:text-green-800">
+					{t('item.facts.refresh')}
+				</button>
+			</form>
+		{/if}
+		{#if form && 'factsRefreshed' in form && form.factsRefreshed}
+			<p class="mt-1 text-xs text-green-700">{t('item.facts.refreshed')}</p>
+		{/if}
+		{#if form && 'factsMessage' in form && form.factsMessage}
+			<p class="mt-1 text-xs text-red-700">{form.factsMessage}</p>
+		{/if}
+	</div>
+{/if}
+
+<!-- Neu aufbauen, wenn sich der Artikel geändert hat (z.B. Produktdaten von Picnic) —
+     sonst überschriebe das nächste Speichern die neuen Werte mit den alten -->
+{#key `${data.article.id}-${data.article.updatedAt}`}
 	<ArticleForm
 		article={{ ...data.article, tags: data.tags }}
 		locations={data.locations}
