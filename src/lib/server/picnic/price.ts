@@ -13,6 +13,8 @@
  * gemeinsamen Abstraktion — eine Zusammenlegung lüde genau zu der
  * Verwechslung ein, die hier der teuerste Fehler wäre (Rabatt als Aufschlag).
  */
+import { offerFromLabel, type PriceTier } from '#lib/offers.js';
+
 export type ProductPrice = {
 	/** Normalpreis in Cent (der Streichpreis). */
 	regularPrice: number;
@@ -20,6 +22,18 @@ export type ProductPrice = {
 	promoPrice: number | null;
 	/** Beschriftung der Aktion, z.B. „10% Rabatt". Reine Anzeige. */
 	promoLabel: string | null;
+};
+
+/**
+ * Preis von der Katalogseite: zusätzlich Mehrfachangebot und Preisstaffeln.
+ * Ein Mehrfachangebot („2 für 4.99€“) steht als Stückpreis in `promoPrice`
+ * und gilt erst ab `promoMinQuantity` Packungen.
+ */
+export type CatalogPrice = ProductPrice & {
+	/** Mindestmenge, ab der `promoPrice` gilt; `null` = ab einer Packung. */
+	promoMinQuantity: number | null;
+	/** Staffelpreise ab der zweiten Stufe; `null` = keine Staffel. */
+	priceRanges: PriceTier[] | null;
 };
 
 /**
@@ -31,6 +45,7 @@ export type CatalogProductPrices = {
 	displayPrice?: unknown;
 	originalPrice?: unknown;
 	promotion?: { label?: unknown } | null;
+	priceRanges?: unknown;
 };
 
 /**
@@ -43,19 +58,82 @@ export type CatalogProductPrices = {
  * Geblieben ist die Plausibilitätsprüfung: Nur ein echt **höherer**
  * Streichpreis ist ein Rabatt, alles andere wäre ein Datenfehler.
  */
-export function catalogPrice(product: CatalogProductPrices | null | undefined): ProductPrice | null {
-	const current = product?.displayPrice;
-	if (typeof current !== 'number' || !Number.isFinite(current) || current <= 0) return null;
-
+export function catalogPrice(product: CatalogProductPrices | null | undefined): CatalogPrice | null {
 	const label = typeof product?.promotion?.label === 'string' ? product.promotion.label : null;
-	const original = product?.originalPrice;
-	const regular = typeof original === 'number' && original > current ? original : null;
+	return interpret(product?.displayPrice, product?.originalPrice, label ? [label] : [], product?.priceRanges, label);
+}
 
-	// Aktion gemeldet, aber kein Streichpreis: Beschriftung behalten, Ersparnis
+/**
+ * Preis einer **Produktkachel** (Angebotsseite, Aktionsgruppen, Ersatzvorschläge).
+ * Dieselbe Regel wie `catalogPrice`; die Aktion steht hier aber nicht in
+ * `promotion`, sondern zwischen anderen Beschriftungen („Bio“, „2+1 gratis“).
+ */
+export function tilePrice(tile: unknown): CatalogPrice | null {
+	if (tile == null || typeof tile !== 'object') return null;
+	const record = tile as { displayPrice?: unknown; originalPrice?: unknown; labels?: unknown; priceRanges?: unknown };
+	const labels = Array.isArray(record.labels)
+		? record.labels.map((l: unknown) => (l as { text?: unknown } | null)?.text).filter((t): t is string => typeof t === 'string')
+		: [];
+	return interpret(record.displayPrice, record.originalPrice, labels, record.priceRanges, null);
+}
+
+/** Angebotsbeschriftungen enthalten Zahlen („20% Rabatt“), Siegel wie „Bio“ nicht. */
+function offerLabel(labels: string[]): string | null {
+	return labels.find((label) => /\d/.test(label)) ?? null;
+}
+
+function tiers(raw: unknown): PriceTier[] | null {
+	if (!Array.isArray(raw)) return null;
+	const result = raw
+		.map((r: unknown) => r as { price?: unknown; from_quantity?: unknown } | null)
+		.filter(
+			(r): r is { price: number; from_quantity: number } =>
+				typeof r?.price === 'number' && r.price > 0 && typeof r.from_quantity === 'number' && r.from_quantity >= 2
+		)
+		.map((r) => ({ fromQuantity: r.from_quantity, unitPrice: r.price }))
+		.sort((a, b) => a.fromQuantity - b.fromQuantity);
+	return result.length > 0 ? result : null;
+}
+
+function interpret(
+	displayPrice: unknown,
+	originalPrice: unknown,
+	labels: string[],
+	priceRanges: unknown,
+	fallbackLabel: string | null
+): CatalogPrice | null {
+	if (typeof displayPrice !== 'number' || !Number.isFinite(displayPrice) || displayPrice <= 0) return null;
+	const ranges = tiers(priceRanges);
+
+	// Echter Streichpreis: der Einzelrabatt steht fest
+	if (typeof originalPrice === 'number' && originalPrice > displayPrice) {
+		return {
+			regularPrice: originalPrice,
+			promoPrice: displayPrice,
+			promoLabel: offerLabel(labels) ?? fallbackLabel,
+			promoMinQuantity: null,
+			priceRanges: ranges
+		};
+	}
+
+	// Kein Streichpreis: höchstens ein Mehrfachangebot, dann ist displayPrice
+	// der Normalpreis (live geprüft an „2 für …“, „n+1 gratis“, „auf 2. Artikel“)
+	for (const label of labels) {
+		const offer = offerFromLabel(label, displayPrice);
+		if (offer) {
+			return {
+				regularPrice: displayPrice,
+				promoPrice: offer.unitPrice,
+				promoLabel: label,
+				promoMinQuantity: offer.minQuantity,
+				priceRanges: ranges
+			};
+		}
+	}
+
+	// Aktion gemeldet, aber nicht deutbar: Beschriftung behalten, Ersparnis
 	// weglassen. Lieber kein Rabatt als ein erfundener.
-	return regular == null
-		? { regularPrice: current, promoPrice: null, promoLabel: label }
-		: { regularPrice: regular, promoPrice: current, promoLabel: label };
+	return { regularPrice: displayPrice, promoPrice: null, promoLabel: fallbackLabel, promoMinQuantity: null, priceRanges: ranges };
 }
 
 /**

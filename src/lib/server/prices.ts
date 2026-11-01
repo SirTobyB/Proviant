@@ -7,16 +7,28 @@
  */
 import { db } from '#lib/server/db/index.js';
 import { picnicPrices } from '#lib/server/db/schema.js';
-import { getConnectionState, getProductPrices } from '#lib/server/picnic/index.js';
+import { getConnectionState, getProductPrices, type CatalogPrice } from '#lib/server/picnic/index.js';
+import type { PriceTier } from '#lib/offers.js';
 import { logWarn } from '#lib/server/log.js';
 import { inArray } from 'drizzle-orm';
 
-export type CachedPrice = {
-	regularPrice: number;
-	promoPrice: number | null;
-	promoLabel: string | null;
-	fetchedAt: Date;
-};
+export type CachedPrice = CatalogPrice & { fetchedAt: Date };
+
+/** Staffeln aus der JSON-Spalte; Unlesbares zählt als „keine Staffel“. */
+function parseTiers(raw: string | null): PriceTier[] | null {
+	if (!raw) return null;
+	try {
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return null;
+		const result = parsed.filter(
+			(t): t is PriceTier =>
+				typeof t?.fromQuantity === 'number' && typeof t?.unitPrice === 'number' && t.unitPrice > 0
+		);
+		return result.length > 0 ? result : null;
+	} catch {
+		return null;
+	}
+}
 
 /** Preise gelten einen Tag als frisch — Picnic-Aktionen laufen tageweise. */
 export const DEFAULT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -29,7 +41,7 @@ export const DEFAULT_REFRESH_LIMIT = 20;
 // Die reine Rechnung liegt in `#lib/prices` — auch Komponenten brauchen sie,
 // und `#lib/server/*` ist für die nicht importierbar. Hier nur durchgereicht,
 // damit die Server-Seiten ihre gewohnte Bezugsquelle behalten.
-export { effectivePrice, savingsOf } from '#lib/prices.js';
+export { effectivePrice, savingsFor, savingsOf, totalFor } from '#lib/prices.js';
 
 /** Gecachte Preise zu den gefragten IDs. Fehlende fehlen einfach in der Map. */
 export function pricesFor(picnicIds: string[]): Map<string, CachedPrice> {
@@ -44,6 +56,8 @@ export function pricesFor(picnicIds: string[]): Map<string, CachedPrice> {
 				regularPrice: row.regularPrice,
 				promoPrice: row.promoPrice,
 				promoLabel: row.promoLabel,
+				promoMinQuantity: row.promoMinQuantity,
+				priceRanges: parseTiers(row.priceRanges),
 				fetchedAt: row.fetchedAt
 			}
 		])
@@ -99,7 +113,7 @@ export async function refreshPrices(
 
 	if (stale.length === 0) return { updated: 0, failed: 0 };
 
-	let fetched: Map<string, { regularPrice: number; promoPrice: number | null; promoLabel: string | null }>;
+	let fetched: Map<string, CatalogPrice>;
 	try {
 		fetched = await getProductPrices(stale);
 	} catch {
@@ -107,24 +121,39 @@ export async function refreshPrices(
 		return { updated: 0, failed: stale.length };
 	}
 
+	const updated = storePrices(fetched);
+	return { updated, failed: stale.length - updated };
+}
+
+/**
+ * Legt Preise im Cache ab (Upsert, Zeitstempel jetzt) und gibt zurück, wie
+ * viele es geschafft haben. Genutzt von der Auffrischung, dem Angebotsabgleich
+ * und dem Live-Abruf der Artikelseite — so zeigen alle Seiten denselben Stand.
+ *
+ * Schreibfehler (SQLITE_BUSY bei Backup, Volume-Snapshot, zweitem Container
+ * auf derselben Datei) dürfen nicht als Ausnahme nach oben durchschlagen: Die
+ * Aufrufer laufen im `load`, die Seite wäre sonst ein 500er — ein veralteter
+ * Preis schlägt eine Fehlerseite. Stumm bleibt es trotzdem nicht, sonst bliebe
+ * ein echtes Datenbankproblem unbemerkt.
+ */
+export function storePrices(prices: Map<string, CatalogPrice>): number {
 	const now = new Date();
-	let updated = 0;
-	for (const [picnicId, price] of fetched) {
-		// Schreibfehler (SQLITE_BUSY bei Backup, Volume-Snapshot, zweitem
-		// Container auf derselben Datei) dürfen nicht als Ausnahme nach oben
-		// durchschlagen: `refreshPrices` wird im `load` abgewartet, die Seite
-		// wäre sonst ein 500er. Genau davor soll dieses Modul schützen — ein
-		// veralteter Preis schlägt eine Fehlerseite. Stumm bleibt es trotzdem
-		// nicht, sonst bliebe ein echtes Datenbankproblem unbemerkt.
+	let stored = 0;
+	for (const [picnicId, price] of prices) {
+		const values = {
+			regularPrice: price.regularPrice,
+			promoPrice: price.promoPrice,
+			promoLabel: price.promoLabel,
+			promoMinQuantity: price.promoMinQuantity,
+			priceRanges: price.priceRanges ? JSON.stringify(price.priceRanges) : null,
+			fetchedAt: now
+		};
 		try {
 			db.insert(picnicPrices)
-				.values({ picnicId, ...price, fetchedAt: now })
-				.onConflictDoUpdate({
-					target: picnicPrices.picnicId,
-					set: { ...price, fetchedAt: now }
-				})
+				.values({ picnicId, ...values })
+				.onConflictDoUpdate({ target: picnicPrices.picnicId, set: values })
 				.run();
-			updated += 1;
+			stored += 1;
 		} catch (err) {
 			logWarn('Preis konnte nicht zwischengespeichert werden', {
 				picnicId,
@@ -132,6 +161,5 @@ export async function refreshPrices(
 			});
 		}
 	}
-
-	return { updated, failed: stale.length - updated };
+	return stored;
 }

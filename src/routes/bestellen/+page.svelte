@@ -2,7 +2,7 @@
 	import { keepValues } from '#lib/forms.js';
 	import { translator } from '#lib/i18n/index.js';
 	import { packageSize, formatPrice } from '#lib/format.js';
-	import { effectivePrice, savingsOf } from '#lib/prices.js';
+	import { savingsFor, totalFor } from '#lib/prices.js';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -88,8 +88,8 @@
 			(acc, s) => {
 				const quantity = orderedQuantity(s);
 				if (!s.price || quantity === 0) return acc;
-				acc.total += effectivePrice(s.price) * quantity;
-				acc.savings += savingsOf(s.price) * quantity;
+				acc.total += totalFor(s.price, quantity);
+				acc.savings += savingsFor(s.price, quantity);
 				return acc;
 			},
 			{ total: 0, savings: 0 }
@@ -266,10 +266,10 @@
 							{#if item.price}
 								{@const lineUnits = lineQuantity(item.id)}
 								<span class="text-sm text-gray-700">
-									{formatPrice(effectivePrice(item.price) * lineUnits, data.locale)}
+									{formatPrice(totalFor(item.price, lineUnits), data.locale)}
 								</span>
-								{#if item.price.promoPrice !== null}
-									{@const savingAmount = formatPrice(savingsOf(item.price) * lineUnits, data.locale)}
+								{#if savingsFor(item.price, lineUnits) > 0}
+									{@const savingAmount = formatPrice(savingsFor(item.price, lineUnits), data.locale)}
 									<span
 										class="rounded bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700"
 										title={t('order.saving', { amount: savingAmount })}

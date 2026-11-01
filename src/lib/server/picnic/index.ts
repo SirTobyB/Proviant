@@ -13,7 +13,7 @@ import type { Translate } from '#lib/i18n/index.js';
 import { logWarn } from '#lib/server/log.js';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
 import { PicnicAdapterError, picnicErrorKind, type PicnicErrorKind } from './errors';
-import { catalogPrice, type ProductPrice } from './price';
+import { catalogPrice, type CatalogPrice, type ProductPrice } from './price';
 import { extractSearchHits, type ProductSearchHit } from './search';
 import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
 import { mapPicnicRecipe } from './recipeMapping';
@@ -21,6 +21,7 @@ import { mapPicnicRecipe } from './recipeMapping';
 export { picnicErrorKind };
 export type {
 	PicnicErrorKind,
+	CatalogPrice,
 	DeliveryChecklistItem,
 	ParsedPicnicRecipe,
 	PicnicRecipeTile,
@@ -458,7 +459,7 @@ export async function listOwnPicnicRecipes(): Promise<PicnicRecipeTile[]> {
  * in `catalogPrice()`; ein Parserfehler der Bibliothek wird in
  * `getProductPrices` zu „kein Preis", lieber das als ein kaputter.
  */
-async function fetchProductPrice(id: string): Promise<ProductPrice | null> {
+async function fetchProductPrice(id: string): Promise<CatalogPrice | null> {
 	return catalogPrice(await getClient().catalog.getProduct(id));
 }
 
@@ -508,9 +509,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
  * Abgearbeitet wird die Liste als Warteschlange durch wenige Arbeiter, statt
  * alle IDs gleichzeitig loszuschicken.
  */
-export async function getProductPrices(ids: string[]): Promise<Map<string, ProductPrice>> {
+export async function getProductPrices(ids: string[]): Promise<Map<string, CatalogPrice>> {
 	await ensureLoggedIn();
-	const prices = new Map<string, ProductPrice>();
+	const prices = new Map<string, CatalogPrice>();
 
 	let next = 0;
 	async function worker(): Promise<void> {

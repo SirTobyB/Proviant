@@ -300,6 +300,10 @@ export const picnicPrices = sqliteTable('picnic_prices', {
 	regularPrice: integer('regular_price').notNull(),
 	promoPrice: integer('promo_price'),
 	promoLabel: text('promo_label'),
+	/** Mehrfachangebot: `promoPrice` ist Stückpreis ab dieser Menge; null = ab 1 */
+	promoMinQuantity: integer('promo_min_quantity'),
+	/** Preisstaffeln als JSON (`PriceTier[]`), null = keine */
+	priceRanges: text('price_ranges'),
 	fetchedAt: integer('fetched_at', { mode: 'timestamp' })
 		.notNull()
 		.default(sql`(unixepoch())`)
