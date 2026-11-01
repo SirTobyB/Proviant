@@ -8,6 +8,14 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.5.0] - 2026-11-01
+
+Proviant zeigt jetzt den Picnic-Warenkorb, aktuelle Angebote und
+Mengenrabatte, übernimmt mehr Produktdaten und importiert Rezepte mit den
+richtigen Mengen. Zu tun ist beim Aktualisieren nichts: `docker compose pull`
+genügt, die Datenbank wird beim Start automatisch erweitert. Wer lokal
+entwickelt, braucht ab dieser Version Node.js 26.
+
 ### Hinzugefügt
 
 - **Filter „Ohne Standard-Lagerort“ in der Artikelliste.** Zeigt nur Artikel,
@@ -375,7 +383,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.4.1...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/SirTobyB/Proviant/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/SirTobyB/Proviant/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/SirTobyB/Proviant/compare/v2.3.1...v2.4.0
 [2.3.1]: https://github.com/SirTobyB/Proviant/compare/v2.3.0...v2.3.1
