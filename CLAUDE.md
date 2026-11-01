@@ -41,7 +41,7 @@ reinen Logik-Module ab: `units.ts`, `suggest.ts`, `mhd.ts`, `format.ts`,
 `journal.ts`, `i18n/` (Sprachaushandlung, Plurale, Vollständigkeit der
 Wörterbücher), `picnic/unitQuantity.ts`, `picnic/checklist.ts`,
 `picnic/price.ts`, `picnic/search.ts`, `picnic/errors.ts`,
-`picnic/recipeMapping.ts`, `picnic/productFacts.ts`, `offers.ts`,
+`picnic/recipeMapping.ts`, `picnic/productFacts.ts`, `picnic/imageCache.ts`, `offers.ts`,
 `priceTiers.ts`, `prices.ts`, `deliveryNewItems.ts`. Genau dort steckten die
 schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 **mit Test**, nicht in eine Route.
@@ -311,6 +311,17 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   Origin der App. Externe Bild-URLs sind auf `openfoodfacts.org` beschränkt
   (`redirect: 'error'`, sonst führte eine Weiterleitung aus der Allowlist
   heraus) — sonst wäre der Server ein Sprungbrett ins Heimnetz.
+- **Picnic-Produktbilder** laufen über `/api/picnic/image/<id>.png` — Links
+  immer per `picnicImageSrc()` aus `format.ts` bauen. Die Endung ist Pflicht:
+  Vor dem Server sitzt CrowdSec, dessen Szenario `http-crawl-non_statics`
+  Pfade ohne Bildendung als Seitenabrufe zählt. Die Favoriten-Liste (~500
+  Bilder) hat damit am 01.11.2026 die eigene IP für vier Stunden gesperrt —
+  von dort sah es aus, als sei der ganze VPS tot (Ping, SSH, HTTPS weg), von
+  außen lief alles. Diagnose: `sudo docker exec crowdsec cscli decisions list
+  --ip <IP>`. Die Bilder selbst cacht `picnic/imageCache.ts` dauerhaft unter
+  `DATA_DIR/picnic-images` (Bild-IDs sind Inhalts-Hashes) und holt höchstens
+  vier gleichzeitig bei Picnic; `getImageAsDataUri` der Bibliothek bleibt
+  ungenutzt.
 - **CSP** steht in `vite.config.ts` unter `csp` (im `sveltekit()`-Plugin), **nicht** im Hook: nur dort
   bekommen SvelteKits Inline-Scripte ihren Nonce, ein selbst gesetzter Header
   müsste `'unsafe-inline'` erlauben und wäre wirkungslos. Die übrigen

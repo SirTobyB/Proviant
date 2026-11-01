@@ -41,6 +41,15 @@ export function formatPrice(cents: number, locale: Locale): string {
 }
 
 /**
+ * Adresse eines Picnic-Produktbilds. Die Endung `.png` ist Pflicht, nicht
+ * Zierde: ohne sie wertet CrowdSec eine Liste mit hundert Bildern als Crawler
+ * und sperrt die IP (siehe `api/picnic/image/[id]`).
+ */
+export function picnicImageSrc(imageId: string): string {
+	return `/api/picnic/image/${encodeURIComponent(imageId)}.png`;
+}
+
+/**
  * Link für einen Tag-Filter: erhält die Suche und schaltet den bereits aktiven
  * Tag wieder ab (Klick auf denselben Tag = Filter aufheben).
  */

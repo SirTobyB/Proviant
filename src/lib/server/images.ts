@@ -80,11 +80,9 @@ export async function saveImageFromUrl(url: string): Promise<string> {
 	return store(Buffer.from(await response.arrayBuffer()));
 }
 
-/** Speichert ein Bild aus einer Data-URI (z.B. Picnic-Produktbild). */
-export function saveImageFromDataUri(dataUri: string): string {
-	const match = dataUri.match(/^data:([^;,]+);base64,(.+)$/s);
-	if (!match) throw new Error('Ungültige Data-URI');
-	return store(Buffer.from(match[2], 'base64'));
+/** Speichert ein Bild aus vorliegenden Bytes (z.B. Picnic-Produktbild). */
+export function saveImageFromBytes(bytes: Buffer): string {
+	return store(bytes);
 }
 
 /** Speichert ein hochgeladenes Bild (Formular-Upload). */

@@ -246,7 +246,7 @@ Check und Rezept-Warenkorb nicht.
 | Variable          | Beschreibung                                            | Default (Container)           |
 | ----------------- | ------------------------------------------------------- | ----------------------------- |
 | `DATABASE_URL`    | Pfad zur SQLite-Datei                                   | `/data/lebensmittelkumpel.db` |
-| `DATA_DIR`        | Verzeichnis für Bilder und Picnic-Auth-Key             | `/data`                       |
+| `DATA_DIR`        | Verzeichnis für Bilder, Picnic-Bildcache und Auth-Key  | `/data`                       |
 | `ORIGIN`          | Öffentliche URL der App (CSRF-Schutz von adapter-node) | —                             |
 | `ADMIN_USERNAME`  | Erster Admin (nur beim Erststart ohne Benutzer)        | —                             |
 | `ADMIN_PASSWORD`  | Passwort des ersten Admins                             | —                             |

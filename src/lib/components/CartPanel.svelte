@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { formatPrice } from '#lib/format.js';
+	import { formatPrice, picnicImageSrc } from '#lib/format.js';
 	import { BCP47, translator, type Locale } from '#lib/i18n/index.js';
 	import { tierHint } from '#lib/priceTiers.js';
 	import type { PriceTier } from '#lib/offers.js';
@@ -118,7 +118,7 @@
 				<li class="px-4 py-2.5 {line.isUnavailable ? 'bg-red-50' : ''}">
 					<div class="flex items-center gap-3">
 						{#if line.imageId}
-							<img src={`/api/picnic/image/${line.imageId}`} alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
+							<img src={picnicImageSrc(line.imageId)} alt="" loading="lazy" class="h-10 w-10 shrink-0 rounded-lg border border-gray-100 bg-white object-contain" />
 						{:else}
 							<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">📦</div>
 						{/if}

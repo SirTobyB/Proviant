@@ -258,7 +258,7 @@ bestelsuggesties, leveringscontrole en het receptenmandje niet.
 | Variabele         | Beschrijving                                            | Standaard (container)         |
 | ----------------- | ------------------------------------------------------- | ----------------------------- |
 | `DATABASE_URL`    | Pad naar het SQLite-bestand                             | `/data/lebensmittelkumpel.db` |
-| `DATA_DIR`        | Map voor afbeeldingen en de Picnic-auth-key             | `/data`                       |
+| `DATA_DIR`        | Map voor afbeeldingen, Picnic-beeldcache en auth-key    | `/data`                       |
 | `ORIGIN`          | Publieke URL van de app (CSRF-bescherming adapter-node) | —                             |
 | `ADMIN_USERNAME`  | Eerste beheerder (alleen bij eerste start zonder gebruikers) | —                        |
 | `ADMIN_PASSWORD`  | Wachtwoord van de eerste beheerder                      | —                             |
