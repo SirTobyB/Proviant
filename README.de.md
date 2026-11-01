@@ -92,7 +92,9 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   übernimmt Produkte aus den letzten Picnic-Lieferungen — oder aus den
   **Picnic-Favoriten**, nach Gang gruppiert — samt Bild, Gebindegröße,
   Produktdaten und Verknüpfung (einzeln beim Auspacken oder gesammelt unter
-  *Artikel → Picnic-Import*; EAN liefert Picnic nicht).
+  *Artikel → Picnic-Import*, nacheinander mit kurzer Pause und
+  Fortschrittsanzeige, damit Picnic nicht überflutet wird; EAN liefert Picnic
+  nicht).
 - **Bestellvorschläge** — Artikel unter Mindestbestand landen auf der
   Vorschlagsliste und wandern nach Bestätigung in den Picnic-Warenkorb
   ([picnic-api](https://github.com/MRVDH/picnic-api), inoffiziell). Bestellt
@@ -156,7 +158,10 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   Portionen, Zutatenmengen und Schritten (*Rezepte → Picnic-Import*). Die
   Mengen passen immer zu den Standardportionen des Rezepts; Zutaten, deren
   Picnic-Produkt schon als Artikel geführt wird, sind gleich verknüpft, und
-  Vorratszutaten (Salz, Öl …) nennt der Zubereitungstext.
+  Vorratszutaten (Salz, Öl …) nennt der Zubereitungstext. **Alle
+  importieren** holt jedes noch fehlende Rezept einer Liste nacheinander mit
+  kurzer Pause, damit Picnic nicht überflutet wird — mit Fortschritt und
+  Abbrechen-Knopf. Rezeptfotos stellt Picnic nicht zur Verfügung.
 - **Wochenplan** — Gerichte für die nächsten 7 Tage planen: Tage auswählen und
   Vorschläge würfeln (ohne Rezept-Wiederholung in der Woche), Tage manuell
   belegen, Portionen anpassen — und die fehlenden Zutaten **aller** geplanten

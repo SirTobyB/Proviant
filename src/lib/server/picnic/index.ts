@@ -19,6 +19,7 @@ import type { PriceTier } from '#lib/offers.js';
 import { extractSearchHits, type ProductSearchHit } from './search';
 import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
 import { mapPicnicRecipe } from './recipeMapping';
+import { createThrottle } from './throttle';
 import { extractProductFacts, type NutritionRow, type ProductFacts } from './productFacts';
 import { createImageCache, isValidImageId, type CachedImage } from './imageCache';
 
@@ -512,6 +513,18 @@ async function getFusionPage(pageId: string): Promise<unknown> {
 	return page.page;
 }
 
+/**
+ * Prozessweite Drossel für Rezeptabrufe (siehe `throttle.ts`): „Alle
+ * importieren" holt Dutzende Rezeptseiten am Stück, jede gut 1 MB groß.
+ */
+const recipeThrottle = createThrottle(1500);
+
+/**
+ * Dasselbe für den Artikelimport (Bestellungen, Favoriten, Lieferungs-Check):
+ * je Artikel eine Produktseite. Die Favoriten umfassen live gut 500 Produkte.
+ */
+const productImportThrottle = createThrottle(1000);
+
 /** Rezepte der Picnic-Rezeptseite (Kacheln mit ID und Name). */
 export async function listPicnicRecipes(): Promise<PicnicRecipeTile[]> {
 	await ensureLoggedIn();
@@ -576,9 +589,10 @@ export async function listFavoriteProducts(): Promise<FavoriteAisle[]> {
  */
 export async function getPicnicRecipe(id: string): Promise<ParsedPicnicRecipe> {
 	await ensureLoggedIn();
-	let recipe = await getClient().recipe.getRecipe(id);
+	let recipe = await recipeThrottle(() => getClient().recipe.getRecipe(id));
 	if (recipe.defaultPortions > 0 && recipe.portions !== recipe.defaultPortions) {
-		recipe = await getClient().recipe.getRecipe(id, { portions: recipe.defaultPortions });
+		const portions = recipe.defaultPortions;
+		recipe = await recipeThrottle(() => getClient().recipe.getRecipe(id, { portions }));
 	}
 	return mapPicnicRecipe(recipe);
 }
@@ -722,11 +736,16 @@ export async function getPromotedProducts(): Promise<Map<string, CatalogPrice>> 
 /**
  * Ein Produkt für die Artikelseite: Preis (mit Angebot), Grundpreis und die
  * Produktdaten (Marke, Herkunft, Bio, Nährwerte) — alles aus einem Abruf.
+ * `bulk` für Importe vieler Artikel am Stück: dann gedrosselt (siehe
+ * `throttle.ts`). Die Artikelseite selbst bleibt ungebremst, damit sie nicht
+ * hinter einem laufenden Import wartet.
  */
 export async function getProductDetails(
-	id: string
+	id: string,
+	options: { bulk?: boolean } = {}
 ): Promise<{ price: CatalogPrice | null; unitPrice: string | null; facts: ProductFacts }> {
 	await ensureLoggedIn();
-	const product = await getClient().catalog.getProduct(id);
+	const fetchProduct = () => getClient().catalog.getProduct(id);
+	const product = await (options.bulk ? productImportThrottle(fetchProduct) : fetchProduct());
 	return { price: catalogPrice(product), unitPrice: product.unitPrice ?? null, facts: extractProductFacts(product) };
 }

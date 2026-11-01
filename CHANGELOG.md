@@ -8,6 +8,33 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **„Alle importieren“ beim Rezeptimport.** Holt alle angezeigten Rezepte
+  der gewählten Liste, die es noch nicht gibt (die Suche schränkt die Auswahl
+  ein), mit Fortschrittsanzeige und Abbrechen-Knopf. Die Rezepte werden
+  nacheinander abgerufen; der Server hält zwischen zwei Picnic-Rezeptabrufen
+  zusätzlich eine Pause ein – auch wenn mehrere Familienmitglieder
+  gleichzeitig importieren. Sperrt Picnic wegen zu vieler Anfragen oder läuft
+  die Anmeldung ab, hört der Import sofort auf, statt weiter anzufragen.
+  Bereits vorhandene Rezepte werden übersprungen, ein zweiter Durchlauf setzt
+  also einfach fort.
+
+### Geändert
+
+- **Der Artikelimport aus Bestellungen und Favoriten ist gedrosselt.** Statt
+  alle ausgewählten Produkte in einer langen Anfrage abzuarbeiten, holt die
+  Seite sie nacheinander, mit Fortschrittsanzeige und Abbrechen-Knopf. Der
+  Server lässt zwischen zwei Picnic-Produktabrufen mindestens eine Sekunde
+  Pause; das gilt auch für neue Artikel aus dem Lieferungs-Check. Bei
+  Ratelimit oder abgelaufener Picnic-Anmeldung hört der Import sofort auf.
+  Artikel, deren Produktdaten Picnic nicht liefern konnte, werden am Ende
+  genannt – die Daten lassen sich auf der Artikelseite nachladen.
+
+- **„Rezept löschen“ steht jetzt oben** neben „Bearbeiten“, statt ganz am
+  Ende der Rezeptseite unterzugehen; die Rückfrage erscheint direkt
+  darunter.
+
 ### Behoben
 
 - **Die Favoriten-Liste im Artikelimport sperrte die eigene IP aus.** Die

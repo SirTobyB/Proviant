@@ -95,8 +95,9 @@ Picnic-functies en een FAQ voor probleemoplossing.
   **Import uit bestellingen:** neemt producten uit recente Picnic-leveringen
   over — of uit je **Picnic-favorieten**, gegroepeerd per schap — inclusief
   afbeelding, verpakkingsgrootte, productgegevens en koppeling (stuk voor stuk
-  tijdens het uitpakken of gebundeld onder *Artikelen → Picnic-import*; EAN's
-  levert Picnic niet).
+  tijdens het uitpakken of gebundeld onder *Artikelen → Picnic-import*, na
+  elkaar met een korte pauze en voortgangsbalk zodat Picnic niet overspoeld
+  raakt; EAN's levert Picnic niet).
 - **Bestelsuggesties** — artikelen onder hun minimumvoorraad komen op de
   suggestielijst en gaan na bevestiging naar het Picnic-mandje
   ([picnic-api](https://github.com/MRVDH/picnic-api), onofficieel). Er wordt
@@ -166,7 +167,10 @@ Picnic-functies en een FAQ voor probleemoplossing.
   (*Recepten → Picnic-import*). De hoeveelheden passen altijd bij de
   standaardporties van het recept; ingrediënten waarvan het Picnic-product al
   een artikel is, worden meteen gekoppeld, en voorraadingrediënten (zout,
-  olie …) noemt de bereidingstekst.
+  olie …) noemt de bereidingstekst. **Alles importeren** haalt elk recept
+  uit een lijst dat er nog niet is na elkaar op, met een korte pauze zodat
+  Picnic niet overspoeld raakt — met voortgang en een stopknop. Receptfoto's
+  stelt Picnic niet beschikbaar.
 - **Weekplanning** — maaltijden plannen voor de komende 7 dagen: dagen kiezen
   en suggesties dobbelen (geen recept twee keer in dezelfde week), dagen
   handmatig invullen, porties aanpassen — en de ontbrekende ingrediënten van

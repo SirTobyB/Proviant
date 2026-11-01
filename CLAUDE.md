@@ -41,7 +41,8 @@ reinen Logik-Module ab: `units.ts`, `suggest.ts`, `mhd.ts`, `format.ts`,
 `journal.ts`, `i18n/` (Sprachaushandlung, Plurale, Vollständigkeit der
 Wörterbücher), `picnic/unitQuantity.ts`, `picnic/checklist.ts`,
 `picnic/price.ts`, `picnic/search.ts`, `picnic/errors.ts`,
-`picnic/recipeMapping.ts`, `picnic/productFacts.ts`, `picnic/imageCache.ts`, `offers.ts`,
+`picnic/recipeMapping.ts`, `picnic/productFacts.ts`, `picnic/throttle.ts`,
+`picnic/imageCache.ts`, `offers.ts`,
 `priceTiers.ts`, `prices.ts`, `deliveryNewItems.ts`. Genau dort steckten die
 schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 **mit Test**, nicht in eine Route.
@@ -64,7 +65,12 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     (Preisdeutung), `productFacts.ts` (Marke, Herkunft, Bio, Nährwerte),
     `errors.ts` (Fehler → `picnic.error.*`; Routen melden Picnic-Fehler nur
     über `describePicnicError`, nie per `err.message`), `unitQuantity.ts`
-    (Gebindegrößen wie „6er Pack", „2 x 125g").
+    (Gebindegrößen wie „6er Pack", „2 x 125g"), `throttle.ts` (prozessweite
+    Drossel: Rezeptabrufe laufen nacheinander mit 1,5 s Mindestabstand,
+    Produktseiten beim Artikelimport — `getProductDetails(id, { bulk: true })`,
+    nur aus `articleImport.ts` — mit 1 s. Beide Import-Seiten arbeiten ihre
+    Auswahl Stück für Stück ab (`?/importBulk` bzw. `?/importOne`) statt in
+    einer langen Anfrage; die Artikelseite selbst ruft ungedrosselt ab).
   - `auth.ts` / `password.ts` – Sessions (DB-gestützt, httpOnly-Cookie) und
     scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder. `log.ts` –
     Zeilen-Logging mit Zeitstempel (siehe Fallstrick unten).
@@ -201,8 +207,10 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   `server/cartActions.ts` — jede liest den Korb danach gegen. Erststart braucht Login + SMS-2FA; der
   Auth-Key liegt in `DATA_DIR/picnic-auth-key` (übersteht Neustarts).
   Grenzen der API (live geprüft): Suche findet **keine EANs**, Produktdetails
-  enthalten **keine EAN/GTIN**, Rezept**bilder** sind nicht öffentlich abrufbar
-  (S3 403) — Produktbilder dagegen schon. Die Rezept-/Übersichtsseiten sind
+  enthalten **keine EAN/GTIN**, Rezept**bilder** sind nicht abrufbar
+  (S3 403, auch mit Auth-Header und für alle Größen/Formate — November 2026
+  erneut geprüft; die ID `recipes/<hash>` steht zwar an `getRecipe()`) —
+  Produktbilder dagegen schon. Die Rezept-/Übersichtsseiten sind
   dynamische PML-Strukturen; Parser dafür heuristisch und **defensiv** halten
   (lieber leer zurückgeben als Datenmüll importieren).
 - **picnic-api ab 5.x** liefert fertige camelCase-Modelle (`Cart`, `Delivery`,

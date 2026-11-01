@@ -89,13 +89,22 @@
 			</span>
 		</div>
 	</div>
-	<div class="flex gap-2">
+	<div class="flex flex-wrap gap-2">
 		<form method="POST" action="?/markCooked" use:enhance>
 			<button type="submit" class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">🍽 {t('recipe.markCooked')}</button>
 		</form>
 		<a href={`/rezepte/${data.recipe.id}/bearbeiten`} class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">{t('recipe.edit')}</a>
+		<button type="button" onclick={() => (confirmDelete = true)} class="rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100">🗑 {t('recipe.delete')}</button>
 	</div>
 </div>
+
+{#if confirmDelete}
+	<form method="POST" action="?/delete" class="mt-4 flex max-w-xl flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3" use:enhance>
+		<span class="text-sm text-red-700">{t('recipe.deleteConfirm', { name: data.recipe.name })}</span>
+		<button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">{t('recipe.deleteYes')}</button>
+		<button type="button" onclick={() => (confirmDelete = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">{t('form.cancel')}</button>
+	</form>
+{/if}
 
 <!-- Portionswähler -->
 <div class="mt-5 flex items-center gap-3">
@@ -208,16 +217,3 @@
 	<h2 class="mt-8 text-sm font-semibold text-gray-700">{t('recipe.instructions')}</h2>
 	<div class="mt-2 max-w-xl whitespace-pre-wrap rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700">{data.recipe.instructions}</div>
 {/if}
-
-<!-- Löschen -->
-<div class="mt-8 max-w-xl border-t border-gray-200 pt-4">
-	{#if confirmDelete}
-		<form method="POST" action="?/delete" class="flex flex-wrap items-center gap-3" use:enhance>
-			<span class="text-sm text-gray-700">{t('recipe.deleteConfirm', { name: data.recipe.name })}</span>
-			<button type="submit" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">{t('recipe.deleteYes')}</button>
-			<button type="button" onclick={() => (confirmDelete = false)} class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">{t('form.cancel')}</button>
-		</form>
-	{:else}
-		<button type="button" onclick={() => (confirmDelete = true)} class="text-sm font-medium text-red-600 hover:text-red-700">{t('recipe.delete')}</button>
-	{/if}
-</div>
