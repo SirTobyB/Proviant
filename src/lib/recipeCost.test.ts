@@ -60,6 +60,27 @@ describe('recipeCost', () => {
 
 	// „Untergrenze statt stiller Null": eine Zutat ohne Preis darf die Summe
 	// nicht vollständig aussehen lassen.
+	// „1+1 gratis“: der Aktionspreis gilt nur für volle Bündel
+	it('gewährt ein Mehrfachangebot nur ab der Mindestmenge', () => {
+		const price: CostPrice = { regularPrice: 300, promoPrice: 150, promoMinQuantity: 2 };
+		const one = recipeCost({
+			ingredients: [zutat(500, [artikel('Nudeln', 'p1', 500)])],
+			baseServings: 2,
+			portions: 2,
+			prices: preise([['p1', price]])
+		});
+		expect(one.all.total).toBe(300);
+		expect(one.all.savings).toBe(0);
+		const two = recipeCost({
+			ingredients: [zutat(1000, [artikel('Nudeln', 'p1', 500)])],
+			baseServings: 2,
+			portions: 2,
+			prices: preise([['p1', price]])
+		});
+		expect(two.all.total).toBe(300);
+		expect(two.all.savings).toBe(300);
+	});
+
 	it('meldet fehlende Preise als unvollständig', () => {
 		const result = recipeCost({
 			ingredients: [

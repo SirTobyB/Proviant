@@ -6,30 +6,48 @@
  * nur den Warenkorb, bestellt wird immer manuell in der Picnic-App.
  */
 import PicnicClient from 'picnic-api';
-// Deep import bewusst: `getClient().catalog.getProductDetails()` holt intern
-// dieselbe rohe Seite wie `getProductDetailsPage()` und parst sie sofort
-// (siehe node_modules/picnic-api/lib/domains/catalog/service.js) — es gibt
-// dort keine Möglichkeit, an die rohe Seite *und* die geparsten Felder zu
-// kommen, ohne die Seite zweimal zu laden. `picnic-api` hat keine `exports`-
-// Sperre im package.json, der Deep-Import auf den Parser ist also erlaubt.
-import { extractProductDetails } from 'picnic-api/lib/domains/catalog/helpers';
 import * as env from '$app/env/private';
 import fs from 'node:fs';
 import path from 'node:path';
+import type { Translate } from '#lib/i18n/index.js';
+import { logWarn } from '#lib/server/log.js';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
-import { crossedOutPrice, type ProductPrice } from './price';
-import {
-	extractRecipeTiles,
-	parseRecipeDetail,
-	type ParsedPicnicRecipe,
-	type PicnicRecipeTile
-} from './recipeImport';
+import { PicnicAdapterError, picnicErrorKind, type PicnicErrorKind } from './errors';
+import { catalogPrice, tilePrice, type CatalogPrice, type ProductPrice } from './price';
+import { priceTiers } from '#lib/priceTiers.js';
+import type { PriceTier } from '#lib/offers.js';
+import { extractSearchHits, type ProductSearchHit } from './search';
+import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
+import { mapPicnicRecipe } from './recipeMapping';
+import { extractProductFacts, type NutritionRow, type ProductFacts } from './productFacts';
 
-export type { DeliveryChecklistItem, ParsedPicnicRecipe, PicnicRecipeTile, ProductPrice };
+export { picnicErrorKind };
+export type {
+	PicnicErrorKind,
+	CatalogPrice,
+	NutritionRow,
+	ProductFacts,
+	DeliveryChecklistItem,
+	ParsedPicnicRecipe,
+	PicnicRecipeTile,
+	ProductPrice,
+	ProductSearchHit
+};
 
 type Client = InstanceType<typeof PicnicClient>;
-type AddProductsItems = Parameters<Client['cart']['addProductsToCart']>[0];
-type SellingUnits = Awaited<ReturnType<Client['catalog']['search']>>;
+
+/** Eine Warenkorb-Position: Picnic-Produkt-ID und Anzahl Gebinde. */
+export type CartItem = { productId: string; quantity: number };
+
+/**
+ * Verständliche Meldung zu einem Picnic-Fehler für die Oberfläche; der
+ * Rohfehler landet im Log. `context` sagt dort, wobei es passiert ist.
+ */
+export function describePicnicError(err: unknown, t: Translate, context: string): string {
+	const kind = picnicErrorKind(err);
+	logWarn(`Picnic-Fehler: ${context}`, { art: kind, fehler: err instanceof Error ? err.message : String(err) });
+	return t(`picnic.error.${kind}`);
+}
 
 /** Auth-Key überlebt Neustarts in DATA_DIR (Docker-Volume) */
 function authKeyFile(): string {
@@ -80,11 +98,11 @@ export function getConnectionState(): ConnectionState {
 export async function ensureLoggedIn(): Promise<void> {
 	if (isLoggedIn()) return;
 	if (!hasCredentials()) {
-		throw new Error('Keine Picnic-Zugangsdaten konfiguriert (PICNIC_USERNAME/PICNIC_PASSWORD)');
+		throw new PicnicAdapterError('notConfigured');
 	}
 	const { needs2FA } = await login();
 	if (needs2FA) {
-		throw new Error('Picnic verlangt eine 2FA-Bestätigung — bitte zuerst den SMS-Code eingeben');
+		throw new PicnicAdapterError('needs2FA');
 	}
 }
 
@@ -94,11 +112,11 @@ export async function ensureLoggedIn(): Promise<void> {
  */
 export async function login(): Promise<{ needs2FA: boolean }> {
 	if (!hasCredentials()) {
-		throw new Error('PICNIC_USERNAME und PICNIC_PASSWORD sind nicht gesetzt');
+		throw new PicnicAdapterError('notConfigured');
 	}
 	const result = await getClient().auth.login(env.PICNIC_USERNAME!, env.PICNIC_PASSWORD!);
 	persistAuthKey();
-	pending2FA = Boolean(result?.second_factor_authentication_required);
+	pending2FA = Boolean(result?.secondFactorAuthenticationRequired);
 	return { needs2FA: pending2FA };
 }
 
@@ -113,9 +131,38 @@ export async function verify2FA(code: string): Promise<void> {
 	pending2FA = false;
 }
 
-/** Produktsuche, z.B. zur Verknüpfung von Artikeln mit Picnic-IDs */
-export async function searchProducts(query: string): Promise<SellingUnits> {
-	return getClient().catalog.search(query);
+/**
+ * Produktsuche, z.B. zur Verknüpfung von Artikeln mit Picnic-IDs.
+ *
+ * Eine Weiche nach Seitenformat: `catalog.getSearchResults()` aus picnic-api 5
+ * versteht nur die RSC-Fassung der Suchseite, Picnic DE liefert aber noch
+ * Fusion — dann wirft die Bibliothek (live geprüft). Deshalb erst die Seite
+ * holen und nachsehen: Fusion werten wir selbst aus (`search.ts`), bei RSC
+ * übernimmt die Bibliothek. Stellt Picnic DE um, läuft die Suche ohne
+ * Codeänderung weiter.
+ */
+export async function searchProducts(query: string): Promise<ProductSearchHit[]> {
+	const pageId = `search-page-results?search_term=${encodeURIComponent(query)}`;
+	const page = await getClient().app.getPage(pageId);
+	if (page.format === 'fusion') return extractSearchHits(page.page);
+
+	// RSC: Treffer kommen in Abschnitten („Schon mal gekauft", je Produktgruppe
+	// einer), dasselbe Produkt kann in mehreren stehen
+	const results = await getClient().catalog.getSearchResults(query);
+	const hits = new Map<string, ProductSearchHit>();
+	for (const section of results.products?.sections ?? []) {
+		for (const tile of section.products) {
+			if (hits.has(tile.id)) continue;
+			hits.set(tile.id, {
+				id: tile.id,
+				name: tile.name,
+				unitQuantity: tile.unitQuantity,
+				price: tile.displayPrice,
+				imageId: tile.imageId
+			});
+		}
+	}
+	return [...hits.values()];
 }
 
 /** Produktbild als Data-URI, z.B. zur Übernahme in den Artikelstamm */
@@ -127,65 +174,187 @@ export async function getProductImage(imageId: string): Promise<string> {
  * Legt Produkte in den Picnic-Warenkorb (Bestellvorschläge, „Rezept bestellen“).
  * Mengen sind Gebinde-Anzahlen — Aufrunden auf Gebindegrößen passiert vorher.
  */
-export async function addToCart(items: AddProductsItems): Promise<void> {
-	await getClient().cart.addProductsToCart(items);
-}
-
-/** Rohdaten des Warenkorbs — nur intern; nach außen gehen die Mengen-Maps. */
-async function getCart() {
-	return getClient().cart.getCart();
+export async function addToCart(items: CartItem[]): Promise<void> {
+	// picnic-api 5 kennt nur noch das Einzel-Hinzufügen. Bewusst nacheinander:
+	// jeder Aufruf antwortet mit dem ganzen Warenkorb, parallel liefen also
+	// konkurrierende Änderungen desselben Korbs gegen eine fremde Schnittstelle.
+	for (const item of items) {
+		await getClient().cart.addProductToCart(item.productId, item.quantity);
+	}
 }
 
 /**
  * Aktuelle Warenkorb-Mengen je Produkt-ID (für den Abgleich der
- * Bestellvorschläge). Defensiv gehalten: die API ist unoffiziell — bei
- * unerwarteter Antwortstruktur lieber leere Map als Fehler.
+ * Bestellvorschläge).
+ *
+ * Seit picnic-api 5 liest die Bibliothek die Menge selbst aus dem
+ * QUANTITY-Decorator (inkl. `decorator_overrides`) — früher stand hier genau
+ * diese Auswertung, weil ein Produkt je Zeile nur **einmal** auftaucht und
+ * Zählen der Vorkommen immer 1 ergab. Defensiv bleibt es trotzdem: die API ist
+ * unoffiziell, unplausible Zeilen werden übersprungen.
  */
+/** Eine Zeile des Picnic-Warenkorbs, so wie Proviant sie anzeigt. */
+export type CartLine = {
+	productId: string;
+	name: string;
+	unitQuantity: string;
+	imageId: string | null;
+	quantity: number;
+	maxCount: number;
+	/** Preis der **Zeile** in Cent (nach Rabatt) */
+	linePrice: number;
+	/** Zeilenpreis vor Rabatt, `null` ohne Rabatt */
+	lineOriginalPrice: number | null;
+	/** Staffeln und Mehrfachangebot als Stufen (für den Mengenrabatt-Hinweis) */
+	tiers: PriceTier[];
+	labels: string[];
+	isUnavailable: boolean;
+	unavailableReason: string | null;
+};
+
+export type CartView = {
+	lines: CartLine[];
+	totalCount: number;
+	/** Zu zahlen inkl. Pfand und Gebühren, in Cent */
+	totalPrice: number;
+	/** Mindestbestellwert des gewählten Lieferfensters, `null` = keiner bekannt */
+	minimumOrderValue: number | null;
+	/** Gewähltes Lieferfenster; `explicit` = selbst gewählt, sonst von Picnic vorbelegt */
+	slot: { start: string; end: string; explicit: boolean } | null;
+};
+
+/**
+ * Der Warenkorb zum Anzeigen. Nicht Lieferbares steht vorn, damit es auffällt.
+ * Die Ersatzprodukte der Cart-Antwort sind Platzhalter (Name „irrelevant“,
+ * Preis 0) — die echten liefert `getReplacements`.
+ */
+export async function getCartView(): Promise<CartView> {
+	await ensureLoggedIn();
+	const cart = await getClient().cart.getCart();
+	const lines: CartLine[] = cart.items
+		.filter((item) => item.productId && item.quantity > 0)
+		.map((item) => {
+			const labels = item.labels.map((label) => label.text).filter(Boolean);
+			const unitRegular = item.quantity > 0 ? Math.round((item.originalPrice ?? item.displayPrice) / item.quantity) : 0;
+			const tilePriced = tilePrice({
+				displayPrice: unitRegular,
+				originalPrice: null,
+				labels: labels.map((text) => ({ text })),
+				priceRanges: item.priceRanges
+			});
+			return {
+				productId: item.productId,
+				name: item.name,
+				unitQuantity: item.unitQuantity,
+				imageId: item.imageId,
+				quantity: item.quantity,
+				maxCount: item.maxCount,
+				linePrice: item.displayPrice,
+				lineOriginalPrice: item.originalPrice != null && item.originalPrice > item.displayPrice ? item.originalPrice : null,
+				tiers: priceTiers(tilePriced),
+				labels,
+				isUnavailable: item.isUnavailable,
+				unavailableReason: item.unavailableReason
+			};
+		})
+		.sort((a, b) => Number(b.isUnavailable) - Number(a.isUnavailable));
+	const slot = cart.selectedSlot;
+	return {
+		lines,
+		totalCount: cart.totalCount,
+		totalPrice: cart.totalPrice,
+		minimumOrderValue: cart.minimumOrderValue,
+		slot:
+			slot?.windowStart && slot.windowEnd
+				? { start: slot.windowStart, end: slot.windowEnd, explicit: slot.isExplicitSelection }
+				: null
+	};
+}
+
+/** Ein Ersatzvorschlag für ein nicht lieferbares Produkt. */
+export type CartReplacement = { id: string; name: string; unitQuantity: string; imageId: string | null; price: number };
+
+/** Picnics Ersatzvorschläge für ein nicht lieferbares Produkt (mit echten Namen und Preisen). */
+export async function getReplacements(productId: string): Promise<CartReplacement[]> {
+	await ensureLoggedIn();
+	const { replacements } = await getClient().cart.getReplacements(productId);
+	return replacements
+		.filter((tile) => tile.id && tile.name && !tile.isUnavailable)
+		.map((tile) => ({
+			id: tile.id,
+			name: tile.name,
+			unitQuantity: tile.unitQuantity,
+			imageId: tile.imageId,
+			price: tile.displayPrice
+		}));
+}
+
+/** Nimmt `count` Packungen eines Produkts aus dem Warenkorb. */
+export async function removeFromCart(productId: string, count: number): Promise<void> {
+	await ensureLoggedIn();
+	await getClient().cart.removeProductFromCart(productId, count);
+}
+
+/**
+ * Ankunftszeit der nächsten offenen Lieferung, wie die Picnic-App sie zeigt.
+ * `null`, wenn keine Lieferung unterwegs ist oder Picnic (noch) keine Zeit
+ * kennt — die gibt es meist erst am Liefertag.
+ */
+export async function getDeliveryEta(): Promise<{
+	eta: string | null;
+	windowStart: string | null;
+	windowEnd: string | null;
+} | null> {
+	await ensureLoggedIn();
+	const open = (await getClient().delivery.getDeliverySummaries()).find(
+		(delivery) => delivery.status !== 'COMPLETED' && delivery.status !== 'CANCELLED'
+	);
+	if (!open) return null;
+	const position = await getClient().delivery.getDeliveryPosition(open.id);
+	const eta = position.eta != null ? new Date(position.eta).toISOString() : null;
+	if (!eta && !position.etaWindowStart) return null;
+	return { eta, windowStart: position.etaWindowStart, windowEnd: position.etaWindowEnd };
+}
+
 export async function getCartQuantities(): Promise<Map<string, number>> {
 	await ensureLoggedIn();
-	const cart = await getCart();
+	const cart = await getClient().cart.getCart();
 	const quantities = new Map<string, number>();
-
-	// Primäre Quelle: analytics_context_data.items_list trägt explizite Mengen
-	const analyticsItems = cart?.analytics_context_data?.items_list;
-	if (Array.isArray(analyticsItems)) {
-		for (const item of analyticsItems) {
-			const id = typeof item?.product_id === 'string' ? item.product_id : null;
-			const qty = Number(item?.quantity);
-			if (id && Number.isFinite(qty) && qty > 0) {
-				quantities.set(id, (quantities.get(id) ?? 0) + qty);
-			}
-		}
-	}
-	if (quantities.size > 0) return quantities;
-
-	// Fallback: Menge steht im QUANTITY-Decorator der Warenkorb-Zeile — ein
-	// Produkt taucht dort nur EINMAL auf, egal wie oft es bestellt wurde
-	// (live geprüft), Zählen der Vorkommen ergäbe also immer 1.
-	if (Array.isArray(cart?.items)) {
-		for (const line of cart.items) {
-			if (!Array.isArray(line?.items)) continue;
-			for (const article of line.items) {
-				const id = typeof article?.id === 'string' ? article.id : null;
-				if (!id) continue;
-				const decorator = Array.isArray(article?.decorators)
-					? article.decorators.find((d: { type?: string }) => d?.type === 'QUANTITY')
-					: undefined;
-				const qty = Number((decorator as { quantity?: number } | undefined)?.quantity);
-				quantities.set(id, (quantities.get(id) ?? 0) + (Number.isFinite(qty) && qty > 0 ? qty : 1));
-			}
+	for (const line of cart?.items ?? []) {
+		const id = typeof line?.productId === 'string' && line.productId ? line.productId : null;
+		const qty = Number(line?.quantity);
+		if (id && Number.isFinite(qty) && qty > 0) {
+			quantities.set(id, (quantities.get(id) ?? 0) + qty);
 		}
 	}
 	return quantities;
 }
 
+type ChecklistOrders = NonNullable<Parameters<typeof aggregateChecklist>[0]>;
+
+/** Rohe Lieferung, soweit `checklist.ts` sie liest. */
+type RawDelivery = { orders?: unknown; decorators?: unknown };
+
 /**
- * Decorators der Lieferung — dort meldet Picnic nicht gelieferte Positionen
- * (`ARTICLE_DELIVERY_ISSUES`). Das Feld fehlt in den Typen der `picnic-api`,
- * deshalb hier einmal zentral herausgereicht statt an jeder Fundstelle gecastet.
+ * Lieferung im **Rohformat** von Picnic.
+ *
+ * Bewusst nicht `delivery.getDelivery()`: Das aufbereitete Modell von
+ * picnic-api 5 lässt die Decorators der Lieferung weg — und genau dort meldet
+ * Picnic nicht gelieferte Positionen (`ARTICLE_DELIVERY_ISSUES`, siehe
+ * `checklist.ts`). Ohne sie hielte die Prüfung eine stornierte Position für
+ * erwartet. `sendRequest` ist der dafür vorgesehene, öffentliche Weg.
  */
-function deliveryDecorators(detail: unknown): unknown {
-	return (detail as { decorators?: unknown } | null)?.decorators;
+async function getRawDelivery(deliveryId: string): Promise<RawDelivery> {
+	const raw = await getClient().sendRequest<null, RawDelivery | null>(
+		'GET',
+		`/deliveries/${encodeURIComponent(deliveryId)}`
+	);
+	return raw ?? {};
+}
+
+/** Bestellungen einer rohen Lieferung; defensiv, das Format ist unoffiziell. */
+function rawOrders(detail: RawDelivery): ChecklistOrders {
+	return (Array.isArray(detail.orders) ? detail.orders : []) as ChecklistOrders;
 }
 
 /**
@@ -199,7 +368,7 @@ function deliveryDecorators(detail: unknown): unknown {
  */
 export async function getOpenOrderQuantities(): Promise<Map<string, number>> {
 	await ensureLoggedIn();
-	const deliveries = await getClient().delivery.getDeliveries();
+	const deliveries = await getClient().delivery.getDeliverySummaries();
 	// Bewusst per Ausschluss statt per Positivliste: ein künftiger
 	// Zwischenstatus von Picnic soll als „noch nicht geliefert" zählen
 	const open = deliveries
@@ -208,16 +377,16 @@ export async function getOpenOrderQuantities(): Promise<Map<string, number>> {
 
 	const quantities = new Map<string, number>();
 	for (const delivery of open) {
-		const detail = await getClient().delivery.getDelivery(delivery.delivery_id);
+		const detail = await getRawDelivery(delivery.id);
 		// Stornierte Teilbestellungen kommen nicht mehr — die zählen nicht mit
-		const orders = (detail.orders ?? []).filter(
-			(order) => (order as { status?: string }).status !== 'CANCELLED'
+		const orders = rawOrders(detail).filter(
+			(order) => (order as { status?: string } | null)?.status !== 'CANCELLED'
 		);
 		// Einzelne stornierte Positionen ebenso: `aggregateChecklist` zieht sie
 		// anhand der Lieferungs-Decorators ab. Ohne das gälte ein Artikel, den
 		// Picnic gar nicht liefert, weiter als „unterwegs" und würde nie wieder
 		// vorgeschlagen.
-		for (const item of aggregateChecklist(orders, deliveryDecorators(detail))) {
+		for (const item of aggregateChecklist(orders, detail.decorators)) {
 			if (item.quantity < 1) continue;
 			quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity);
 		}
@@ -236,17 +405,14 @@ export type DeliverySummary = {
 /** Jüngste Lieferungen als schlanke Zusammenfassung für die Übersicht. */
 export async function getRecentDeliveries(limit = 10): Promise<DeliverySummary[]> {
 	await ensureLoggedIn();
-	const deliveries = await getClient().delivery.getDeliveries();
+	const deliveries = await getClient().delivery.getDeliverySummaries();
 	return deliveries.slice(0, limit).map((delivery) => ({
-		id: delivery.delivery_id,
-		creationTime: delivery.creation_time,
-		deliveryStart: delivery.delivery_time?.start ?? delivery.eta2?.start ?? null,
+		id: delivery.id,
+		creationTime: delivery.creationTime,
+		deliveryStart: delivery.windowStart,
 		status: delivery.status,
-		// Summe der Bestellwerte der (Teil-)Bestellungen dieser Lieferung
-		totalPrice: (delivery.orders ?? []).reduce(
-			(sum, order) => sum + ((order as { total_price?: number }).total_price ?? 0),
-			0
-		)
+		// Summe der Bestellwerte der (Teil-)Bestellungen — rechnet die Bibliothek
+		totalPrice: delivery.totalPrice
 	}));
 }
 
@@ -256,8 +422,8 @@ export async function getRecentDeliveries(limit = 10): Promise<DeliverySummary[]
  */
 export async function getDeliveryChecklist(deliveryId: string): Promise<DeliveryChecklistItem[]> {
 	await ensureLoggedIn();
-	const detail = await getClient().delivery.getDelivery(deliveryId);
-	return aggregateChecklist(detail.orders, deliveryDecorators(detail));
+	const detail = await getRawDelivery(deliveryId);
+	return aggregateChecklist(rawOrders(detail), detail.decorators);
 }
 
 export type OrderedProduct = {
@@ -309,58 +475,120 @@ export async function listOrderedProducts(deliveryLimit = 10): Promise<OrderedPr
 	);
 }
 
+/**
+ * Rohe Fusion-Seite für unsere eigenen Parser in `recipeImport.ts`.
+ *
+ * picnic-api 5 hat die Seitenabrufe der Rezepte privat gemacht; `app.getPage`
+ * ist der öffentliche Ersatz. Picnic stellt Seiten nach und nach auf RSC um —
+ * kommt eine als RSC, verstehen unsere Parser sie nicht. Dann lieber eine
+ * klare Meldung als ein still leerer Import.
+ */
+async function getFusionPage(pageId: string): Promise<unknown> {
+	const page = await getClient().app.getPage(pageId);
+	if (page.format !== 'fusion') {
+		throw new PicnicAdapterError(
+			'unexpectedFormat',
+			`Picnic liefert die Seite ${pageId.split('?')[0]} in einem unbekannten Format (${page.format})`
+		);
+	}
+	return page.page;
+}
+
 /** Rezepte der Picnic-Rezeptseite (Kacheln mit ID und Name). */
 export async function listPicnicRecipes(): Promise<PicnicRecipeTile[]> {
 	await ensureLoggedIn();
-	const page = await getClient().recipe.getRecipesPage();
-	return extractRecipeTiles(page);
+	return extractRecipeTiles(await getFusionPage('meals-page-root'));
 }
 
-/** Detaildaten eines Picnic-Rezepts (Zutaten, Portionen, Schritte). */
-export async function getPicnicRecipeDetail(id: string, name?: string): Promise<ParsedPicnicRecipe> {
+/** Ein Gang der Picnic-Favoriten mit seinen Produkten (Quelle für den Artikelimport). */
+export type FavoriteAisle = {
+	id: string;
+	title: string;
+	products: { productId: string; name: string; unitQuantity: string; imageId: string | null }[];
+};
+
+/** Höchstens so viele Gänge werden gleichzeitig nachgeladen. */
+const AISLE_CONCURRENCY = 4;
+
+/**
+ * Die Produkte, die der Haushalt bei Picnic kauft, nach Gang gruppiert
+ * (Reiter „Favoriten“ der App). Lange Gänge liefert die Übersicht nur
+ * angeschnitten (`complete: false`) — die werden einzeln nachgeladen. Ein
+ * Produkt steht nur im ersten Gang, in dem es vorkommt; leere Gänge fallen weg.
+ */
+export async function listFavoriteProducts(): Promise<FavoriteAisle[]> {
 	await ensureLoggedIn();
-	const page = await getClient().recipe.getRecipeDetailsPage(id);
-	return parseRecipeDetail(page, name);
+	const { aisles } = await getClient().catalog.getFavorites();
+
+	const tilesByAisle = new Map(aisles.map((aisle) => [aisle.id, aisle.products]));
+	const incomplete = aisles.filter((aisle) => !aisle.complete);
+	for (let i = 0; i < incomplete.length; i += AISLE_CONCURRENCY) {
+		await Promise.all(
+			incomplete.slice(i, i + AISLE_CONCURRENCY).map(async (aisle) => {
+				try {
+					tilesByAisle.set(aisle.id, await getClient().catalog.getFavoritesInAisle(aisle.id));
+				} catch {
+					// dann eben nur der angeschnittene Teil
+				}
+			})
+		);
+	}
+
+	const seen = new Set<string>();
+	const result: FavoriteAisle[] = [];
+	for (const aisle of aisles) {
+		const products = (tilesByAisle.get(aisle.id) ?? [])
+			.filter((tile) => tile.id && tile.name && !seen.has(tile.id))
+			.map((tile) => {
+				seen.add(tile.id);
+				return { productId: tile.id, name: tile.name, unitQuantity: tile.unitQuantity, imageId: tile.imageId };
+			});
+		if (products.length > 0) result.push({ id: aisle.id, title: aisle.title, products });
+	}
+	return result;
+}
+
+/**
+ * Ein Picnic-Rezept, umgerechnet auf seine **Standardportionen**.
+ *
+ * Ohne Angabe liefert Picnic das Rezept für die Portionenzahl, die zuletzt in
+ * der App gewählt war (live: 3 statt 4). Weicht sie ab, wird mit den
+ * Standardportionen neu geladen — sonst passten gespeicherte Portionen und
+ * Mengen nicht zusammen.
+ */
+export async function getPicnicRecipe(id: string): Promise<ParsedPicnicRecipe> {
+	await ensureLoggedIn();
+	let recipe = await getClient().recipe.getRecipe(id);
+	if (recipe.defaultPortions > 0 && recipe.portions !== recipe.defaultPortions) {
+		recipe = await getClient().recipe.getRecipe(id, { portions: recipe.defaultPortions });
+	}
+	return mapPicnicRecipe(recipe);
+}
+
+/** In der Picnic-App gespeicherte Rezepte. */
+export async function listSavedPicnicRecipes(): Promise<PicnicRecipeTile[]> {
+	await ensureLoggedIn();
+	return (await getClient().recipe.getSavedRecipes()).map((r) => ({ id: r.id, name: r.name }));
+}
+
+/** In der Picnic-App selbst angelegte Rezepte. */
+export async function listOwnPicnicRecipes(): Promise<PicnicRecipeTile[]> {
+	await ensureLoggedIn();
+	return (await getClient().recipe.getUserDefinedRecipes()).map((r) => ({ id: r.id, name: r.name }));
 }
 
 /**
  * Preis je Produkt-ID. Es gibt **keinen Bulk-Lookup** — ein Call pro Produkt,
  * deshalb ist die Menge vom Aufrufer zu deckeln (siehe `server/prices.ts`).
  *
- * Genau **ein** HTTP-Call, ob im Angebot oder nicht: `getProductDetails()`
- * holt intern dieselbe rohe Seite, die auch `getProductDetailsPage()` liefert,
- * und wirft sie danach weg — ein zweiter Aufruf würde also nur dieselbe URL
- * doppelt laden. Stattdessen wird die rohe Seite hier **einmal** geholt und
- * zweimal ausgewertet: einmal über `extractProductDetails()` (aktueller
- * Preis + `promotion`), bei laufender Aktion zusätzlich über
- * `crossedOutPrice()` (Streichpreis) auf derselben Seite.
+ * `catalog.getProduct()` lädt die Produktseite genau **einmal** und liefert
+ * seit picnic-api 5 auch den Streichpreis (`originalPrice`) — vorher musste
+ * die rohe Seite dafür ein zweites Mal ausgewertet werden. Die Deutung liegt
+ * in `catalogPrice()`; ein Parserfehler der Bibliothek wird in
+ * `getProductPrices` zu „kein Preis", lieber das als ein kaputter.
  */
-async function fetchProductPrice(id: string): Promise<ProductPrice | null> {
-	const page = await getClient().catalog.getProductDetailsPage(id);
-
-	// `extractProductDetails` parst dynamische PML-Strukturen und ist laut
-	// picnic-api selbst "experimental" — lieber null als ein kaputtes Ergebnis.
-	let details: ReturnType<typeof extractProductDetails>;
-	try {
-		details = extractProductDetails(id, page);
-	} catch {
-		return null;
-	}
-
-	const current = details.displayPrice;
-	if (typeof current !== 'number' || current <= 0) return null;
-
-	const promotion = details.promotion;
-	if (!promotion) return { regularPrice: current, promoPrice: null, promoLabel: null };
-
-	const label = typeof promotion.label === 'string' ? promotion.label : null;
-	const regular = crossedOutPrice(page, current);
-
-	// Aktion gemeldet, aber kein Streichpreis auffindbar: Beschriftung
-	// behalten, Ersparnis weglassen. Lieber kein Rabatt als ein erfundener.
-	return regular == null
-		? { regularPrice: current, promoPrice: null, promoLabel: label }
-		: { regularPrice: regular, promoPrice: current, promoLabel: label };
+async function fetchProductPrice(id: string): Promise<CatalogPrice | null> {
+	return catalogPrice(await getClient().catalog.getProduct(id));
 }
 
 /**
@@ -409,9 +637,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
  * Abgearbeitet wird die Liste als Warteschlange durch wenige Arbeiter, statt
  * alle IDs gleichzeitig loszuschicken.
  */
-export async function getProductPrices(ids: string[]): Promise<Map<string, ProductPrice>> {
+export async function getProductPrices(ids: string[]): Promise<Map<string, CatalogPrice>> {
 	await ensureLoggedIn();
-	const prices = new Map<string, ProductPrice>();
+	const prices = new Map<string, CatalogPrice>();
 
 	let next = 0;
 	async function worker(): Promise<void> {
@@ -425,4 +653,62 @@ export async function getProductPrices(ids: string[]): Promise<Map<string, Produ
 	const workers = Array.from({ length: Math.min(PRICE_CONCURRENCY, ids.length) }, () => worker());
 	await Promise.all(workers);
 	return prices;
+}
+
+/** Höchstens so viele Aktionsgruppen werden gleichzeitig geladen. */
+const PROMO_GROUP_CONCURRENCY = 6;
+
+/**
+ * Alle Produkte mit Angebot: die Kacheln der Angebotsseite plus die Produkte
+ * jeder Aktionsgruppe („Alpro Milchersatz“, „De Cecco Pasta“ …), die die Seite
+ * nur als Sammelkachel zeigt. Gedeutet über `tilePrice`; übrig bleiben nur
+ * Produkte mit echtem Rabatt. Eine Beschriftung mit Zahl, die sich nicht
+ * deuten ließ, wird geloggt — dann kennt Picnic eine neue Angebotsform.
+ */
+export async function getPromotedProducts(): Promise<Map<string, CatalogPrice>> {
+	await ensureLoggedIn();
+	const { sections } = await getClient().catalog.getPromotions();
+
+	const tiles = sections.flatMap((section) => section.products);
+	const groupIds = [...new Set(sections.flatMap((section) => section.groups.map((group) => group.id)))];
+	for (let i = 0; i < groupIds.length; i += PROMO_GROUP_CONCURRENCY) {
+		const groups = await Promise.all(
+			groupIds.slice(i, i + PROMO_GROUP_CONCURRENCY).map((id) =>
+				getClient()
+					.catalog.getPromotionGroup(id)
+					.catch(() => null)
+			)
+		);
+		for (const group of groups) if (group) tiles.push(...group.products);
+	}
+
+	const result = new Map<string, CatalogPrice>();
+	const unknownLabels = new Set<string>();
+	for (const tile of tiles) {
+		if (result.has(tile.id)) continue;
+		const price = tilePrice(tile);
+		if (price?.promoPrice != null) {
+			result.set(tile.id, price);
+		} else if (tile.originalPrice == null) {
+			for (const label of tile.labels) {
+				const text = label.text;
+				if (text && /\d/.test(text) && !/^jetzt\s/i.test(text)) unknownLabels.add(text);
+			}
+		}
+	}
+	// „jetzt 1.49€“ ohne Streichpreis ist bekannt und bewusst nicht deutbar
+	if (unknownLabels.size > 0) logWarn('Unbekannte Picnic-Angebotsbeschriftungen', { labels: [...unknownLabels].join(' | ') });
+	return result;
+}
+
+/**
+ * Ein Produkt für die Artikelseite: Preis (mit Angebot), Grundpreis und die
+ * Produktdaten (Marke, Herkunft, Bio, Nährwerte) — alles aus einem Abruf.
+ */
+export async function getProductDetails(
+	id: string
+): Promise<{ price: CatalogPrice | null; unitPrice: string | null; facts: ProductFacts }> {
+	await ensureLoggedIn();
+	const product = await getClient().catalog.getProduct(id);
+	return { price: catalogPrice(product), unitPrice: product.unitPrice ?? null, facts: extractProductFacts(product) };
 }

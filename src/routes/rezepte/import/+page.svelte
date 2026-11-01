@@ -14,6 +14,12 @@
 		data.tiles.filter((t) => t.name.toLowerCase().includes(query.trim().toLowerCase()))
 	);
 
+	const sources = [
+		{ key: 'katalog', label: 'recipeImport.source.catalog' },
+		{ key: 'gespeichert', label: 'recipeImport.source.saved' },
+		{ key: 'eigene', label: 'recipeImport.source.own' }
+	] as const;
+
 	function alreadyImported(name: string): boolean {
 		return data.existingNames.includes(name.toLowerCase());
 	}
@@ -28,6 +34,18 @@
 <p class="mt-1 text-sm text-gray-500">
 	{t('recipeImport.description')}
 </p>
+
+<nav class="mt-4 flex flex-wrap gap-1.5" aria-label={t('recipeImport.sources')}>
+	{#each sources as source (source.key)}
+		<a
+			href={source.key === 'katalog' ? '/rezepte/import' : `/rezepte/import?quelle=${source.key}`}
+			aria-current={data.source === source.key ? 'page' : undefined}
+			class="rounded-full px-3 py-1 text-sm font-medium {data.source === source.key ? 'bg-green-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'}"
+		>
+			{t(source.label)}
+		</a>
+	{/each}
+</nav>
 
 {#if data.connection !== 'connected'}
 	<div class="mt-6 max-w-2xl rounded-xl border border-gray-200 bg-white p-6 text-center">
@@ -52,6 +70,11 @@
 	/>
 
 	<p class="mt-2 text-xs text-gray-500">{t('recipeImport.counted', { shown: filtered.length, total: data.tiles.length })}</p>
+	{#if data.tiles.length === 0}
+		<div class="mt-2 max-w-2xl rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
+			{t('recipeImport.emptySource')}
+		</div>
+	{/if}
 
 	<ul class="mt-2 max-w-2xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
 		{#each filtered as tile (tile.id)}

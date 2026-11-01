@@ -40,7 +40,9 @@ Formatierung von Hand am Stil der Datei ausrichten (Tabs).
 reinen Logik-Module ab: `units.ts`, `suggest.ts`, `mhd.ts`, `format.ts`,
 `journal.ts`, `i18n/` (Sprachaushandlung, Plurale, Vollständigkeit der
 Wörterbücher), `picnic/unitQuantity.ts`, `picnic/checklist.ts`,
-`deliveryNewItems.ts`. Genau dort steckten die
+`picnic/price.ts`, `picnic/search.ts`, `picnic/errors.ts`,
+`picnic/recipeMapping.ts`, `picnic/productFacts.ts`, `offers.ts`,
+`priceTiers.ts`, `prices.ts`, `deliveryNewItems.ts`. Genau dort steckten die
 schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 **mit Test**, nicht in eine Route.
 
@@ -56,7 +58,12 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     Rest der App importiert Picnic **nur von hier**. Reine, eigenständig
     testbare Untermodule (ohne SvelteKit-Import): `checklist.ts`
     (Lieferdaten-Normalisierung), `recipeImport.ts` (Parser für die
-    undokumentierten PML-/Fusion-Rezeptseiten), `unitQuantity.ts`
+    undokumentierten PML-/Fusion-Rezeptseiten, heute nur noch die
+    Rezeptliste), `recipeMapping.ts` (`getRecipe()` → Importformat),
+    `search.ts` (Produkttreffer der Fusion-Suchseite), `price.ts`
+    (Preisdeutung), `productFacts.ts` (Marke, Herkunft, Bio, Nährwerte),
+    `errors.ts` (Fehler → `picnic.error.*`; Routen melden Picnic-Fehler nur
+    über `describePicnicError`, nie per `err.message`), `unitQuantity.ts`
     (Gebindegrößen wie „6er Pack", „2 x 125g").
   - `auth.ts` / `password.ts` – Sessions (DB-gestützt, httpOnly-Cookie) und
     scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder. `log.ts` –
@@ -69,6 +76,9 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     Listenseiten), `recipeData.ts`, `mealPlan.ts` (Wochenplan-Einkaufsliste:
     verrechnet den gemeinsamen Vorrat über alle geplanten Tage per
     Artikel-Pool, Rundungs-Überschüsse werden zurückgebucht),
+    `offers.ts` (Picnic-Angebote eigener Artikel, siehe Fallstrick unten),
+    `cartActions.ts` (Warenkorb-Schreibaktionen **mit Gegenprobe**),
+    `cartButton.ts` (Serverseite des `CartButton`),
     `articleForm.ts`, `recipeForm.ts`, `articleImport.ts` (Artikel aus
     Picnic-Produkt, **idempotent** per picnicId-Dedupe — wird auch vom
     Lieferungs-Check zum Auto-Anlegen fehlender Artikel genutzt), `images.ts`.
@@ -81,12 +91,20 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   (Mengen/Einheiten; `coverageMulti` summiert Bestand über die
   Alternativartikel einer Zutat), `mhd.ts` (Restlaufzeit/Ampel), `suggest.ts`
   (gewichteter Rezeptvorschlag), `sound.ts` (Scan-Signalton per Web Audio),
-  `format.ts` (`packageSize`, `formatPrice`, `tagFilterHref` — vor eigenen
-  Formatierern erst hier nachsehen), `stock.ts` (`sumQuantity`), `forms.ts`
+  `format.ts` (`packageSize`, `formatPrice`, `tagFilterHref`,
+  `articleFilterHref` — vor eigenen Formatierern erst hier nachsehen),
+  `prices.ts` (`totalFor`/`savingsFor` — Mengen immer hierüber rechnen, nie
+  `effectivePrice * n`: Mehrfachangebote gelten nur für volle Bündel,
+  Staffeln erst ab ihrer Menge), `offers.ts` (Mehrfachangebot-Labels →
+  Stückpreis, `discountPercent`, `sortOffers`), `priceTiers.ts`
+  (Mengenrabatt-Hinweis: nur wenn **genau eine** Packung mehr eine Stufe
+  erreicht — so vom Nutzer festgelegt), `stock.ts` (`sumQuantity`), `forms.ts`
   (`keepValues`, siehe Formular-Fallstrick unten), `journal.ts`
   (Beschriftungen der Buchungsarten/-herkünfte).
 - **Wiederverwendbare Komponenten** in `src/lib/components/`: `ArticleForm`,
-  `RecipeForm`, `TagInput` (Chips + Autocomplete, rendert das
+  `RecipeForm`, `OfferBadge` (einheitliche Angebotsanzeige), `CartPanel`
+  (Warenkorb-Block der Bestellseite), `CartButton` (🛒 +1, braucht eine
+  Action `?/addToCart`), `TagInput` (Chips + Autocomplete, rendert das
   `name="tags"`-Hiddenfield selbst), `BarcodeScanner`, `StockEntryRow`
   (Chargen-Zeile mit Schnellkorrektur/Bearbeiten/Umlagern — genutzt von der
   Lagerort- **und** der Artikelseite; die Server-Logik dazu liegt in
@@ -176,24 +194,63 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   Server teilen sich dieses Modul bewusst.
 - **Erster Admin** wird beim Start aus `ADMIN_USERNAME`/`ADMIN_PASSWORD`
   angelegt, solange kein Benutzer existiert.
-- **Picnic:** Nur Warenkorb befüllen, **nie automatisch bestellen** — der
-  Checkout bleibt in der Picnic-App. Erststart braucht Login + SMS-2FA; der
+- **Picnic:** Nur Warenkorb befüllen und bearbeiten, **nie automatisch
+  bestellen** — der Checkout bleibt in der Picnic-App, und auch das
+  **Lieferfenster wird nie gesetzt** (`setDeliverySlot` bleibt ungenutzt; DE
+  belegt eins vor, `state: IMPLICIT`). Warenkorb-Schreibaktionen nur über
+  `server/cartActions.ts` — jede liest den Korb danach gegen. Erststart braucht Login + SMS-2FA; der
   Auth-Key liegt in `DATA_DIR/picnic-auth-key` (übersteht Neustarts).
   Grenzen der API (live geprüft): Suche findet **keine EANs**, Produktdetails
   enthalten **keine EAN/GTIN**, Rezept**bilder** sind nicht öffentlich abrufbar
   (S3 403) — Produktbilder dagegen schon. Die Rezept-/Übersichtsseiten sind
   dynamische PML-Strukturen; Parser dafür heuristisch und **defensiv** halten
   (lieber leer zurückgeben als Datenmüll importieren).
+- **picnic-api ab 5.x** liefert fertige camelCase-Modelle (`Cart`, `Delivery`,
+  `Product`, `Recipe`) statt Picnics Roh-JSON; die rohen Seitenabrufe der
+  Dienste sind `private`, Deep-Imports (`lib/domains/…/helpers`) gibt es
+  nicht mehr. Roh geht es nur noch über `app.getPage(pageId)` (gibt
+  `{ format: 'fusion' | 'rsc' }` zurück — **immer das Format prüfen**, Picnic
+  stellt Seiten nach und nach auf RSC um) und `sendRequest()`. Zwei Stellen
+  bleiben bewusst roh: die **Lieferungsdetails** (das Modell lässt
+  `delivery.decorators` weg, also die Stornos, siehe unten) und die
+  **Rezeptseiten** (unsere Parser). Die **Suche** ist in 5.2 und 5.3 RSC-only, Picnic
+  DE liefert sie aber noch als Fusion (live geprüft, Oktober 2026) — deshalb
+  die Format-Weiche in `searchProducts` mit eigenem Parser (`search.ts`).
+- **Angebote** (`server/offers.ts`): Angebotsseite plus jede Aktionsgruppe
+  einzeln (`getPromotionGroup`) — live gut drei Dutzend Anfragen, über zehn
+  Sekunden. Deshalb Modul-Cache mit **stale-while-revalidate** (1 h), und
+  Listen streamen die Angebote nach, statt zu warten. Der Cache enthält nur
+  sprachunabhängige Picnic-Daten — Anfrage- oder Sprachbezogenes gehört nie
+  dort hinein. Treffer eigener Artikel landen zusätzlich in `picnic_prices`.
+  **Einzelrabatte** („20% Rabatt“, „jetzt 2.22€“) nur über `originalPrice`
+  deuten, nie aus dem Text: dort ist `displayPrice` schon rabattiert.
+  **Mehrfachangebote** („2 für …“, „n+1 gratis“, „-x% auf 2. Artikel“) haben
+  keinen `originalPrice`; `displayPrice` ist dann der Normalpreis.
+  Aktionsgruppen-Kacheln zeigen teils „jetzt 1.49€“ **ohne** Streichpreis —
+  nicht deutbar, bewusst kein Angebot.
+- **Rezeptimport** über `recipe.getRecipe()`: ohne Angabe rendert Picnic die
+  zuletzt in der App gewählte Portionenzahl, deshalb mit `defaultPortions`
+  nachladen. `neededText` („(0.75 EL benötigt)“) ist die benötigte Menge,
+  `quantity` die Zahl der **Gebinde**. `VARIATION` und Nicht-Vorrat-Zutaten
+  ohne `neededText` gehören zu Abwandlungen (z.B. vegan), nicht ins Rezept.
+- **Produktdaten**: Herkunft steht nur in den Zusatzinformationen als
+  „**Ursprungsland**“ (frische Ware); Bio nur aus dem Siegel in `labels`,
+  als ganzes Wort. Der Grundpreis wird nicht gespeichert, sondern live
+  angezeigt.
 - **Picnic-Datenstrukturen** (alle live geprüft, sparen viel Rätselraten):
   - **Mengen stehen im `QUANTITY`-Decorator**, nie in der Länge von `items`:
     ein Produkt taucht je Zeile genau **einmal** auf. Vorkommen zählen ergibt
     also immer 1 — genau dieser Fehler steckte im ersten Warenkorb-Abgleich.
     `lineQuantity()` in `picnic/checklist.ts` macht es richtig.
-  - **Warenkorb:** `analytics_context_data.items_list` (`product_id` +
-    `quantity`) ist die bequemste Quelle, fehlt aber bei leerem Warenkorb —
-    deshalb zusätzlich der Decorator-Weg als Fallback (`getCartQuantities`).
-  - **Lieferungsliste enthält keine Positionen** (`orders[].items` fehlt), die
-    kommen erst per `getDelivery(id)`. Offene Lieferungen deshalb per
+  - **Warenkorb:** Seit picnic-api 5 trägt `cart.getCart()` je Zeile
+    `productId` + `quantity` (aus dem Decorator gelesen, Overrides
+    eingerechnet) — die frühere Auswertung von `analytics_context_data` bzw.
+    der Decorators entfällt. `displayPrice`/`originalPrice` einer Zeile sind
+    **Zeilen**preise. Die `replacements` einer nicht lieferbaren Zeile sind
+    Platzhalter (Name „irrelevant“, Preis 0) — Namen und Preise nur über
+    `cart.getReplacements(productId)`.
+  - **Lieferungsliste enthält keine Positionen** (`getDeliverySummaries()`),
+    die kommen erst per Detailabruf (bei uns roh, siehe oben). Offene Lieferungen deshalb per
     Ausschluss bestimmen (nicht `COMPLETED`/`CANCELLED`) und je Lieferung
     einzeln nachladen; auch Teilbestellungen können `CANCELLED` sein.
   - **Storno einzelner Positionen steht an der Lieferung, nicht an der
@@ -209,21 +266,25 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     `ARTICLE_DELIVERY_FAILURES`) — deshalb `deliveryIssues()` in
     `picnic/checklist.ts` **defensiv** halten: im Zweifel nichts melden, sonst
     verschwindet eine bestellte Position fälschlich aus der Prüfung.
-  - **Unbekannte Produkt-IDs quittiert Picnic ohne Fehler** — es landet
-    nichts im Warenkorb, die App meldete trotzdem Erfolg. Nach dem Befüllen
-    deshalb gegenprüfen (siehe `notInCart` auf der Bestellseite). Dasselbe
+  - **Unbekannte Produkt-IDs quittierte Picnic früher ohne Fehler** — es
+    landete nichts im Warenkorb, die App meldete trotzdem Erfolg. Seit
+    picnic-api 5.3 kommt dafür ein 404 `NOT_FOUND` (live geprüft, wird zu
+    `productNotFound`); die Gegenprobe nach jedem Befüllen bleibt trotzdem
+    (siehe `notInCart` und `server/cartActions.ts`). Dasselbe
     Produkt existiert im Katalog teils unter mehreren IDs.
   - **Preise und Rabatte folgen zwei gegenläufigen Regeln** (live geprüft):
     An der **ORDER_LINE** ist `line.price` der **Streichpreis** und der
     `PRICE`-Decorator (`display_price`) der tatsächlich gezahlte Preis, dazu
     ein `PROMO`-Decorator mit Beschriftung. Auf der **Katalogseite** ist es
     umgekehrt: `displayPrice` ist der **rabattierte** Preis, der Streichpreis
-    steckt ausschließlich als PML-Knoten `{ type: "PRICE", isCrossed: true }`
-    in der rohen `getProductDetailsPage()`. Wer eine Regel auf die andere
-    Quelle anwendet, verbucht den Rabatt als Aufschlag. Deshalb liegen sie in
-    `picnic/price.ts` als **zwei getrennte Funktionen** nebeneinander.
-    Weiteres: `getProductDetails()` kennt den Streichpreis gar nicht (nur ein
-    `promotion.label`), `search()` liefert **leere** `decorators` und ist für
+    steht seit picnic-api 5 als `originalPrice` an `catalog.getProduct()`
+    (die Bibliothek liest ihn nur aus dem Hauptcontainer — vorher erfand ein
+    Nachbarangebot „Ähnliche Produkte" sonst einen Rabatt). `originalPrice`
+    ohne `promotion` kommt vor (live: Putenschnitzel 6,49 statt 8,49 €).
+    Wer eine Regel auf die andere Quelle anwendet, verbucht den Rabatt als
+    Aufschlag. Deshalb liegen sie in `picnic/price.ts` als **zwei getrennte
+    Funktionen** (`lineSavings`, `catalogPrice`) nebeneinander.
+    Weiteres: Die Fusion-Suchseite liefert **leere** `decorators` und ist für
     Rabatte unbrauchbar, und `ORDER_ARTICLE.price` ist ein Sentinel-Müllwert
     (`432199`) — der echte Preis steht an der Line. `line.price` ist zudem der
     **Zeilen**-Gesamtpreis, nicht der Stückpreis.

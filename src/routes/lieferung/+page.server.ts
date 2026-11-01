@@ -1,7 +1,8 @@
-import { getConnectionState, getRecentDeliveries } from '#lib/server/picnic/index.js';
+import { translator } from '#lib/i18n/index.js';
+import { describePicnicError, getConnectionState, getRecentDeliveries } from '#lib/server/picnic/index.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const connection = getConnectionState();
 	if (connection !== 'connected') {
 		return { connection, deliveries: [], error: null };
@@ -12,7 +13,7 @@ export const load: PageServerLoad = async () => {
 		return {
 			connection,
 			deliveries: [],
-			error: err instanceof Error ? err.message : 'Lieferungen konnten nicht geladen werden'
+			error: describePicnicError(err, translator(locals.locale), 'Lieferungsliste')
 		};
 	}
 };

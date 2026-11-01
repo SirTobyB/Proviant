@@ -16,6 +16,9 @@ export type ArticleFormResult = {
 		picnicId: string | null;
 		minStock: number;
 		defaultLocationId: number | null;
+		brand: string | null;
+		origin: string | null;
+		organic: boolean;
 	};
 	/** Neuer Bild-Dateiname; undefined = Bild unverändert lassen */
 	imagePath: string | undefined;
@@ -61,7 +64,10 @@ export async function parseArticleForm(
 		ean: text('ean')?.replace(/\D/g, '') || null,
 		picnicId: text('picnicId'),
 		minStock: parseInt(text('minStock') ?? '0', 10) || 0,
-		defaultLocationId: text('defaultLocationId') ? Number(text('defaultLocationId')) : null
+		defaultLocationId: text('defaultLocationId') ? Number(text('defaultLocationId')) : null,
+		brand: text('brand'),
+		origin: text('origin'),
+		organic: formData.get('organic') === 'on'
 	};
 
 	// Bild-Priorität: Upload > Open-Food-Facts-URL > Picnic-Bild
@@ -94,6 +100,9 @@ function emptyValues(): ArticleFormResult['values'] {
 		ean: null,
 		picnicId: null,
 		minStock: 0,
-		defaultLocationId: null
+		defaultLocationId: null,
+		brand: null,
+		origin: null,
+		organic: false
 	};
 }

@@ -95,6 +95,20 @@
 						{t(item.label)}
 					</a>
 				{/each}
+				<!-- Angebote: nur in der Seitenleiste; mobil über die Bestellseite erreichbar,
+				     die Bottom-Nav ist mit Scan-Knopf in der Mitte symmetrisch voll -->
+				<a
+					href="/angebote"
+					class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium
+						{isActive('/angebote') ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100'}"
+				>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-5 w-5">
+						<!-- Heroicons: tag -->
+						<path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+					</svg>
+					{t('nav.offers')}
+				</a>
 				<a
 					href="/scan"
 					class="mt-2 flex items-center gap-3 rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"

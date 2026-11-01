@@ -1,23 +1,41 @@
 import { db } from '#lib/server/db/index.js';
 import { translator } from '#lib/i18n/index.js';
-import { recipes, recipeIngredients } from '#lib/server/db/schema.js';
+import { articles, recipes, recipeIngredientArticles, recipeIngredients } from '#lib/server/db/schema.js';
 import {
+	describePicnicError,
 	getConnectionState,
-	getPicnicRecipeDetail,
+	getPicnicRecipe,
+	listOwnPicnicRecipes,
 	listPicnicRecipes,
+	listSavedPicnicRecipes,
 	type PicnicRecipeTile
 } from '#lib/server/picnic/index.js';
 import { buildInstructions } from '#lib/server/picnic/recipeImport.js';
-import { auditNew } from '#lib/server/audit.js';
-import { sql } from 'drizzle-orm';
+import { auditLink, auditNew } from '#lib/server/audit.js';
+import { inArray } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async () => {
+/** Die drei Quellen als Reiter: Picnics Rezeptseite, in der App gespeicherte, eigene. */
+const SOURCES = {
+	katalog: listPicnicRecipes,
+	gespeichert: listSavedPicnicRecipes,
+	eigene: listOwnPicnicRecipes
+} as const;
+type Source = keyof typeof SOURCES;
+
+function sourceFrom(url: URL): Source {
+	const value = url.searchParams.get('quelle');
+	return value === 'gespeichert' || value === 'eigene' ? value : 'katalog';
+}
+
+export const load: PageServerLoad = async ({ url, locals }) => {
+	const source = sourceFrom(url);
 	const connection = getConnectionState();
 	if (connection !== 'connected') {
 		return {
 			connection,
+			source,
 			tiles: [] as PicnicRecipeTile[],
 			existingNames: [] as string[],
 			error: null
@@ -32,15 +50,16 @@ export const load: PageServerLoad = async () => {
 		.map((r) => r.name.toLowerCase());
 
 	try {
-		const tiles = await listPicnicRecipes();
+		const tiles = await SOURCES[source]();
 		tiles.sort((a, b) => a.name.localeCompare(b.name, 'de'));
-		return { connection, tiles, existingNames, error: null };
+		return { connection, source, tiles, existingNames, error: null };
 	} catch (err) {
 		return {
 			connection,
+			source,
 			tiles: [],
 			existingNames,
-			error: err instanceof Error ? err.message : 'Picnic-Rezepte konnten nicht geladen werden'
+			error: describePicnicError(err, translator(locals.locale), 'Rezeptliste laden')
 		};
 	}
 };
@@ -55,43 +74,64 @@ export const actions: Actions = {
 
 		let parsed;
 		try {
-			parsed = await getPicnicRecipeDetail(id, name);
+			parsed = await getPicnicRecipe(id);
 		} catch (err) {
-			return fail(502, {
-				message: err instanceof Error ? err.message : 'Rezept konnte nicht geladen werden'
-			});
+			return fail(502, { message: describePicnicError(err, t, 'Rezept laden') });
 		}
 		if (parsed.ingredients.length === 0 && parsed.steps.length === 0) {
 			return fail(422, { message: t('msg.recipeParseFailed', { name }) });
 		}
 
-		const user = locals.user?.username ?? null;
-		const recipeId = db
-			.insert(recipes)
-			.values({
-				name,
-				category: 'meal',
-				servings: parsed.servings ?? 4,
-				instructions: buildInstructions(parsed),
-				...auditNew(user)
-			})
-			.returning({ id: recipes.id })
-			.get().id;
+		// Zutaten, deren Picnic-Produkt schon als Artikel geführt wird, gleich
+		// verknüpfen — dann zählt der Bestand sofort bei „Kochbar?“ mit
+		const picnicIds = parsed.ingredients.map((ing) => ing.picnicId).filter((pid): pid is string => Boolean(pid));
+		const articleByPicnicId = new Map(
+			picnicIds.length > 0
+				? db
+						.select({ id: articles.id, picnicId: articles.picnicId })
+						.from(articles)
+						.where(inArray(articles.picnicId, picnicIds))
+						.all()
+						.map((a) => [a.picnicId!, a.id] as const)
+				: []
+		);
 
-		if (parsed.ingredients.length > 0) {
-			db.insert(recipeIngredients)
-				.values(
-					parsed.ingredients.map((ing, index) => ({
-						recipeId,
+		const user = locals.user?.username ?? null;
+		const recipeId = db.transaction((tx) => {
+			const newId = tx
+				.insert(recipes)
+				.values({
+					name,
+					category: 'meal',
+					servings: parsed.servings ?? 4,
+					instructions: buildInstructions(parsed),
+					...auditNew(user)
+				})
+				.returning({ id: recipes.id })
+				.get().id;
+
+			parsed.ingredients.forEach((ing, index) => {
+				const ingredientId = tx
+					.insert(recipeIngredients)
+					.values({
+						recipeId: newId,
 						freeText: ing.name,
 						amount: ing.amount,
 						unit: ing.unit,
 						sortOrder: index,
 						...auditNew(user)
-					}))
-				)
-				.run();
-		}
+					})
+					.returning({ id: recipeIngredients.id })
+					.get().id;
+				const articleId = ing.picnicId ? articleByPicnicId.get(ing.picnicId) : undefined;
+				if (articleId !== undefined) {
+					tx.insert(recipeIngredientArticles)
+						.values({ recipeIngredientId: ingredientId, articleId, ...auditLink(user) })
+						.run();
+				}
+			});
+			return newId;
+		});
 
 		redirect(303, `/rezepte/${recipeId}`);
 	}

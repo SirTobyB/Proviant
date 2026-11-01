@@ -82,12 +82,17 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
 - **Artikelstamm** — Name, Bild, Gebindegröße mit Maßeinheit, EAN, optionale
   Picnic-Artikel-ID (Suche oder Direkteingabe), Mindestbestand,
   Standard-Lagerort und frei vergebbare Tags (mit Filter in Artikelliste und
-  Inventur). Neuanlage per Barcode-Scan, Vorbefüllung über Open Food Facts und
+  Inventur; die Artikelliste zeigt auf Wunsch nur Artikel *ohne
+  Standard-Lagerort* oder *im Angebot*). Marke, Herkunft und Bio übernimmt
+  Proviant von Picnic (von Hand änderbar); die Artikelseite zeigt dazu Picnics
+  Grundpreis und Nährwerttabelle, und ein „🛒 +1“-Knopf legt den Artikel in
+  den Picnic-Warenkorb. Neuanlage per Barcode-Scan, Vorbefüllung über Open Food Facts und
   Picnic-Produktsuche. Die Artikelseite zeigt alle Chargen des Artikels über
   alle Lagerorte, direkt bearbeit- und umlagerbar. **Import aus Bestellungen:**
-  übernimmt Produkte aus den letzten Picnic-Lieferungen samt Bild,
-  Gebindegröße und Verknüpfung (einzeln beim Auspacken oder gesammelt
-  unter *Artikel → Picnic-Import*; EAN liefert Picnic nicht).
+  übernimmt Produkte aus den letzten Picnic-Lieferungen — oder aus den
+  **Picnic-Favoriten**, nach Gang gruppiert — samt Bild, Gebindegröße,
+  Produktdaten und Verknüpfung (einzeln beim Auspacken oder gesammelt unter
+  *Artikel → Picnic-Import*; EAN liefert Picnic nicht).
 - **Bestellvorschläge** — Artikel unter Mindestbestand landen auf der
   Vorschlagsliste und wandern nach Bestätigung in den Picnic-Warenkorb
   ([picnic-api](https://github.com/MRVDH/picnic-api), inoffiziell). Bestellt
@@ -97,7 +102,17 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   ist, wird nur noch als Fehlmenge vorgeschlagen (oder gar nicht mehr). Von
   Picnic stornierte Positionen gelten dabei nicht als unterwegs und werden
   wieder vorgeschlagen, statt bis zur nächsten Lieferung unsichtbar zu bleiben.
-  Alle Vorschläge lassen sich mit einem Klick an- und abwählen.
+  Alle Vorschläge lassen sich mit einem Klick an- und abwählen. Würde genau
+  eine Packung mehr eine günstigere Preisstaffel oder ein Mehrfachangebot
+  erreichen, sagt der Vorschlag das („1 mehr kostet nur 1,99 € extra“) und
+  bietet an, die Menge zu erhöhen — von selbst ändert sie sich nie.
+- **Picnic-Warenkorb** — die Bestellseite zeigt den aktuellen Warenkorb: Mengen
+  ändern, Produkte entfernen und Produkte, die Picnic nicht liefern kann,
+  gegen einen von Picnics Ersatzvorschlägen tauschen. Dazu das gewählte
+  Lieferfenster, der Abstand zum Mindestbestellwert und, solange eine
+  Lieferung unterwegs ist, die voraussichtliche Ankunftszeit. Jede Änderung
+  wird bei Picnic nachgeprüft und gemeldet, falls sie nicht angekommen ist;
+  das Lieferfenster wird nur in der Picnic-App geändert.
 - **Preise und Rabatte** — Bestellvorschläge, Rezepte, Rezeptliste, Wochenplan
   und Lieferungs-Check zeigen, was etwas kostet, auf Basis gecachter
   Picnic-Preise (ein HTTP-Aufruf je Produkt — Picnic bietet keinen
@@ -108,7 +123,10 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   Wochenplan lesen nur aus dem Cache und nennen dafür das Datum des ältesten
   gezeigten Preises. Laufende Picnic-Angebote werden mit der
   erzielten Ersparnis in Euro angezeigt, je Artikel, je Portion und in
-  Summe; fehlt zu einer Zutat der verknüpfte Artikel oder ein gecachter
+  Summe. Mehrfachangebote („2 für 4.99€“, „2+1 gratis“, „-50% auf 2.
+  Artikel“) erscheinen als Stückpreis mit Streichpreis und zählen nur für
+  volle Bündel. Die Seite **Angebote** listet alle eigenen Artikel, die gerade
+  im Angebot sind, Artikel unter Mindestbestand zuerst; fehlt zu einer Zutat der verknüpfte Artikel oder ein gecachter
   Preis, erscheint die Summe als Untergrenze („ab …") statt stillschweigend
   als Null, und die ungepreisten Zutaten werden namentlich genannt.
 - **Lieferungs-Check** — Beim Auspacken einer Picnic-Lieferung: Positionen per
@@ -133,8 +151,12 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   Bestand („Was kann ich heute kochen?"), Portionsskalierung und „Fehlende
   Zutaten in den Picnic-Warenkorb" (aufgerundet auf Gebindegrößen). Zufälliger
   Rezeptvorschlag mit 2-Wochen-Sperre für kürzlich Gekochtes, optional nach
-  Tags. **Import aus Picnic:** übernimmt Rezepte der Picnic-Rezeptseite mit
-  Portionen, Zutaten, Schritten und Tipp (*Rezepte → Picnic-Import*).
+  Tags. **Import aus Picnic:** übernimmt Picnic-Rezepte — von der
+  Rezeptseite, aus den gespeicherten oder den eigenen Rezepten — mit
+  Portionen, Zutatenmengen und Schritten (*Rezepte → Picnic-Import*). Die
+  Mengen passen immer zu den Standardportionen des Rezepts; Zutaten, deren
+  Picnic-Produkt schon als Artikel geführt wird, sind gleich verknüpft, und
+  Vorratszutaten (Salz, Öl …) nennt der Zubereitungstext.
 - **Wochenplan** — Gerichte für die nächsten 7 Tage planen: Tage auswählen und
   Vorschläge würfeln (ohne Rezept-Wiederholung in der Woche), Tage manuell
   belegen, Portionen anpassen — und die fehlenden Zutaten **aller** geplanten

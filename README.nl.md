@@ -84,11 +84,17 @@ Picnic-functies en een FAQ voor probleemoplossing.
 - **Artikelbeheer** — naam, afbeelding, verpakkingsgrootte met eenheid, EAN,
   optioneel Picnic-artikelnummer (via zoeken of rechtstreeks ingevoerd),
   minimumvoorraad, standaardlocatie en vrij te kiezen tags (met filters in de
-  artikellijst en de inventarisatie). Nieuwe artikelen via barcodescan,
+  artikellijst en de inventarisatie; de artikellijst toont desgewenst alleen
+  artikelen *zonder standaardlocatie* of *in de aanbieding*). Merk, herkomst
+  en biologisch neemt Proviant over van Picnic (met de hand aan te passen); de
+  artikelpagina toont daarbij de eenheidsprijs en voedingswaardetabel van
+  Picnic, en een knop „🛒 +1“ legt het artikel in het Picnic-mandje. Nieuwe
+  artikelen via barcodescan,
   voorgevuld met Open Food Facts en het Picnic-productzoeken. De artikelpagina
   toont alle partijen over alle locaties, direct te bewerken en te verplaatsen.
   **Import uit bestellingen:** neemt producten uit recente Picnic-leveringen
-  over inclusief afbeelding, verpakkingsgrootte en koppeling (stuk voor stuk
+  over — of uit je **Picnic-favorieten**, gegroepeerd per schap — inclusief
+  afbeelding, verpakkingsgrootte, productgegevens en koppeling (stuk voor stuk
   tijdens het uitpakken of gebundeld onder *Artikelen → Picnic-import*; EAN's
   levert Picnic niet).
 - **Bestelsuggesties** — artikelen onder hun minimumvoorraad komen op de
@@ -101,6 +107,17 @@ Picnic-functies en een FAQ voor probleemoplossing.
   niet meer). Door Picnic geannuleerde regels gelden daarbij niet als onderweg
   en worden opnieuw voorgesteld, in plaats van tot de volgende levering
   onzichtbaar te blijven. Alle suggesties zijn met één klik aan en uit te vinken.
+  Zou precies één verpakking meer een goedkopere prijsstaffel of
+  meervoudsaanbieding halen, dan meldt de suggestie dat („1 extra kost maar
+  € 1,99 meer“) en biedt aan het aantal te verhogen — vanzelf verandert het
+  nooit.
+- **Picnic-mandje** — de bestelpagina toont het huidige mandje: aantallen
+  wijzigen, producten verwijderen en producten die Picnic niet kan leveren
+  ruilen voor een van Picnics vervangers. Daarbij het gekozen levermoment,
+  hoeveel er nog ontbreekt tot de minimale bestelwaarde en, zolang een
+  levering onderweg is, de verwachte aankomsttijd. Elke wijziging wordt bij
+  Picnic nagecontroleerd en gemeld als ze niet is aangekomen; het
+  levermoment wijzig je alleen in de Picnic-app.
 - **Prijzen en aanbiedingen** — bestelsuggesties, recepten, de receptenlijst,
   de weekplanning en de leveringscontrole laten zien wat iets kost, op basis
   van gecachte Picnic-prijzen (één HTTP-aanroep per product — Picnic biedt
@@ -111,7 +128,11 @@ Picnic-functies en een FAQ voor probleemoplossing.
   weekplanning lezen alleen uit de cache en noemen daarbij de datum van de
   oudste getoonde prijs. Lopende Picnic-aanbiedingen worden
   getoond met het bespaarde bedrag in euro's, per artikel, per portie en in
-  totaal; ontbreekt bij een ingrediënt het gekoppelde artikel of een gecachte
+  totaal. Meervoudsaanbiedingen („2 voor €4,99“, „2+1 gratis“, „-50% op 2e
+  artikel“) verschijnen als stukprijs met doorgestreepte prijs en tellen alleen
+  voor volle bundels. De pagina **Aanbiedingen** toont alle eigen artikelen die
+  nu in de aanbieding zijn, artikelen onder hun minimumvoorraad eerst;
+  ontbreekt bij een ingrediënt het gekoppelde artikel of een gecachte
   prijs, dan verschijnt het totaal als ondergrens („vanaf …") in plaats van
   stilzwijgend als nul, en worden de ingrediënten zonder prijs met naam
   genoemd.
@@ -140,9 +161,12 @@ Picnic-functies en een FAQ voor probleemoplossing.
   schalen van porties en „ontbrekende ingrediënten in het Picnic-mandje"
   (afgerond op verpakkingsgroottes). Willekeurige receptsuggestie met een
   blokkade van twee weken voor wat recent gekookt is, optioneel op tag.
-  **Import uit Picnic:** neemt recepten van de Picnic-receptpagina's over
-  inclusief porties, ingrediënten, stappen en tip (*Recepten →
-  Picnic-import*).
+  **Import uit Picnic:** neemt Picnic-recepten over — van de receptpagina's,
+  uit je bewaarde of je eigen recepten — met porties, hoeveelheden en stappen
+  (*Recepten → Picnic-import*). De hoeveelheden passen altijd bij de
+  standaardporties van het recept; ingrediënten waarvan het Picnic-product al
+  een artikel is, worden meteen gekoppeld, en voorraadingrediënten (zout,
+  olie …) noemt de bereidingstekst.
 - **Weekplanning** — maaltijden plannen voor de komende 7 dagen: dagen kiezen
   en suggesties dobbelen (geen recept twee keer in dezelfde week), dagen
   handmatig invullen, porties aanpassen — en de ontbrekende ingrediënten van
