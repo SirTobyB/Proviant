@@ -15,6 +15,7 @@ import {
 	type NutritionRow
 } from '#lib/server/picnic/index.js';
 import { applyProductFacts } from '#lib/server/articleImport.js';
+import { addToCartAction, cartQuantitiesForPage } from '#lib/server/cartButton.js';
 import { storePrices } from '#lib/server/prices.js';
 import { logWarn } from '#lib/server/log.js';
 import { eq } from 'drizzle-orm';
@@ -96,6 +97,7 @@ export const load: PageServerLoad = ({ params, locals }) => {
 		article,
 		nutrition: parseNutrition(article.nutrition),
 		picnic: picnicDetails(article.picnicId),
+		cart: article.picnicId ? cartQuantitiesForPage() : Promise.resolve(null),
 		tags: tagsForArticle(article.id),
 		stock: [...byLocation.values()],
 		locations: activeLocations(),
@@ -133,6 +135,8 @@ export const actions: Actions = {
 
 		redirect(303, '/artikel');
 	},
+
+	addToCart: ({ request, locals }) => addToCartAction(request, locals.locale),
 
 	// Marke, Herkunft, Bio und Nährwerte neu von Picnic übernehmen (überschreibt)
 	refreshFromPicnic: async ({ params, locals }) => {

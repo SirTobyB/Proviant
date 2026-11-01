@@ -14,6 +14,8 @@ import { logWarn } from '#lib/server/log.js';
 import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
 import { PicnicAdapterError, picnicErrorKind, type PicnicErrorKind } from './errors';
 import { catalogPrice, tilePrice, type CatalogPrice, type ProductPrice } from './price';
+import { priceTiers } from '#lib/priceTiers.js';
+import type { PriceTier } from '#lib/offers.js';
 import { extractSearchHits, type ProductSearchHit } from './search';
 import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
 import { mapPicnicRecipe } from './recipeMapping';
@@ -191,6 +193,129 @@ export async function addToCart(items: CartItem[]): Promise<void> {
  * Zählen der Vorkommen immer 1 ergab. Defensiv bleibt es trotzdem: die API ist
  * unoffiziell, unplausible Zeilen werden übersprungen.
  */
+/** Eine Zeile des Picnic-Warenkorbs, so wie Proviant sie anzeigt. */
+export type CartLine = {
+	productId: string;
+	name: string;
+	unitQuantity: string;
+	imageId: string | null;
+	quantity: number;
+	maxCount: number;
+	/** Preis der **Zeile** in Cent (nach Rabatt) */
+	linePrice: number;
+	/** Zeilenpreis vor Rabatt, `null` ohne Rabatt */
+	lineOriginalPrice: number | null;
+	/** Staffeln und Mehrfachangebot als Stufen (für den Mengenrabatt-Hinweis) */
+	tiers: PriceTier[];
+	labels: string[];
+	isUnavailable: boolean;
+	unavailableReason: string | null;
+};
+
+export type CartView = {
+	lines: CartLine[];
+	totalCount: number;
+	/** Zu zahlen inkl. Pfand und Gebühren, in Cent */
+	totalPrice: number;
+	/** Mindestbestellwert des gewählten Lieferfensters, `null` = keiner bekannt */
+	minimumOrderValue: number | null;
+	/** Gewähltes Lieferfenster; `explicit` = selbst gewählt, sonst von Picnic vorbelegt */
+	slot: { start: string; end: string; explicit: boolean } | null;
+};
+
+/**
+ * Der Warenkorb zum Anzeigen. Nicht Lieferbares steht vorn, damit es auffällt.
+ * Die Ersatzprodukte der Cart-Antwort sind Platzhalter (Name „irrelevant“,
+ * Preis 0) — die echten liefert `getReplacements`.
+ */
+export async function getCartView(): Promise<CartView> {
+	await ensureLoggedIn();
+	const cart = await getClient().cart.getCart();
+	const lines: CartLine[] = cart.items
+		.filter((item) => item.productId && item.quantity > 0)
+		.map((item) => {
+			const labels = item.labels.map((label) => label.text).filter(Boolean);
+			const unitRegular = item.quantity > 0 ? Math.round((item.originalPrice ?? item.displayPrice) / item.quantity) : 0;
+			const tilePriced = tilePrice({
+				displayPrice: unitRegular,
+				originalPrice: null,
+				labels: labels.map((text) => ({ text })),
+				priceRanges: item.priceRanges
+			});
+			return {
+				productId: item.productId,
+				name: item.name,
+				unitQuantity: item.unitQuantity,
+				imageId: item.imageId,
+				quantity: item.quantity,
+				maxCount: item.maxCount,
+				linePrice: item.displayPrice,
+				lineOriginalPrice: item.originalPrice != null && item.originalPrice > item.displayPrice ? item.originalPrice : null,
+				tiers: priceTiers(tilePriced),
+				labels,
+				isUnavailable: item.isUnavailable,
+				unavailableReason: item.unavailableReason
+			};
+		})
+		.sort((a, b) => Number(b.isUnavailable) - Number(a.isUnavailable));
+	const slot = cart.selectedSlot;
+	return {
+		lines,
+		totalCount: cart.totalCount,
+		totalPrice: cart.totalPrice,
+		minimumOrderValue: cart.minimumOrderValue,
+		slot:
+			slot?.windowStart && slot.windowEnd
+				? { start: slot.windowStart, end: slot.windowEnd, explicit: slot.isExplicitSelection }
+				: null
+	};
+}
+
+/** Ein Ersatzvorschlag für ein nicht lieferbares Produkt. */
+export type CartReplacement = { id: string; name: string; unitQuantity: string; imageId: string | null; price: number };
+
+/** Picnics Ersatzvorschläge für ein nicht lieferbares Produkt (mit echten Namen und Preisen). */
+export async function getReplacements(productId: string): Promise<CartReplacement[]> {
+	await ensureLoggedIn();
+	const { replacements } = await getClient().cart.getReplacements(productId);
+	return replacements
+		.filter((tile) => tile.id && tile.name && !tile.isUnavailable)
+		.map((tile) => ({
+			id: tile.id,
+			name: tile.name,
+			unitQuantity: tile.unitQuantity,
+			imageId: tile.imageId,
+			price: tile.displayPrice
+		}));
+}
+
+/** Nimmt `count` Packungen eines Produkts aus dem Warenkorb. */
+export async function removeFromCart(productId: string, count: number): Promise<void> {
+	await ensureLoggedIn();
+	await getClient().cart.removeProductFromCart(productId, count);
+}
+
+/**
+ * Ankunftszeit der nächsten offenen Lieferung, wie die Picnic-App sie zeigt.
+ * `null`, wenn keine Lieferung unterwegs ist oder Picnic (noch) keine Zeit
+ * kennt — die gibt es meist erst am Liefertag.
+ */
+export async function getDeliveryEta(): Promise<{
+	eta: string | null;
+	windowStart: string | null;
+	windowEnd: string | null;
+} | null> {
+	await ensureLoggedIn();
+	const open = (await getClient().delivery.getDeliverySummaries()).find(
+		(delivery) => delivery.status !== 'COMPLETED' && delivery.status !== 'CANCELLED'
+	);
+	if (!open) return null;
+	const position = await getClient().delivery.getDeliveryPosition(open.id);
+	const eta = position.eta != null ? new Date(position.eta).toISOString() : null;
+	if (!eta && !position.etaWindowStart) return null;
+	return { eta, windowStart: position.etaWindowStart, windowEnd: position.etaWindowEnd };
+}
+
 export async function getCartQuantities(): Promise<Map<string, number>> {
 	await ensureLoggedIn();
 	const cart = await getClient().cart.getCart();

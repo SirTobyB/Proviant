@@ -5,6 +5,7 @@
 	import { enhance } from '$app/forms';
 	import { translator } from '#lib/i18n/index.js';
 	import OfferBadge from '#lib/components/OfferBadge.svelte';
+	import CartButton from '#lib/components/CartButton.svelte';
 
 	let { data, form } = $props();
 
@@ -56,6 +57,21 @@
 				</table>
 			</details>
 		{/if}
+		<div class="mt-2">
+			{#if data.article.picnicId}
+				{#await data.cart}
+					<CartButton articleId={data.article.id} inCart={null} {t} />
+				{:then cart}
+					<CartButton articleId={data.article.id} inCart={cart ? (cart[data.article.picnicId] ?? 0) : null} {t} />
+				{/await}
+			{/if}
+			{#if form && 'cartAdded' in form && form.cartAdded}
+				<p class="mt-1 text-xs text-green-700">{t('cart.added')}</p>
+			{/if}
+			{#if form && 'cartMessage' in form && form.cartMessage}
+				<p class="mt-1 text-xs text-red-700">{form.cartMessage}</p>
+			{/if}
+		</div>
 		{#if data.article.picnicId}
 			<form method="POST" action="?/refreshFromPicnic" use:enhance class="mt-2">
 				<button type="submit" class="text-sm font-medium text-green-700 underline hover:text-green-800">

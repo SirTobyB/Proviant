@@ -4,8 +4,9 @@
 	import { enhance } from '$app/forms';
 	import { translator } from '#lib/i18n/index.js';
 	import OfferBadge from '#lib/components/OfferBadge.svelte';
+	import CartButton from '#lib/components/CartButton.svelte';
 
-	let { data } = $props();
+	let { data, form } = $props();
 
 	const t = $derived(translator(data.locale));
 
@@ -86,6 +87,10 @@
 	</div>
 {/if}
 
+{#if form && 'cartMessage' in form && form.cartMessage}
+	<div class="mt-4 max-w-2xl rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{form.cartMessage}</div>
+{/if}
+
 {#if data.articles.length === 0}
 	<div class="mt-8 rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
 		{anyFilter ? t('items.emptyFiltered') : t('items.empty')}
@@ -128,6 +133,17 @@
 						</span>
 					</span>
 				</a>
+				<!-- Warenkorb-Knopf erst ab Tablet-Breite: auf 375 px kürzte er die Namen
+				     bis zur Unlesbarkeit; auf dem Handy liegt er auf der Artikelseite -->
+				{#if article.picnicId}
+					<div class="hidden sm:block">
+					{#await data.cart}
+						<CartButton articleId={article.id} inCart={null} {t} compact />
+					{:then cart}
+						<CartButton articleId={article.id} inCart={cart ? (cart[article.picnicId] ?? 0) : null} {t} compact />
+					{/await}
+					</div>
+				{/if}
 				<!-- Schnell-Bestandskorrektur: Menge (Default 1) wirkt auf − und + -->
 				<!-- reset: false — sonst verliert das versteckte Mengenfeld nach dem ersten Klick seinen Wert -->
 				<form method="POST" action="?/bookOut" use:enhance={keepValues}>

@@ -1,9 +1,10 @@
 <script lang="ts">
 	import OfferBadge from '#lib/components/OfferBadge.svelte';
+	import CartButton from '#lib/components/CartButton.svelte';
 	import { packageSize } from '#lib/format.js';
 	import { translator } from '#lib/i18n/index.js';
 
-	let { data } = $props();
+	let { data, form } = $props();
 
 	const t = $derived(translator(data.locale));
 </script>
@@ -12,6 +13,10 @@
 
 <h1 class="text-2xl font-bold">{t('offers.title')}</h1>
 <p class="mt-1 text-sm text-gray-500">{t('offers.subtitle')}</p>
+
+{#if form && 'cartMessage' in form && form.cartMessage}
+	<div class="mt-4 max-w-2xl rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{form.cartMessage}</div>
+{/if}
 
 {#if data.connection !== 'connected'}
 	<div class="mt-6 max-w-2xl rounded-xl border border-gray-200 bg-white p-6 text-center">
@@ -47,6 +52,7 @@
 						<OfferBadge price={item.price} locale={data.locale} />
 					</div>
 				</div>
+				<CartButton articleId={item.id} inCart={data.cart && item.picnicId ? (data.cart[item.picnicId] ?? 0) : null} {t} compact />
 			</li>
 		{/each}
 	</ul>

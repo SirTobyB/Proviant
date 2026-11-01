@@ -5,6 +5,7 @@ import { allArticleTagNames, tagsForArticles } from '#lib/server/articleTags.js'
 import { activeLocations, bookingLocationId } from '#lib/server/locations.js';
 import { bookIn, bookOut } from '#lib/server/stock.js';
 import { currentOffers } from '#lib/server/offers.js';
+import { addToCartAction, cartQuantitiesForPage } from '#lib/server/cartButton.js';
 import type { CatalogPrice } from '#lib/server/picnic/index.js';
 import { eq, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
@@ -67,7 +68,9 @@ export const load: PageServerLoad = async ({ url }) => {
 		tagFilter,
 		filters: { query, tag: tagFilter, noLocation, offers: offersOnly },
 		allTags: allArticleTagNames(),
-		offers
+		offers,
+		// Nachgestreamt wie die Angebote: die Liste wartet nicht auf Picnic
+		cart: cartQuantitiesForPage()
 	};
 };
 
@@ -84,6 +87,8 @@ function parseQuantity(formData: FormData): number {
 }
 
 export const actions: Actions = {
+	addToCart: ({ request, locals }) => addToCartAction(request, locals.locale),
+
 	// Schnell einbuchen: in den Standard-Lagerort (oder ersten Lagerort), ohne MHD
 	bookIn: async ({ request, locals }) => {
 		const t = translator(locals.locale);

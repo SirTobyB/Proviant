@@ -14,6 +14,24 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   die keinen (oder einen stillgelegten) Standard-Lagerort haben, und lässt
   sich mit Suche und Tag kombinieren. Der Filter steht in der Adresse und
   kann als Lesezeichen gespeichert werden.
+- **Der Picnic-Warenkorb in Proviant.** Die Bestellseite zeigt den
+  Warenkorb als aufklappbaren Block über den Vorschlägen: Inhalt mit Menge
+  und Preis, Mengen mit − und + ändern, Produkte entfernen. Nicht lieferbare
+  Produkte stehen rot markiert oben, mit Picnics Ersatzvorschlägen und einem
+  „Tauschen“-Knopf. Dazu kommen das gewählte Lieferfenster, der Abstand zum
+  Mindestbestellwert und – wenn eine Lieferung unterwegs ist – die
+  voraussichtliche Ankunftszeit. Bestellt wird weiterhin nur in der
+  Picnic-App, auch das Lieferfenster wird dort geändert. Jede Änderung prüft
+  Proviant anschließend nach und meldet, wenn Picnic sie nicht übernommen
+  hat.
+- **Artikel direkt in den Picnic-Warenkorb legen.** Artikelseite,
+  Angebotsseite und (ab Tablet-Breite) die Artikelliste haben einen Knopf
+  „🛒 +1“ und zeigen, wie viele Packungen schon im Warenkorb liegen.
+- **Hinweis auf Mengenrabatte.** Fehlt genau eine Packung bis zu einer
+  günstigeren Preisstaffel („ab 3 Stück je 2,19 €“) oder einem
+  Mehrfachangebot, schlägt die Bestellseite das mit den Mehrkosten vor („1
+  mehr kostet nur 1,99 € extra“); ein Klick erhöht die Menge. Von selbst
+  ändert sich keine Menge. Summen rechnen Staffelpreise jetzt mit ein.
 - **Picnic-Angebote für eure Artikel.** Die neue Seite „Angebote“ (in der
   Seitenleiste und über die Bestellseite erreichbar) listet alle eigenen
   Artikel, die bei Picnic gerade im Angebot sind – zuerst die, die ohnehin

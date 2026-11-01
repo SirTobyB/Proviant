@@ -3,8 +3,9 @@ import { articles, stockEntries } from '#lib/server/db/schema.js';
 import { currentOffers } from '#lib/server/offers.js';
 import { getConnectionState } from '#lib/server/picnic/index.js';
 import { sortOffers } from '#lib/offers.js';
+import { addToCartAction, cartQuantitiesForPage } from '#lib/server/cartButton.js';
 import { eq, isNotNull, sql } from 'drizzle-orm';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 /** Alle eigenen Artikel, die bei Picnic gerade im Angebot sind. */
 export const load: PageServerLoad = async () => {
@@ -35,5 +36,9 @@ export const load: PageServerLoad = async () => {
 		})
 	);
 
-	return { connection, items };
+	return { connection, items, cart: await cartQuantitiesForPage() };
+};
+
+export const actions: Actions = {
+	addToCart: ({ request, locals }) => addToCartAction(request, locals.locale)
 };

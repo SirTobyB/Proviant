@@ -23,6 +23,22 @@ describe('totalFor / savingsFor', () => {
 		expect(savingsFor({ regularPrice: 249, promoPrice: null }, 3)).toBe(0);
 	});
 
+	// Live: Gewürzketchup 2,29 €, ab 3 Stück 2,19 €, ab 4 Stück 2,09 €
+	it('rechnet Preisstaffeln ab ihrer Mindestmenge', () => {
+		const ketchup = {
+			regularPrice: 229,
+			promoPrice: null,
+			priceRanges: [
+				{ fromQuantity: 3, unitPrice: 219 },
+				{ fromQuantity: 4, unitPrice: 209 }
+			]
+		};
+		expect(totalFor(ketchup, 2)).toBe(458);
+		expect(totalFor(ketchup, 3)).toBe(657);
+		expect(totalFor(ketchup, 5)).toBe(1045);
+		expect(savingsFor(ketchup, 3)).toBe(30);
+	});
+
 	it('gibt bei Menge 0 nichts aus', () => {
 		expect(totalFor(oneplusone, 0)).toBe(0);
 		expect(savingsFor(discount, 0)).toBe(0);
