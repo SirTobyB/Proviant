@@ -233,6 +233,11 @@ export const en = {
 	'recipeImport.exists': 'already present',
 	'recipeImport.import': 'Import',
 	'recipeImport.importing': 'Importing …',
+	'recipeImport.sources': 'Recipe source',
+	'recipeImport.source.catalog': 'Picnic recipes',
+	'recipeImport.source.saved': 'Saved',
+	'recipeImport.source.own': 'My own',
+	'recipeImport.emptySource': 'No recipes here yet.',
 
 	'order.title': 'Order',
 	'order.subtitle': 'Items below their minimum stock → Picnic basket',

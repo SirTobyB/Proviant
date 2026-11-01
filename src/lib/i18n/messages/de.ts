@@ -222,6 +222,11 @@ export const de: Messages = {
 	'recipeImport.exists': 'bereits vorhanden',
 	'recipeImport.import': 'Importieren',
 	'recipeImport.importing': 'Importiere …',
+	'recipeImport.sources': 'Rezeptquelle',
+	'recipeImport.source.catalog': 'Picnic-Rezepte',
+	'recipeImport.source.saved': 'Gespeichert',
+	'recipeImport.source.own': 'Eigene',
+	'recipeImport.emptySource': 'Hier gibt es noch keine Rezepte.',
 
 	'order.title': 'Bestellen',
 	'order.subtitle': 'Artikel unter Mindestbestand → Picnic-Warenkorb',

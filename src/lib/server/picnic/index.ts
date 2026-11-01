@@ -15,12 +15,8 @@ import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
 import { PicnicAdapterError, picnicErrorKind, type PicnicErrorKind } from './errors';
 import { catalogPrice, type ProductPrice } from './price';
 import { extractSearchHits, type ProductSearchHit } from './search';
-import {
-	extractRecipeTiles,
-	parseRecipeDetail,
-	type ParsedPicnicRecipe,
-	type PicnicRecipeTile
-} from './recipeImport';
+import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
+import { mapPicnicRecipe } from './recipeMapping';
 
 export { picnicErrorKind };
 export type {
@@ -375,13 +371,33 @@ export async function listPicnicRecipes(): Promise<PicnicRecipeTile[]> {
 	return extractRecipeTiles(await getFusionPage('meals-page-root'));
 }
 
-/** Detaildaten eines Picnic-Rezepts (Zutaten, Portionen, Schritte). */
-export async function getPicnicRecipeDetail(id: string, name?: string): Promise<ParsedPicnicRecipe> {
+/**
+ * Ein Picnic-Rezept, umgerechnet auf seine **Standardportionen**.
+ *
+ * Ohne Angabe liefert Picnic das Rezept für die Portionenzahl, die zuletzt in
+ * der App gewählt war (live: 3 statt 4). Weicht sie ab, wird mit den
+ * Standardportionen neu geladen — sonst passten gespeicherte Portionen und
+ * Mengen nicht zusammen.
+ */
+export async function getPicnicRecipe(id: string): Promise<ParsedPicnicRecipe> {
 	await ensureLoggedIn();
-	const page = await getFusionPage(
-		`selling-group-details-page?selling_group_id=${encodeURIComponent(id)}`
-	);
-	return parseRecipeDetail(page, name);
+	let recipe = await getClient().recipe.getRecipe(id);
+	if (recipe.defaultPortions > 0 && recipe.portions !== recipe.defaultPortions) {
+		recipe = await getClient().recipe.getRecipe(id, { portions: recipe.defaultPortions });
+	}
+	return mapPicnicRecipe(recipe);
+}
+
+/** In der Picnic-App gespeicherte Rezepte. */
+export async function listSavedPicnicRecipes(): Promise<PicnicRecipeTile[]> {
+	await ensureLoggedIn();
+	return (await getClient().recipe.getSavedRecipes()).map((r) => ({ id: r.id, name: r.name }));
+}
+
+/** In der Picnic-App selbst angelegte Rezepte. */
+export async function listOwnPicnicRecipes(): Promise<PicnicRecipeTile[]> {
+	await ensureLoggedIn();
+	return (await getClient().recipe.getUserDefinedRecipes()).map((r) => ({ id: r.id, name: r.name }));
 }
 
 /**

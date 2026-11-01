@@ -223,6 +223,11 @@ export const nl: Messages = {
 	'recipeImport.exists': 'al aanwezig',
 	'recipeImport.import': 'Importeren',
 	'recipeImport.importing': 'Importeren …',
+	'recipeImport.sources': 'Receptbron',
+	'recipeImport.source.catalog': 'Picnic-recepten',
+	'recipeImport.source.saved': 'Bewaard',
+	'recipeImport.source.own': 'Eigen',
+	'recipeImport.emptySource': 'Hier staan nog geen recepten.',
 
 	'order.title': 'Bestellen',
 	'order.subtitle': 'Artikelen onder de minimumvoorraad → Picnic-mandje',

@@ -14,6 +14,13 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   die keinen (oder einen stillgelegten) Standard-Lagerort haben, und lässt
   sich mit Suche und Tag kombinieren. Der Filter steht in der Adresse und
   kann als Lesezeichen gespeichert werden.
+- **Rezeptimport: gespeicherte und eigene Picnic-Rezepte.** Die Importseite
+  hat drei Reiter – Picnics Rezeptseite, die in der Picnic-App gespeicherten
+  und die selbst angelegten Rezepte.
+- **Rezeptimport verknüpft Zutaten mit vorhandenen Artikeln.** Wird das
+  Picnic-Produkt einer Zutat schon als Artikel geführt, ist es gleich als
+  Zutat hinterlegt und zählt bei „Kochbar?“ mit. Vorratszutaten wie Salz, Öl
+  oder Zwiebeln nennt der Zubereitungstext unter „Aus dem Vorrat“.
 
 ### Geändert
 
@@ -31,6 +38,16 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   ungültigen SMS-Code, ein nicht mehr erhältliches Produkt oder dass Picnic
   gerade nicht erreichbar ist bzw. Anfragen bremst. Die Details landen
   weiterhin im Server-Log.
+
+### Behoben
+
+- **Rezeptimport mit falschen Mengen.** Picnic zeigt ein Rezept mit der
+  Portionenzahl, die zuletzt in der App gewählt war. Der Import las die
+  Portionen aber aus dem Zubereitungstext – so wurden etwa Mengen für 3
+  Portionen als 4-Portionen-Rezept gespeichert. Jetzt stammen Portionen und
+  Mengen aus Picnics strukturierten Rezeptdaten und passen immer zu den
+  Standardportionen des Rezepts. Bereits importierte Rezepte bleiben
+  unverändert.
 
 ## [2.4.1] - 2026-10-20
 
