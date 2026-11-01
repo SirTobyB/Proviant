@@ -65,9 +65,11 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     `errors.ts` (Fehler → `picnic.error.*`; Routen melden Picnic-Fehler nur
     über `describePicnicError`, nie per `err.message`), `unitQuantity.ts`
     (Gebindegrößen wie „6er Pack", „2 x 125g"), `throttle.ts` (prozessweite
-    Drossel: Rezeptabrufe laufen nacheinander mit 1,5 s Mindestabstand —
-    nötig für „Alle importieren", das die Import-Seite Rezept für Rezept
-    über `?/importBulk` abarbeitet statt in einer langen Anfrage).
+    Drossel: Rezeptabrufe laufen nacheinander mit 1,5 s Mindestabstand,
+    Produktseiten beim Artikelimport — `getProductDetails(id, { bulk: true })`,
+    nur aus `articleImport.ts` — mit 1 s. Beide Import-Seiten arbeiten ihre
+    Auswahl Stück für Stück ab (`?/importBulk` bzw. `?/importOne`) statt in
+    einer langen Anfrage; die Artikelseite selbst ruft ungedrosselt ab).
   - `auth.ts` / `password.ts` – Sessions (DB-gestützt, httpOnly-Cookie) und
     scrypt-Hashing. `audit.ts` – Helfer für die Audit-Felder. `log.ts` –
     Zeilen-Logging mit Zeitstempel (siehe Fallstrick unten).

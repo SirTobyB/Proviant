@@ -22,6 +22,15 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ### Geändert
 
+- **Der Artikelimport aus Bestellungen und Favoriten ist gedrosselt.** Statt
+  alle ausgewählten Produkte in einer langen Anfrage abzuarbeiten, holt die
+  Seite sie nacheinander, mit Fortschrittsanzeige und Abbrechen-Knopf. Der
+  Server lässt zwischen zwei Picnic-Produktabrufen mindestens eine Sekunde
+  Pause; das gilt auch für neue Artikel aus dem Lieferungs-Check. Bei
+  Ratelimit oder abgelaufener Picnic-Anmeldung hört der Import sofort auf.
+  Artikel, deren Produktdaten Picnic nicht liefern konnte, werden am Ende
+  genannt – die Daten lassen sich auf der Artikelseite nachladen.
+
 - **„Rezept löschen“ steht jetzt oben** neben „Bearbeiten“, statt ganz am
   Ende der Rezeptseite unterzugehen; die Rückfrage erscheint direkt
   darunter.

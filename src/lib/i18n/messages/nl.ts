@@ -529,6 +529,12 @@ export const nl: Messages = {
 	'itemImport.source.deliveries': 'Recente leveringen',
 	'itemImport.source.favourites': 'Favorieten',
 	'itemImport.timesOrdered': '{n}× besteld',
+	'itemImport.counted': '{shown} van {total} producten',
+	'itemImport.submit': 'Artikelen importeren ({n})',
+	'itemImport.progress': '{done} van {total} importeren …',
+	'itemImport.hint': 'De artikelen worden na elkaar met een korte pauze opgehaald, zodat Picnic niet overbelast raakt.',
+	'itemImport.summary': 'Geïmporteerd: {imported} · overgeslagen (al gekoppeld): {skipped}.',
+	'itemImport.withoutFacts': 'Zonder productgegevens aangemaakt (later op de artikelpagina op te halen): {names}',
 
 	'msg.nameRequired': 'Naam is verplicht',
 	'msg.amountNotNumber': 'Hoeveelheid is geen getal',

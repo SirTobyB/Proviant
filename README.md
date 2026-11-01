@@ -89,8 +89,9 @@ a troubleshooting FAQ.
   movable in place. **Import from orders:** pulls products out of recent Picnic
   deliveries — or from your **Picnic favourites**, grouped by aisle —
   including picture, pack size, product data and the link (one by one while
-  unpacking, or in bulk under *Items → Picnic import*; Picnic does not supply
-  EANs).
+  unpacking, or in bulk under *Items → Picnic import*, one after another with
+  a short pause and a progress bar so Picnic isn't flooded; Picnic does not
+  supply EANs).
 - **Order suggestions** — items below their minimum stock appear on the
   suggestion list and, once confirmed, move into the Picnic basket
   ([picnic-api](https://github.com/MRVDH/picnic-api), unofficial). Orders are

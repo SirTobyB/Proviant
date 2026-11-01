@@ -95,8 +95,9 @@ Picnic-functies en een FAQ voor probleemoplossing.
   **Import uit bestellingen:** neemt producten uit recente Picnic-leveringen
   over — of uit je **Picnic-favorieten**, gegroepeerd per schap — inclusief
   afbeelding, verpakkingsgrootte, productgegevens en koppeling (stuk voor stuk
-  tijdens het uitpakken of gebundeld onder *Artikelen → Picnic-import*; EAN's
-  levert Picnic niet).
+  tijdens het uitpakken of gebundeld onder *Artikelen → Picnic-import*, na
+  elkaar met een korte pauze en voortgangsbalk zodat Picnic niet overspoeld
+  raakt; EAN's levert Picnic niet).
 - **Bestelsuggesties** — artikelen onder hun minimumvoorraad komen op de
   suggestielijst en gaan na bevestiging naar het Picnic-mandje
   ([picnic-api](https://github.com/MRVDH/picnic-api), onofficieel). Er wordt

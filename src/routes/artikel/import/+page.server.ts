@@ -1,7 +1,7 @@
 import { db } from '#lib/server/db/index.js';
 import { translator } from '#lib/i18n/index.js';
 import { articles } from '#lib/server/db/schema.js';
-import { activeLocations } from '#lib/server/locations.js';
+import { activeLocation, activeLocations } from '#lib/server/locations.js';
 import {
 	describePicnicError,
 	getConnectionState,
@@ -71,42 +71,31 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 };
 
 export const actions: Actions = {
-	import: async ({ request, locals }) => {
+	// Ein Produkt je Anfrage: Die Seite arbeitet die Auswahl nacheinander ab
+	// (Fortschritt, abbrechbar) statt in einer Anfrage, die bei Hunderten
+	// Favoriten minutenlang offen bliebe. Der Picnic-Abruf ist zusätzlich
+	// serverseitig gedrosselt (siehe `importArticleFromPicnic`).
+	importOne: async ({ request, locals }) => {
 		const t = translator(locals.locale);
 		const formData = await request.formData();
+		const productId = String(formData.get('productId') ?? '').trim();
+		const name = String(formData.get('name') ?? '').trim();
+		if (!productId || !name) return fail(400, { message: t('msg.invalidProductSelection'), kind: null });
+
+		// Ein veraltetes Formular darf keinen stillgelegten Lagerort setzen
 		const defaultLocationRaw = Number(formData.get('defaultLocationId'));
-		const defaultLocationId =
-			Number.isInteger(defaultLocationRaw) && defaultLocationRaw > 0 ? defaultLocationRaw : null;
-
-		let selected: { productId: string; name: string; unitQuantity: string; imageId: string | null }[];
-		try {
-			const raw = JSON.parse(String(formData.get('products') ?? '[]'));
-			if (!Array.isArray(raw)) throw new Error();
-			selected = raw;
-		} catch {
-			return fail(400, { message: t('msg.invalidProductSelection') });
-		}
-		if (selected.length === 0) return fail(400, { message: t('msg.nothingSelected') });
-
-		const user = locals.user?.username ?? null;
-		let created = 0;
-		let skipped = 0;
-		for (const product of selected) {
-			if (!product.productId || !product.name) continue;
-			const result = await importArticleFromPicnic(
-				{
-					productId: String(product.productId),
-					name: String(product.name),
-					unitQuantity: String(product.unitQuantity ?? ''),
-					imageId: product.imageId ? String(product.imageId) : null
-				},
-				defaultLocationId,
-				user
-			);
-			if (result.created) created += 1;
-			else skipped += 1;
+		let defaultLocationId: number | null = null;
+		if (Number.isInteger(defaultLocationRaw) && defaultLocationRaw > 0) {
+			if (!activeLocation(defaultLocationRaw)) return fail(400, { message: t('msg.locationNotFound'), kind: null });
+			defaultLocationId = defaultLocationRaw;
 		}
 
-		return { imported: created, skipped };
+		const imageId = String(formData.get('imageId') ?? '').trim();
+		const result = await importArticleFromPicnic(
+			{ productId, name, unitQuantity: String(formData.get('unitQuantity') ?? ''), imageId: imageId || null },
+			defaultLocationId,
+			locals.user?.username ?? null
+		);
+		return { created: result.created, picnicError: result.picnicError ?? null };
 	}
 };

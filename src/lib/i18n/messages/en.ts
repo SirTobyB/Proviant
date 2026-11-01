@@ -537,6 +537,12 @@ export const en = {
 	'itemImport.source.deliveries': 'Recent deliveries',
 	'itemImport.source.favourites': 'Favourites',
 	'itemImport.timesOrdered': 'ordered {n}×',
+	'itemImport.counted': '{shown} of {total} products',
+	'itemImport.submit': 'Import items ({n})',
+	'itemImport.progress': 'Importing {done} of {total} …',
+	'itemImport.hint': 'Items are fetched one after another with a short pause so Picnic isn’t overloaded.',
+	'itemImport.summary': 'Imported: {imported} · skipped (already linked): {skipped}.',
+	'itemImport.withoutFacts': 'Created without product details (fetch them later on the item page): {names}',
 
 	'msg.nameRequired': 'Name is required',
 	'msg.amountNotNumber': 'Amount is not a number',

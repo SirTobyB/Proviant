@@ -528,6 +528,12 @@ export const de: Messages = {
 	'itemImport.source.deliveries': 'Letzte Lieferungen',
 	'itemImport.source.favourites': 'Favoriten',
 	'itemImport.timesOrdered': '{n}× bestellt',
+	'itemImport.counted': '{shown} von {total} Produkten',
+	'itemImport.submit': 'Artikel importieren ({n})',
+	'itemImport.progress': 'Importiere {done} von {total} …',
+	'itemImport.hint': 'Die Artikel werden nacheinander mit kurzer Pause abgerufen, damit Picnic nicht überlastet wird.',
+	'itemImport.summary': 'Importiert: {imported} · übersprungen (bereits verknüpft): {skipped}.',
+	'itemImport.withoutFacts': 'Ohne Produktdaten angelegt (lassen sich später auf der Artikelseite nachladen): {names}',
 
 	'msg.nameRequired': 'Name ist erforderlich',
 	'msg.amountNotNumber': 'Menge ist keine Zahl',

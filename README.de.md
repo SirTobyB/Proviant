@@ -92,7 +92,9 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   übernimmt Produkte aus den letzten Picnic-Lieferungen — oder aus den
   **Picnic-Favoriten**, nach Gang gruppiert — samt Bild, Gebindegröße,
   Produktdaten und Verknüpfung (einzeln beim Auspacken oder gesammelt unter
-  *Artikel → Picnic-Import*; EAN liefert Picnic nicht).
+  *Artikel → Picnic-Import*, nacheinander mit kurzer Pause und
+  Fortschrittsanzeige, damit Picnic nicht überflutet wird; EAN liefert Picnic
+  nicht).
 - **Bestellvorschläge** — Artikel unter Mindestbestand landen auf der
   Vorschlagsliste und wandern nach Bestätigung in den Picnic-Warenkorb
   ([picnic-api](https://github.com/MRVDH/picnic-api), inoffiziell). Bestellt
