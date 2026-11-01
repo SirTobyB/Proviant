@@ -186,7 +186,7 @@ unterdrücken.
 
 ## Entwicklung
 
-Voraussetzung: **Node.js ≥ 22.17** (SvelteKit 3).
+Voraussetzung: **Node.js ≥ 26**.
 
 ```sh
 cp .env.example .env      # Werte anpassen (siehe unten)

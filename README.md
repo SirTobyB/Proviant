@@ -178,7 +178,7 @@ silent, iOS may suppress the sound as well.
 
 ## Development
 
-Requires **Node.js ≥ 22.17** (SvelteKit 3).
+Requires **Node.js ≥ 26**.
 
 ```sh
 cp .env.example .env      # adjust the values (see below)

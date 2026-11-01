@@ -32,7 +32,7 @@ jobs:
         with:
           # Muss zur Basis im Dockerfile passen, sonst prueft die CI eine
           # andere Laufzeit als die, die spaeter im Container laeuft.
-          node-version: 22
+          node-version: 26
           cache: npm
 
       # ci statt install: installiert streng nach package-lock.json und schlaegt
