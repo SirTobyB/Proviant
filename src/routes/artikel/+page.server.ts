@@ -2,7 +2,7 @@ import { db } from '#lib/server/db/index.js';
 import { translator } from '#lib/i18n/index.js';
 import { articles, stockEntries, storageLocations } from '#lib/server/db/schema.js';
 import { allArticleTagNames, tagsForArticles } from '#lib/server/articleTags.js';
-import { bookingLocationId } from '#lib/server/locations.js';
+import { activeLocations, bookingLocationId } from '#lib/server/locations.js';
 import { bookIn, bookOut } from '#lib/server/stock.js';
 import { eq, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
@@ -11,6 +11,7 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = ({ url }) => {
 	const query = url.searchParams.get('q')?.trim() ?? '';
 	const tagFilter = url.searchParams.get('tag')?.trim() ?? '';
+	const noLocation = url.searchParams.get('ohneLagerort') === '1';
 
 	const rows = db
 		.select({
@@ -40,9 +41,22 @@ export const load: PageServerLoad = ({ url }) => {
 	// sum(quantity) mit der Tag-Anzahl multiplizieren
 	const tagMap = tagsForArticles(rows.map((r) => r.id));
 	const tagged = rows.map((r) => ({ ...r, tags: tagMap.get(r.id) ?? [] }));
-	const filtered = tagFilter ? tagged.filter((r) => r.tags.includes(tagFilter)) : tagged;
+	// Ein stillgelegter Lagerort gilt als keiner: Für den Anwender ist er wie
+	// gelöscht, der Artikel hat also faktisch kein Zuhause mehr
+	const activeIds = new Set(activeLocations().map((location) => location.id));
+	const filtered = tagged.filter(
+		(r) =>
+			(!tagFilter || r.tags.includes(tagFilter)) &&
+			(!noLocation || r.defaultLocationId == null || !activeIds.has(r.defaultLocationId))
+	);
 
-	return { articles: filtered, query, tagFilter, allTags: allArticleTagNames() };
+	return {
+		articles: filtered,
+		query,
+		tagFilter,
+		filters: { query, tag: tagFilter, noLocation, offers: false },
+		allTags: allArticleTagNames()
+	};
 };
 
 function getArticle(formData: FormData) {

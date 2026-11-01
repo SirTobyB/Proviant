@@ -42,6 +42,7 @@ export const nl: Messages = {
 	'items.new': 'Nieuw artikel',
 	'items.search': 'Zoeken (naam of EAN) …',
 	'items.emptyFiltered': 'Geen artikelen gevonden.',
+	'items.filter.noLocation': 'Zonder standaardlocatie',
 	'items.empty': 'Nog geen artikelen — maak het eerste aan!',
 	'items.bookOut': 'Uitboeken',
 	'items.bookIn': 'Inboeken',

@@ -52,6 +52,7 @@ export const en = {
 	'items.new': 'New item',
 	'items.search': 'Search (name or EAN) …',
 	'items.emptyFiltered': 'No items found.',
+	'items.filter.noLocation': 'Without default location',
 	'items.empty': 'No items yet — create the first one!',
 	'items.bookOut': 'Book out',
 	'items.bookIn': 'Book in',

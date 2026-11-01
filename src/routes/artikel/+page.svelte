@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { packageSize, tagFilterHref } from '#lib/format.js';
+	import { articleFilterHref, packageSize } from '#lib/format.js';
 	import { keepValues } from '#lib/forms.js';
 	import { enhance } from '$app/forms';
 	import { translator } from '#lib/i18n/index.js';
@@ -17,8 +17,8 @@
 	}
 
 
-	const tagHref = (tag: string) =>
-		tagFilterHref('/artikel', tag, { query: data.query, activeTag: data.tagFilter });
+	const tagHref = (tag: string) => articleFilterHref(data.filters, { tag });
+	const anyFilter = $derived(Boolean(data.query || data.filters.tag || data.filters.noLocation || data.filters.offers));
 </script>
 
 <svelte:head><title>{t('items.title')} – Proviant</title></svelte:head>
@@ -53,7 +53,18 @@
 		class="block w-full rounded-lg border-gray-300 text-sm focus:border-green-600 focus:ring-green-600"
 	/>
 	{#if data.tagFilter}<input type="hidden" name="tag" value={data.tagFilter} />{/if}
+	{#if data.filters.noLocation}<input type="hidden" name="ohneLagerort" value="1" />{/if}
+	{#if data.filters.offers}<input type="hidden" name="angebot" value="1" />{/if}
 </form>
+
+<div class="mt-3 flex max-w-2xl flex-wrap gap-1.5">
+	<a
+		href={articleFilterHref(data.filters, { noLocation: !data.filters.noLocation })}
+		class="rounded-full px-3 py-1 text-sm font-medium {data.filters.noLocation ? 'bg-green-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'}"
+	>
+		{t('items.filter.noLocation')}
+	</a>
+</div>
 
 {#if data.allTags.length > 0}
 	<div class="mt-3 flex max-w-2xl flex-wrap gap-1.5">
@@ -70,7 +81,7 @@
 
 {#if data.articles.length === 0}
 	<div class="mt-8 rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm text-gray-500">
-		{data.query ? t('items.emptyFiltered') : t('items.empty')}
+		{anyFilter ? t('items.emptyFiltered') : t('items.empty')}
 	</div>
 {:else}
 	<ul class="mt-4 max-w-2xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">

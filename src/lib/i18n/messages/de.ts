@@ -42,6 +42,7 @@ export const de: Messages = {
 	'items.new': 'Neuer Artikel',
 	'items.search': 'Suchen (Name oder EAN) …',
 	'items.emptyFiltered': 'Keine Artikel gefunden.',
+	'items.filter.noLocation': 'Ohne Standard-Lagerort',
 	'items.empty': 'Noch keine Artikel — lege den ersten an!',
 	'items.bookOut': 'Ausbuchen',
 	'items.bookIn': 'Einbuchen',

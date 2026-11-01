@@ -8,6 +8,13 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Filter „Ohne Standard-Lagerort“ in der Artikelliste.** Zeigt nur Artikel,
+  die keinen (oder einen stillgelegten) Standard-Lagerort haben, und lässt
+  sich mit Suche und Tag kombinieren. Der Filter steht in der Adresse und
+  kann als Lesezeichen gespeichert werden.
+
 ### Geändert
 
 - **Picnic-Anbindung auf picnic-api 5.3 umgestellt.** Die neue Fassung der
