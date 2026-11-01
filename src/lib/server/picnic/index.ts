@@ -371,6 +371,54 @@ export async function listPicnicRecipes(): Promise<PicnicRecipeTile[]> {
 	return extractRecipeTiles(await getFusionPage('meals-page-root'));
 }
 
+/** Ein Gang der Picnic-Favoriten mit seinen Produkten (Quelle für den Artikelimport). */
+export type FavoriteAisle = {
+	id: string;
+	title: string;
+	products: { productId: string; name: string; unitQuantity: string; imageId: string | null }[];
+};
+
+/** Höchstens so viele Gänge werden gleichzeitig nachgeladen. */
+const AISLE_CONCURRENCY = 4;
+
+/**
+ * Die Produkte, die der Haushalt bei Picnic kauft, nach Gang gruppiert
+ * (Reiter „Favoriten“ der App). Lange Gänge liefert die Übersicht nur
+ * angeschnitten (`complete: false`) — die werden einzeln nachgeladen. Ein
+ * Produkt steht nur im ersten Gang, in dem es vorkommt; leere Gänge fallen weg.
+ */
+export async function listFavoriteProducts(): Promise<FavoriteAisle[]> {
+	await ensureLoggedIn();
+	const { aisles } = await getClient().catalog.getFavorites();
+
+	const tilesByAisle = new Map(aisles.map((aisle) => [aisle.id, aisle.products]));
+	const incomplete = aisles.filter((aisle) => !aisle.complete);
+	for (let i = 0; i < incomplete.length; i += AISLE_CONCURRENCY) {
+		await Promise.all(
+			incomplete.slice(i, i + AISLE_CONCURRENCY).map(async (aisle) => {
+				try {
+					tilesByAisle.set(aisle.id, await getClient().catalog.getFavoritesInAisle(aisle.id));
+				} catch {
+					// dann eben nur der angeschnittene Teil
+				}
+			})
+		);
+	}
+
+	const seen = new Set<string>();
+	const result: FavoriteAisle[] = [];
+	for (const aisle of aisles) {
+		const products = (tilesByAisle.get(aisle.id) ?? [])
+			.filter((tile) => tile.id && tile.name && !seen.has(tile.id))
+			.map((tile) => {
+				seen.add(tile.id);
+				return { productId: tile.id, name: tile.name, unitQuantity: tile.unitQuantity, imageId: tile.imageId };
+			});
+		if (products.length > 0) result.push({ id: aisle.id, title: aisle.title, products });
+	}
+	return result;
+}
+
 /**
  * Ein Picnic-Rezept, umgerechnet auf seine **Standardportionen**.
  *

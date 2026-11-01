@@ -5,8 +5,8 @@ import { activeLocations } from '#lib/server/locations.js';
 import {
 	describePicnicError,
 	getConnectionState,
-	listOrderedProducts,
-	type OrderedProduct
+	listFavoriteProducts,
+	listOrderedProducts
 } from '#lib/server/picnic/index.js';
 import { importArticleFromPicnic } from '#lib/server/articleImport.js';
 import { fail } from '@sveltejs/kit';
@@ -14,11 +14,37 @@ import type { Actions, PageServerLoad } from './$types';
 
 const DELIVERY_LIMIT = 10;
 
-export const load: PageServerLoad = async ({ locals }) => {
+/**
+ * Ein importierbares Produkt, egal aus welcher Quelle. Lieferungen liefern
+ * Kaufhäufigkeit und -datum, Favoriten ihren Gang (für Zwischenüberschriften).
+ */
+type ImportProduct = {
+	productId: string;
+	name: string;
+	unitQuantity: string;
+	imageId: string | null;
+	timesOrdered: number | null;
+	lastOrderedAt: string | null;
+	aisle: string | null;
+};
+
+type Source = 'lieferungen' | 'favoriten';
+
+async function loadProducts(source: Source): Promise<ImportProduct[]> {
+	if (source === 'favoriten') {
+		return (await listFavoriteProducts()).flatMap((aisle) =>
+			aisle.products.map((p) => ({ ...p, timesOrdered: null, lastOrderedAt: null, aisle: aisle.title }))
+		);
+	}
+	return (await listOrderedProducts(DELIVERY_LIMIT)).map((p) => ({ ...p, aisle: null }));
+}
+
+export const load: PageServerLoad = async ({ url, locals }) => {
+	const source: Source = url.searchParams.get('quelle') === 'favoriten' ? 'favoriten' : 'lieferungen';
 	const connection = getConnectionState();
 	const locations = activeLocations();
 	if (connection !== 'connected') {
-		return { connection, products: [] as OrderedProduct[], linkedIds: [] as string[], locations, error: null };
+		return { connection, source, products: [] as ImportProduct[], linkedIds: [] as string[], locations, error: null };
 	}
 
 	// Bereits verknüpfte Picnic-IDs, um Vorhandenes zu markieren
@@ -30,12 +56,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.filter((id): id is string => Boolean(id));
 
 	try {
-		const products = await listOrderedProducts(DELIVERY_LIMIT);
-		return { connection, products, linkedIds, locations, error: null };
+		const products = await loadProducts(source);
+		return { connection, source, products, linkedIds, locations, error: null };
 	} catch (err) {
 		return {
 			connection,
-			products: [] as OrderedProduct[],
+			source,
+			products: [] as ImportProduct[],
 			linkedIds,
 			locations,
 			error: describePicnicError(err, translator(locals.locale), 'Bestellte Produkte laden')

@@ -471,6 +471,10 @@ export const nl: Messages = {
 	'itemImport.exists': 'aanwezig',
 	'itemImport.toItems': 'Naar de artikellijst',
 	'itemImport.lastOrdered': 'laatst {date}',
+	'itemImport.sources': 'Productbron',
+	'itemImport.source.deliveries': 'Recente leveringen',
+	'itemImport.source.favourites': 'Favorieten',
+	'itemImport.timesOrdered': '{n}× besteld',
 
 	'msg.nameRequired': 'Naam is verplicht',
 	'msg.amountNotNumber': 'Hoeveelheid is geen getal',

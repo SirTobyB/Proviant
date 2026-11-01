@@ -479,6 +479,10 @@ export const en = {
 	'itemImport.exists': 'present',
 	'itemImport.toItems': 'Go to items',
 	'itemImport.lastOrdered': 'last ordered {date}',
+	'itemImport.sources': 'Product source',
+	'itemImport.source.deliveries': 'Recent deliveries',
+	'itemImport.source.favourites': 'Favourites',
+	'itemImport.timesOrdered': 'ordered {n}×',
 
 	'msg.nameRequired': 'Name is required',
 	'msg.amountNotNumber': 'Amount is not a number',

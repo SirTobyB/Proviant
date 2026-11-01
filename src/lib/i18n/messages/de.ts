@@ -470,6 +470,10 @@ export const de: Messages = {
 	'itemImport.exists': 'vorhanden',
 	'itemImport.toItems': 'Zur Artikelliste',
 	'itemImport.lastOrdered': 'zuletzt {date}',
+	'itemImport.sources': 'Produktquelle',
+	'itemImport.source.deliveries': 'Letzte Lieferungen',
+	'itemImport.source.favourites': 'Favoriten',
+	'itemImport.timesOrdered': '{n}× bestellt',
 
 	'msg.nameRequired': 'Name ist erforderlich',
 	'msg.amountNotNumber': 'Menge ist keine Zahl',

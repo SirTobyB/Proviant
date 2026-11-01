@@ -33,6 +33,11 @@
 		)
 	);
 
+	const sources = [
+		{ key: 'lieferungen', label: 'itemImport.source.deliveries' },
+		{ key: 'favoriten', label: 'itemImport.source.favourites' }
+	] as const;
+
 	function isLinked(id: string): boolean {
 		return data.linkedIds.includes(id);
 	}
@@ -57,6 +62,18 @@
 <p class="mt-1 text-sm text-gray-500">
 	{t('itemImport.description')}
 </p>
+
+<nav class="mt-4 flex flex-wrap gap-1.5" aria-label={t('itemImport.sources')}>
+	{#each sources as source (source.key)}
+		<a
+			href={source.key === 'lieferungen' ? '/artikel/import' : `/artikel/import?quelle=${source.key}`}
+			aria-current={data.source === source.key ? 'page' : undefined}
+			class="rounded-full px-3 py-1 text-sm font-medium {data.source === source.key ? 'bg-green-600 text-white' : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'}"
+		>
+			{t(source.label)}
+		</a>
+	{/each}
+</nav>
 
 {#if data.connection !== 'connected'}
 	<div class="mt-6 max-w-2xl rounded-xl border border-gray-200 bg-white p-6 text-center">
@@ -93,8 +110,11 @@
 	<p class="mt-2 text-xs text-gray-500">{filtered.length} von {data.products.length} Produkten</p>
 
 	<ul class="mt-2 max-w-2xl divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
-		{#each filtered as product (product.productId)}
+		{#each filtered as product, index (product.productId)}
 			{@const linked = isLinked(product.productId)}
+			{#if product.aisle && product.aisle !== filtered[index - 1]?.aisle}
+				<li class="bg-gray-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">{product.aisle}</li>
+			{/if}
 			<li class="flex items-center gap-3 px-4 py-2.5 {linked ? 'opacity-60' : ''}">
 				<input
 					type="checkbox"
@@ -112,7 +132,7 @@
 					<div class="truncate text-sm font-medium">{product.name}</div>
 					<div class="text-xs text-gray-500">
 						{product.unitQuantity}
-						· {product.timesOrdered}× bestellt
+						{#if product.timesOrdered}· {t('itemImport.timesOrdered', { n: product.timesOrdered })}{/if}
 						{#if product.lastOrderedAt}· {t('itemImport.lastOrdered', { date: formatDate(product.lastOrderedAt) })}{/if}
 					</div>
 				</div>

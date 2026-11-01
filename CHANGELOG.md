@@ -14,6 +14,10 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
   die keinen (oder einen stillgelegten) Standard-Lagerort haben, und lässt
   sich mit Suche und Tag kombinieren. Der Filter steht in der Adresse und
   kann als Lesezeichen gespeichert werden.
+- **Artikelimport aus den Picnic-Favoriten.** Neben den letzten Lieferungen
+  bietet der Import jetzt die Favoriten aus der Picnic-App an – alle
+  Produkte, die der Haushalt dort kauft, nach Gang gruppiert. Bereits
+  angelegte Artikel sind markiert und werden nicht doppelt importiert.
 - **Rezeptimport: gespeicherte und eigene Picnic-Rezepte.** Die Importseite
   hat drei Reiter – Picnics Rezeptseite, die in der Picnic-App gespeicherten
   und die selbst angelegten Rezepte.
