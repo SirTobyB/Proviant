@@ -8,6 +8,15 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.6.0] - 2026-11-01
+
+Proviant importiert jetzt alle Picnic-Rezepte einer Liste auf einmal und
+schont dabei Picnic und den eigenen Server: Rezept- und Artikelimporte laufen
+gedrosselt, Picnic-Produktbilder kommen aus einem Cache. Damit sperrt
+CrowdSec beim Öffnen der Favoriten nicht mehr die eigene IP aus. Zu tun ist
+beim Aktualisieren nichts: `docker compose pull` genügt, der Bildcache legt
+sich selbst unter `DATA_DIR/picnic-images` an.
+
 ### Hinzugefügt
 
 - **„Alle importieren“ beim Rezeptimport.** Holt alle angezeigten Rezepte
@@ -422,7 +431,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.5.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/SirTobyB/Proviant/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/SirTobyB/Proviant/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/SirTobyB/Proviant/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/SirTobyB/Proviant/compare/v2.3.1...v2.4.0
