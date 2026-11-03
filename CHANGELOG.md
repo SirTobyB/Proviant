@@ -8,6 +8,13 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Behoben
+
+- Beim Import eigener Picnic-Rezepte wird die Notiz sauberer in Text
+  umgewandelt: Maskierte Zeichen wie `&amp;lt;` werden nur noch einmal
+  entschlüsselt, und Reste unvollständiger HTML-Tags fallen weg (Code-Scanning-
+  Hinweise von CodeQL).
+
 ## [2.6.0] - 2026-11-01
 
 Proviant importiert jetzt alle Picnic-Rezepte einer Liste auf einmal und

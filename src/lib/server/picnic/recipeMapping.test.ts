@@ -108,6 +108,16 @@ describe('mapPicnicRecipe', () => {
 		expect(own.steps).toEqual(['Erst anbraten, dann köcheln']);
 	});
 
+	it('dekodiert Entitäten der Notiz nur einmal', () => {
+		const own = mapPicnicRecipe({ ...gyros, steps: [], note: '<p>Salz &amp;lt; Zucker &amp; 2 &lt; 3</p>' });
+		expect(own.steps).toEqual(['Salz &lt; Zucker & 2 < 3']);
+	});
+
+	it('lässt von unvollständigen Tags keinen Rest stehen', () => {
+		const own = mapPicnicRecipe({ ...gyros, steps: [], note: '<p>Fertig</p><script' });
+		expect(own.steps).toEqual(['Fertig']);
+	});
+
 	it('verkraftet Datenmüll, ohne zu werfen', () => {
 		expect(mapPicnicRecipe(null).ingredients).toEqual([]);
 		expect(mapPicnicRecipe({ ingredients: 'kaputt' }).servings).toBeNull();

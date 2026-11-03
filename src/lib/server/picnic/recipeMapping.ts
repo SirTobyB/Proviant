@@ -41,18 +41,21 @@ function record(value: unknown): Record<string, unknown> {
 	return value != null && typeof value === 'object' ? (value as Record<string, unknown>) : {};
 }
 
-/** HTML der Notiz eigener Rezepte als schlichter Text — kein Markup in die App. */
+const ENTITIES: Record<string, string> = { nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" };
+
+/**
+ * HTML der Notiz eigener Rezepte als schlichter Text — kein Markup in die App.
+ * Ein Tag ohne schließendes `>` fällt bis zum Ende weg (sonst bliebe ein
+ * offenes `<script` stehen; echter Text steht im HTML ohnehin als `&lt;`).
+ * Entitäten werden in **einem** Durchgang dekodiert, sonst würde `&amp;lt;`
+ * zu `<` statt `&lt;`.
+ */
 function stripHtml(html: string): string {
 	return html
 		.replace(/<br\s*\/?>/gi, '\n')
 		.replace(/<\/p>/gi, '\n')
-		.replace(/<[^>]*>/g, '')
-		.replace(/&nbsp;/g, ' ')
-		.replace(/&amp;/g, '&')
-		.replace(/&lt;/g, '<')
-		.replace(/&gt;/g, '>')
-		.replace(/&quot;/g, '"')
-		.replace(/&#39;/g, "'")
+		.replace(/<[^>]*(?:>|$)/g, '')
+		.replace(/&(nbsp|amp|lt|gt|quot|#39);/g, (_, name: string) => ENTITIES[name])
 		.trim();
 }
 
