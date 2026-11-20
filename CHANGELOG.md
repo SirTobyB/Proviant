@@ -8,6 +8,19 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- picnic-api auf 5.6.0 angehoben. Die neue Fassung liest Produkt- und
+  Angebotsseiten auch in Picnics neuem Seitenformat (RSC). Picnic DE liefert
+  beide noch im alten Format, stellt Picnic um, laufen Artikelseite,
+  Artikelimport und Angebote ohne Änderung weiter.
+
+### Behoben
+
+- Bio-Produkte hießen in den Picnic-Favoriten (Artikelimport) teils nur
+  „Bio", bei anderen fehlte das „Bio" im Namen. Jetzt steht der volle Name
+  da, z.B. „Bio Zitronen"; dasselbe gilt für Ersatzvorschläge im Warenkorb.
+
 ## [2.7.0] - 2026-11-20
 
 Die Startseite zeigt jetzt, wann die nächste Picnic-Lieferung kommt — vorher
