@@ -64,7 +64,8 @@ Picnic-functies en een FAQ voor probleemoplossing.
   partij met één tik in de locatieweergave (0 verwijdert de partij); partijen
   zijn te bewerken en tussen locaties te verplaatsen.
 - **Volgende levering op de startpagina** — de volgende openstaande
-  Picnic-levering met dag en geboekt tijdvak, om de dag te plannen. Op de
+  Picnic-levering met dag en hetzelfde verfijnde tijdvak als in de Picnic-app
+  (anders het geboekte tijdvak), om de dag te plannen. Op de
   leverdag neemt, zodra de bezorger onderweg is, de precieze verwachte
   aankomsttijd die plaats in en ververst zich elke twee minuten zolang de
   pagina open is.

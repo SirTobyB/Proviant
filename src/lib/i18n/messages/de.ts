@@ -29,7 +29,7 @@ export const de: Messages = {
 	'delivery.tomorrow': 'Morgen',
 	'delivery.window': '{day}, {range}',
 	'delivery.live': '{day} ca. {time}',
-	'delivery.bookedWindow': 'Fenster {range}',
+	'delivery.bookedWindow': 'gebucht {range}',
 	'stock.journalShort': 'Journal',
 
 	'stocktake.title': 'Inventur',

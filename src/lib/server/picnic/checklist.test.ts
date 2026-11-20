@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aggregateChecklist, deliveryIssues, lineQuantity } from './checklist';
+import { aggregateChecklist, deliveryIssues, forecastWindow, lineQuantity } from './checklist';
 
 /**
  * Storno-Decorator, wie Picnic ihn an der **Lieferung** führt (live geprüft an
@@ -242,5 +242,26 @@ describe('aggregateChecklist — Preise bei Storno', () => {
 			issuesDecorator([{ article_id: 's1', quantity: 1 }])
 		);
 		expect(item).toMatchObject({ quantity: 1, regularPrice: null, promoPrice: null });
+	});
+});
+
+describe('forecastWindow', () => {
+	it('liest Picnics eingegrenzte Prognose aus eta2 (live geprüft, 20.11.2026)', () => {
+		const raw = {
+			slot: { window_start: '2026-11-20T14:30:00.000+01:00', window_end: '2026-11-20T16:30:00.000+01:00' },
+			eta2: { start: '2026-11-20T15:44:00.000+01:00', end: '2026-11-20T16:04:00.000+01:00' }
+		};
+		expect(forecastWindow(raw)).toEqual({
+			start: '2026-11-20T15:44:00.000+01:00',
+			end: '2026-11-20T16:04:00.000+01:00'
+		});
+	});
+
+	it('meldet im Zweifel nichts', () => {
+		expect(forecastWindow({})).toBeNull();
+		expect(forecastWindow(null)).toBeNull();
+		expect(forecastWindow({ eta2: { start: '2026-11-20T15:44:00.000+01:00' } })).toBeNull();
+		expect(forecastWindow({ eta2: { start: 'kaputt', end: 'auch kaputt' } })).toBeNull();
+		expect(forecastWindow({ eta2: 'irgendwas' })).toBeNull();
 	});
 });

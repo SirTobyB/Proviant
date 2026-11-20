@@ -61,7 +61,8 @@ a troubleshooting FAQ.
   in the item list, and per batch with a single tap in the location view (0
   removes the batch); batches can be edited and moved between locations.
 - **Next delivery on the start page** — the next open Picnic delivery with its
-  day and booked window, so you can plan the day. On delivery day, as soon as
+  day and the same narrowed time window the Picnic app shows (falling back to
+  the booked window), so you can plan the day. On delivery day, as soon as
   the driver is on the way, the exact expected arrival takes its place and
   updates itself every two minutes while the page is open.
 - **Storage locations** (admin) — create, rename and reorder them. Nothing is

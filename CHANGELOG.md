@@ -8,6 +8,13 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Behoben
+
+- Die Lieferkarte zeigt jetzt dasselbe Fenster wie die Picnic-App: Picnics
+  eingegrenzte Prognose (z.B. 15:44–16:04) statt nur des gebuchten
+  2-Stunden-Fensters, das klein daneben steht. Die Bibliothek gab die
+  Prognose bisher nicht weiter.
+
 ### Geändert
 
 - picnic-api auf 5.6.0 angehoben. Die neue Fassung liest Produkt- und

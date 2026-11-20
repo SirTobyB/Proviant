@@ -40,7 +40,7 @@ export const en = {
 	'delivery.tomorrow': 'Tomorrow',
 	'delivery.window': '{day}, {range}',
 	'delivery.live': '{day} at about {time}',
-	'delivery.bookedWindow': 'window {range}',
+	'delivery.bookedWindow': 'booked {range}',
 
 	'stocktake.title': 'Stocktake',
 	'stocktake.description':

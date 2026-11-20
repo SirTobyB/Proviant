@@ -17,6 +17,12 @@ export type DeliveryEta = {
 	/** Beginn des gebuchten Fensters (ISO). */
 	windowStart: string;
 	windowEnd: string | null;
+	/**
+	 * Picnics eingegrenzte Prognose (`eta2`, ~20 Minuten) — das Fenster, das
+	 * die Picnic-App zeigt. Fehlt, solange Picnic noch keine Prognose hat.
+	 */
+	forecastStart: string | null;
+	forecastEnd: string | null;
 	/** Live-ETA des Fahrers (ISO), nur bei laufender Tour. */
 	eta: string | null;
 };
@@ -61,8 +67,10 @@ function dayLabel(date: Date, t: Translate, locale: Locale, now: Date): string {
 }
 
 /**
- * Anzeigetext: vor der Tour Tag + Fenster („Di., 24.11., 18:00–19:00“), mit
- * Live-ETA die genaue Zeit („Heute ca. 18:24“) und das Fenster daneben.
+ * Anzeigetext, genauste Angabe zuerst: Live-ETA („Heute ca. 18:24“), sonst
+ * Picnics Prognose („Heute, 15:44–16:04“), sonst das gebuchte Fenster
+ * („Di., 24.11., 18:00–19:00“). Ist die Hauptzeile genauer als das gebuchte
+ * Fenster, steht dieses daneben.
  */
 export function deliveryEtaText(
 	eta: DeliveryEta,
@@ -72,14 +80,24 @@ export function deliveryEtaText(
 ): { main: string; window: string | null } {
 	const time = (iso: string) =>
 		new Date(iso).toLocaleTimeString(BCP47[locale], { hour: '2-digit', minute: '2-digit' });
-	const start = new Date(eta.windowStart);
-	const range = eta.windowEnd ? `${time(eta.windowStart)}–${time(eta.windowEnd)}` : time(eta.windowStart);
+	const booked = eta.windowEnd ? `${time(eta.windowStart)}–${time(eta.windowEnd)}` : time(eta.windowStart);
+	const bookedWindow = t('delivery.bookedWindow', { range: booked });
 
 	if (eta.eta && !Number.isNaN(Date.parse(eta.eta))) {
 		return {
 			main: t('delivery.live', { day: dayLabel(new Date(eta.eta), t, locale, now), time: time(eta.eta) }),
-			window: t('delivery.bookedWindow', { range })
+			window: bookedWindow
 		};
 	}
-	return { main: t('delivery.window', { day: dayLabel(start, t, locale, now), range }), window: null };
+	if (eta.forecastStart && eta.forecastEnd) {
+		const day = dayLabel(new Date(eta.forecastStart), t, locale, now);
+		return {
+			main: t('delivery.window', { day, range: `${time(eta.forecastStart)}–${time(eta.forecastEnd)}` }),
+			window: bookedWindow
+		};
+	}
+	return {
+		main: t('delivery.window', { day: dayLabel(new Date(eta.windowStart), t, locale, now), range: booked }),
+		window: null
+	};
 }

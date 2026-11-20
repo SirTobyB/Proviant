@@ -91,6 +91,25 @@ export function deliveryIssues(decorators: unknown): Map<string, DeliveryIssue> 
 }
 
 /**
+ * Picnics eingegrenzte Ankunftsprognose (`eta2`) aus der **rohen** Lieferung —
+ * das 20-Minuten-Fenster, das die Picnic-App zeigt (live: gebucht 14:30–16:30,
+ * Prognose 15:44–16:04, geliefert 15:50).
+ *
+ * Das Listenmodell der `picnic-api` bildet nur *ein* Fenster und nimmt zuerst
+ * den gebuchten `slot` — die Prognose ginge dort verloren. Defensiv: nur ein
+ * vollständiges, lesbares Paar zählt, sonst `null` (dann bleibt es beim
+ * gebuchten Fenster).
+ */
+export function forecastWindow(rawDelivery: unknown): { start: string; end: string } | null {
+	const eta2 = (rawDelivery as { eta2?: unknown } | null)?.eta2 as { start?: unknown; end?: unknown } | undefined;
+	if (!eta2 || typeof eta2 !== 'object') return null;
+	const { start, end } = eta2;
+	if (typeof start !== 'string' || typeof end !== 'string') return null;
+	if (Number.isNaN(Date.parse(start)) || Number.isNaN(Date.parse(end))) return null;
+	return { start, end };
+}
+
+/**
  * Anteil eines Zeilen-Gesamtpreises, der auf die noch erwartete Menge entfällt.
  *
  * Bewusst **einmal** am Ende gerundet statt Bruchteile mitzuschleppen: Der

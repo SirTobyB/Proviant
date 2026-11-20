@@ -63,7 +63,8 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   Lagerort-Ansicht je Charge mit einem Klick (0 löscht die Charge); Chargen
   lassen sich bearbeiten und zwischen Lagerorten umlagern.
 - **Nächste Lieferung auf der Startseite** — die nächste offene
-  Picnic-Lieferung mit Tag und gebuchtem Fenster, um den Tag zu planen. Am
+  Picnic-Lieferung mit Tag und demselben eingegrenzten Zeitfenster wie in der
+  Picnic-App (sonst dem gebuchten Fenster), um den Tag zu planen. Am
   Liefertag tritt, sobald der Fahrer unterwegs ist, die genaue
   voraussichtliche Ankunft an ihre Stelle und aktualisiert sich alle zwei
   Minuten, solange die Seite offen ist.
