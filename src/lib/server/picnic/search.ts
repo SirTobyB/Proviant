@@ -2,11 +2,11 @@
  * Produkttreffer aus der **Fusion**-Fassung der Picnic-Suchseite.
  * Rein und ohne SvelteKit-Import, damit eigenständig testbar.
  *
- * picnic-api 5 liest die Suche nur noch als RSC-Seite. Picnic DE liefert sie
- * aber (live geprüft, Oktober 2026) weiterhin als Fusion aus — dort stecken
- * die Produkte als `sellingUnit`-Objekte mit den alten snake_case-Feldern.
- * Sobald Picnic DE umstellt, übernimmt die Bibliothek (siehe `searchProducts`
- * in `index.ts`); dieser Parser ist dann nur noch Rückfallebene.
+ * Picnic DE liefert die Suche (live geprüft, November 2026) weiterhin als
+ * Fusion aus — dort stecken die Produkte als `sellingUnit`-Objekte mit den
+ * alten snake_case-Feldern, deren `name` die Marke enthält. picnic-api liest
+ * Fusion seit 5.3.1 zwar auch, aber nur den kürzeren Kachelnamen; warum der
+ * Parser deshalb bleibt, steht an `searchProducts` in `index.ts`.
  */
 
 export type ProductSearchHit = {

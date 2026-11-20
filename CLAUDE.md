@@ -42,7 +42,7 @@ reinen Logik-Module ab: `units.ts`, `suggest.ts`, `mhd.ts`, `format.ts`,
 Wörterbücher), `picnic/unitQuantity.ts`, `picnic/checklist.ts`,
 `picnic/price.ts`, `picnic/search.ts`, `picnic/errors.ts`,
 `picnic/recipeMapping.ts`, `picnic/productFacts.ts`, `picnic/throttle.ts`,
-`picnic/imageCache.ts`, `offers.ts`,
+`picnic/imageCache.ts`, `picnic/tiles.ts`, `offers.ts`,
 `priceTiers.ts`, `prices.ts`, `deliveryNewItems.ts`. Genau dort steckten die
 schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
 **mit Test**, nicht in eine Route.
@@ -221,9 +221,17 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
   stellt Seiten nach und nach auf RSC um) und `sendRequest()`. Zwei Stellen
   bleiben bewusst roh: die **Lieferungsdetails** (das Modell lässt
   `delivery.decorators` weg, also die Stornos, siehe unten) und die
-  **Rezeptseiten** (unsere Parser). Die **Suche** ist in 5.2 und 5.3 RSC-only, Picnic
-  DE liefert sie aber noch als Fusion (live geprüft, Oktober 2026) — deshalb
-  die Format-Weiche in `searchProducts` mit eigenem Parser (`search.ts`).
+  **Rezeptseiten** (unsere Parser). Die **Suche** liefert Picnic DE noch als
+  Fusion (live geprüft, November 2026) — deshalb die Format-Weiche in
+  `searchProducts` mit eigenem Parser (`search.ts`). Die Bibliothek liest
+  Fusion seit 5.3.1 zwar selbst, aber nur den kurzen Kachelnamen ohne Marke;
+  unser Parser bleibt, damit Suchtreffer nicht anders heißen als bisher.
+  Seit 5.5/5.6 liest die Bibliothek Produkt- und Angebotsseite auch als RSC
+  (NL ist umgestellt, DE noch Fusion, Stand November 2026).
+- **Kachelnamen** (`ProductTile` aus Favoriten, Ersatzvorschlägen, Suche):
+  Ein hervorgehobener Namensanfang („Bio") steht in `namePrefix`, `name` ist
+  nur der Rest — Namen deshalb immer über `tileName()` aus `picnic/tiles.ts`
+  bilden, sonst fehlt das „Bio" im Artikelnamen.
 - **Angebote** (`server/offers.ts`): Angebotsseite plus jede Aktionsgruppe
   einzeln (`getPromotionGroup`) — live gut drei Dutzend Anfragen, über zehn
   Sekunden. Deshalb Modul-Cache mit **stale-while-revalidate** (1 h), und

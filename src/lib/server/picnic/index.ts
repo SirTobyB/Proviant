@@ -18,6 +18,7 @@ import { priceTiers } from '#lib/priceTiers.js';
 import type { PriceTier } from '#lib/offers.js';
 import { nextOpenDelivery, wantsLivePosition, type DeliveryEta } from '#lib/deliveryEta.js';
 import { extractSearchHits, type ProductSearchHit } from './search';
+import { tileName } from './tiles';
 import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
 import { mapPicnicRecipe } from './recipeMapping';
 import { createThrottle } from './throttle';
@@ -139,12 +140,13 @@ export async function verify2FA(code: string): Promise<void> {
 /**
  * Produktsuche, z.B. zur Verknüpfung von Artikeln mit Picnic-IDs.
  *
- * Eine Weiche nach Seitenformat: `catalog.getSearchResults()` aus picnic-api 5
- * versteht nur die RSC-Fassung der Suchseite, Picnic DE liefert aber noch
- * Fusion — dann wirft die Bibliothek (live geprüft). Deshalb erst die Seite
- * holen und nachsehen: Fusion werten wir selbst aus (`search.ts`), bei RSC
- * übernimmt die Bibliothek. Stellt Picnic DE um, läuft die Suche ohne
- * Codeänderung weiter.
+ * Eine Weiche nach Seitenformat: Picnic DE liefert die Suchseite noch als
+ * Fusion (live geprüft, November 2026), die werten wir selbst aus
+ * (`search.ts`), bei RSC übernimmt die Bibliothek. Seit 5.3.1 liest zwar auch
+ * `catalog.getSearchResults()` Fusion, gibt aber den Kachelnamen ohne Marke
+ * zurück („Bio Frische Vollmilch" statt „Edeka Bio Bio Frische Vollmilch") —
+ * ein Umstieg hätte die Suchtreffer sichtbar umbenannt, deshalb bleibt unser
+ * Parser. Stellt Picnic DE um, läuft die Suche ohne Codeänderung weiter.
  */
 export async function searchProducts(query: string): Promise<ProductSearchHit[]> {
 	const pageId = `search-page-results?search_term=${encodeURIComponent(query)}`;
@@ -160,7 +162,7 @@ export async function searchProducts(query: string): Promise<ProductSearchHit[]>
 			if (hits.has(tile.id)) continue;
 			hits.set(tile.id, {
 				id: tile.id,
-				name: tile.name,
+				name: tileName(tile),
 				unitQuantity: tile.unitQuantity,
 				price: tile.displayPrice,
 				imageId: tile.imageId
@@ -303,7 +305,7 @@ export async function getReplacements(productId: string): Promise<CartReplacemen
 		.filter((tile) => tile.id && tile.name && !tile.isUnavailable)
 		.map((tile) => ({
 			id: tile.id,
-			name: tile.name,
+			name: tileName(tile),
 			unitQuantity: tile.unitQuantity,
 			imageId: tile.imageId,
 			price: tile.displayPrice
@@ -591,7 +593,7 @@ export async function listFavoriteProducts(): Promise<FavoriteAisle[]> {
 			.filter((tile) => tile.id && tile.name && !seen.has(tile.id))
 			.map((tile) => {
 				seen.add(tile.id);
-				return { productId: tile.id, name: tile.name, unitQuantity: tile.unitQuantity, imageId: tile.imageId };
+				return { productId: tile.id, name: tileName(tile), unitQuantity: tile.unitQuantity, imageId: tile.imageId };
 			});
 		if (products.length > 0) result.push({ id: aisle.id, title: aisle.title, products });
 	}
