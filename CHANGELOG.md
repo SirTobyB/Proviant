@@ -8,12 +8,7 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
-### Behoben
-
-- Die Lieferkarte zeigt jetzt dasselbe Fenster wie die Picnic-App: Picnics
-  eingegrenzte Prognose (z.B. 15:44–16:04) statt nur des gebuchten
-  2-Stunden-Fensters, das klein daneben steht. Die Bibliothek gab die
-  Prognose bisher nicht weiter.
+## [2.7.1] - 2026-11-20
 
 ### Geändert
 
@@ -24,6 +19,10 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ### Behoben
 
+- Die Lieferkarte zeigt jetzt dasselbe Fenster wie die Picnic-App: Picnics
+  eingegrenzte Prognose (z.B. 15:44–16:04) statt nur des gebuchten
+  2-Stunden-Fensters, das klein daneben steht. Die Bibliothek gab die
+  Prognose bisher nicht weiter.
 - Bio-Produkte hießen in den Picnic-Favoriten (Artikelimport) teils nur
   „Bio", bei anderen fehlte das „Bio" im Namen. Jetzt steht der volle Name
   da, z.B. „Bio Zitronen"; dasselbe gilt für Ersatzvorschläge im Warenkorb.
@@ -476,7 +475,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.7.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.7.1...HEAD
+[2.7.1]: https://github.com/SirTobyB/Proviant/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/SirTobyB/Proviant/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/SirTobyB/Proviant/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/SirTobyB/Proviant/compare/v2.4.1...v2.5.0
