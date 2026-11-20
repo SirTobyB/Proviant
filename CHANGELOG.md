@@ -8,6 +8,12 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.7.0] - 2026-11-20
+
+Die Startseite zeigt jetzt, wann die nächste Picnic-Lieferung kommt — vorher
+mit Tag und Lieferfenster, am Liefertag mit der Live-Ankunft des Fahrers.
+Zu tun ist beim Aktualisieren nichts: `docker compose pull` genügt.
+
 ### Hinzugefügt
 
 - Die Startseite zeigt die nächste offene Picnic-Lieferung: vorher mit Tag
@@ -450,7 +456,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.6.0...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/SirTobyB/Proviant/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/SirTobyB/Proviant/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/SirTobyB/Proviant/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/SirTobyB/Proviant/compare/v2.4.0...v2.4.1
