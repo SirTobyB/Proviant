@@ -265,6 +265,13 @@ schwersten Bugs — neue Rechenlogik gehört deshalb in ein solches Modul
     **Zeilen**preise. Die `replacements` einer nicht lieferbaren Zeile sind
     Platzhalter (Name „irrelevant“, Preis 0) — Namen und Preise nur über
     `cart.getReplacements(productId)`.
+  - **Zwei Fenster je Lieferung:** `slot` ist das gebuchte 2-Stunden-Fenster,
+    `eta2` Picnics eingegrenzte Prognose (~20 Minuten, steht schon vor der
+    Tour) — die zeigt die Picnic-App. `getDeliverySummaries()` bildet daraus
+    nur **ein** Fenster und nimmt zuerst den `slot`; die Prognose kommt
+    deshalb aus der rohen Lieferung (`forecastWindow()` in
+    `picnic/checklist.ts`). Die Fahrerposition (`getDeliveryPosition`) gibt
+    es erst bei laufender Tour.
   - **Lieferungsliste enthält keine Positionen** (`getDeliverySummaries()`),
     die kommen erst per Detailabruf (bei uns roh, siehe oben). Offene Lieferungen deshalb per
     Ausschluss bestimmen (nicht `COMPLETED`/`CANCELLED`) und je Lieferung

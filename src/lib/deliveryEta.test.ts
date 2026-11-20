@@ -42,33 +42,55 @@ describe('deliveryEtaText', () => {
 	const de = translator('de');
 
 	it('zeigt vor dem Liefertag Tag und Fenster', () => {
-		const text = deliveryEtaText({ windowStart: at(24, 18), windowEnd: at(24, 19), eta: null }, de, 'de', JETZT);
+		const text = deliveryEtaText({ windowStart: at(24, 18), windowEnd: at(24, 19), forecastStart: null, forecastEnd: null, eta: null }, de, 'de', JETZT);
 		expect(text.main).toBe('Di., 24.11., 18:00–19:00');
 		expect(text.window).toBeNull();
 	});
 
 	it('sagt „Heute“ und „Morgen“', () => {
-		expect(deliveryEtaText({ windowStart: at(20, 18), windowEnd: at(20, 19), eta: null }, de, 'de', JETZT).main).toBe(
+		expect(deliveryEtaText({ windowStart: at(20, 18), windowEnd: at(20, 19), forecastStart: null, forecastEnd: null, eta: null }, de, 'de', JETZT).main).toBe(
 			'Heute, 18:00–19:00'
 		);
-		expect(deliveryEtaText({ windowStart: at(21, 7), windowEnd: at(21, 8), eta: null }, de, 'de', JETZT).main).toBe(
+		expect(deliveryEtaText({ windowStart: at(21, 7), windowEnd: at(21, 8), forecastStart: null, forecastEnd: null, eta: null }, de, 'de', JETZT).main).toBe(
 			'Morgen, 07:00–08:00'
 		);
 	});
 
 	it('zeigt mit Live-ETA die genaue Zeit und das gebuchte Fenster daneben', () => {
-		const text = deliveryEtaText({ windowStart: at(20, 18), windowEnd: at(20, 19), eta: at(20, 18, 24) }, de, 'de', JETZT);
+		const text = deliveryEtaText({ windowStart: at(20, 18), windowEnd: at(20, 19), forecastStart: null, forecastEnd: null, eta: at(20, 18, 24) }, de, 'de', JETZT);
 		expect(text.main).toBe('Heute ca. 18:24');
-		expect(text.window).toBe('Fenster 18:00–19:00');
+		expect(text.window).toBe('gebucht 18:00–19:00');
+	});
+
+	it('zeigt Picnics eingegrenzte Prognose und das gebuchte Fenster daneben', () => {
+		const text = deliveryEtaText(
+			{ windowStart: at(20, 14, 30), windowEnd: at(20, 16, 30), forecastStart: at(20, 15, 44), forecastEnd: at(20, 16, 4), eta: null },
+			de,
+			'de',
+			JETZT
+		);
+		expect(text.main).toBe('Heute, 15:44–16:04');
+		expect(text.window).toBe('gebucht 14:30–16:30');
+	});
+
+	it('lässt die Live-ETA vor der Prognose gelten', () => {
+		const text = deliveryEtaText(
+			{ windowStart: at(20, 14, 30), windowEnd: at(20, 16, 30), forecastStart: at(20, 15, 44), forecastEnd: at(20, 16, 4), eta: at(20, 15, 52) },
+			de,
+			'de',
+			JETZT
+		);
+		expect(text.main).toBe('Heute ca. 15:52');
+		expect(text.window).toBe('gebucht 14:30–16:30');
 	});
 
 	it('kommt ohne Fensterende aus', () => {
-		expect(deliveryEtaText({ windowStart: at(20, 18), windowEnd: null, eta: null }, de, 'de', JETZT).main).toBe('Heute, 18:00');
+		expect(deliveryEtaText({ windowStart: at(20, 18), windowEnd: null, forecastStart: null, forecastEnd: null, eta: null }, de, 'de', JETZT).main).toBe('Heute, 18:00');
 	});
 
 	it('formatiert Englisch im en-GB-Stil', () => {
 		const en = translator('en');
-		expect(deliveryEtaText({ windowStart: at(24, 18), windowEnd: at(24, 19), eta: null }, en, 'en', JETZT).main).toBe(
+		expect(deliveryEtaText({ windowStart: at(24, 18), windowEnd: at(24, 19), forecastStart: null, forecastEnd: null, eta: null }, en, 'en', JETZT).main).toBe(
 			'Tue 24/11, 18:00–19:00'
 		);
 	});

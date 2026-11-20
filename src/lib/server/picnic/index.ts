@@ -11,7 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Translate } from '#lib/i18n/index.js';
 import { logWarn } from '#lib/server/log.js';
-import { aggregateChecklist, type DeliveryChecklistItem } from './checklist';
+import { aggregateChecklist, forecastWindow, type DeliveryChecklistItem } from './checklist';
 import { PicnicAdapterError, picnicErrorKind, type PicnicErrorKind } from './errors';
 import { catalogPrice, tilePrice, type CatalogPrice, type ProductPrice } from './price';
 import { priceTiers } from '#lib/priceTiers.js';
@@ -319,7 +319,8 @@ export async function removeFromCart(productId: string, count: number): Promise<
 }
 
 /**
- * Die nächste offene Lieferung mit gebuchtem Fenster und — kurz vor bzw. am
+ * Die nächste offene Lieferung mit gebuchtem Fenster, Picnics Prognose (`eta2`,
+ * das 20-Minuten-Fenster der App) und — kurz vor bzw. am
  * Liefertag — der Live-ETA des Fahrers. `null` ohne offene Lieferung.
  *
  * Das Fenster kommt aus der Lieferungsliste und steht ab der Bestellung fest;
@@ -331,6 +332,15 @@ export async function getNextDelivery(): Promise<DeliveryEta | null> {
 	await ensureLoggedIn();
 	const next = nextOpenDelivery(await getClient().delivery.getDeliverySummaries());
 	if (!next?.windowStart) return null;
+
+	// Prognose nur aus der rohen Lieferung, das Listenmodell verwirft sie
+	let forecast: { start: string; end: string } | null = null;
+	try {
+		forecast = forecastWindow(await getRawDelivery(next.id));
+	} catch {
+		// ohne Prognose bleibt es beim gebuchten Fenster
+	}
+
 	let eta: string | null = null;
 	if (wantsLivePosition(next.windowStart)) {
 		try {
@@ -340,7 +350,13 @@ export async function getNextDelivery(): Promise<DeliveryEta | null> {
 			// Tour noch nicht gestartet
 		}
 	}
-	return { windowStart: next.windowStart, windowEnd: next.windowEnd, eta };
+	return {
+		windowStart: next.windowStart,
+		windowEnd: next.windowEnd,
+		forecastStart: forecast?.start ?? null,
+		forecastEnd: forecast?.end ?? null,
+		eta
+	};
 }
 
 /**
@@ -373,7 +389,7 @@ export async function getCartQuantities(): Promise<Map<string, number>> {
 type ChecklistOrders = NonNullable<Parameters<typeof aggregateChecklist>[0]>;
 
 /** Rohe Lieferung, soweit `checklist.ts` sie liest. */
-type RawDelivery = { orders?: unknown; decorators?: unknown };
+type RawDelivery = { orders?: unknown; decorators?: unknown; eta2?: unknown };
 
 /**
  * Lieferung im **Rohformat** von Picnic.

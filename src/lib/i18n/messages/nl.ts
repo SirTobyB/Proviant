@@ -29,7 +29,7 @@ export const nl: Messages = {
 	'delivery.tomorrow': 'Morgen',
 	'delivery.window': '{day}, {range}',
 	'delivery.live': '{day} rond {time}',
-	'delivery.bookedWindow': 'tijdvak {range}',
+	'delivery.bookedWindow': 'geboekt {range}',
 	'stock.journalShort': 'Journaal',
 
 	'stocktake.title': 'Inventarisatie',
