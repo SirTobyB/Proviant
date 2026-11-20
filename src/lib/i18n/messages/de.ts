@@ -23,6 +23,13 @@ export const de: Messages = {
 	'stock.locations': 'Lagerorte',
 	'stock.empty': 'Keine Bestände',
 	'stock.deliveryShort': 'Lieferung',
+
+	'delivery.heading': 'Nächste Picnic-Lieferung',
+	'delivery.today': 'Heute',
+	'delivery.tomorrow': 'Morgen',
+	'delivery.window': '{day}, {range}',
+	'delivery.live': '{day} ca. {time}',
+	'delivery.bookedWindow': 'Fenster {range}',
 	'stock.journalShort': 'Journal',
 
 	'stocktake.title': 'Inventur',
@@ -299,7 +306,6 @@ export const de: Messages = {
 	'cart.inCart': '{n} im Warenkorb',
 	'cart.added': 'In den Picnic-Warenkorb gelegt.',
 	'cart.linkFirst': 'Zum Bestellen mit Picnic verknüpfen',
-	'order.eta': 'Eure Picnic-Lieferung kommt voraussichtlich um {time}.',
 	'order.tierHint': 'Ab {n} Stück je {price} – 1 mehr kostet nur {extra} extra',
 	'order.tierRaise': 'Auf {n} erhöhen',
 	'order.cart.title': 'Picnic-Warenkorb',

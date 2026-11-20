@@ -16,6 +16,7 @@ import { PicnicAdapterError, picnicErrorKind, type PicnicErrorKind } from './err
 import { catalogPrice, tilePrice, type CatalogPrice, type ProductPrice } from './price';
 import { priceTiers } from '#lib/priceTiers.js';
 import type { PriceTier } from '#lib/offers.js';
+import { nextOpenDelivery, wantsLivePosition, type DeliveryEta } from '#lib/deliveryEta.js';
 import { extractSearchHits, type ProductSearchHit } from './search';
 import { extractRecipeTiles, type ParsedPicnicRecipe, type PicnicRecipeTile } from './recipeImport';
 import { mapPicnicRecipe } from './recipeMapping';
@@ -26,6 +27,7 @@ import { createImageCache, isValidImageId, type CachedImage } from './imageCache
 export { picnicErrorKind, isValidImageId };
 export type {
 	CachedImage,
+	DeliveryEta,
 	PicnicErrorKind,
 	CatalogPrice,
 	NutritionRow,
@@ -315,24 +317,41 @@ export async function removeFromCart(productId: string, count: number): Promise<
 }
 
 /**
- * Ankunftszeit der nächsten offenen Lieferung, wie die Picnic-App sie zeigt.
- * `null`, wenn keine Lieferung unterwegs ist oder Picnic (noch) keine Zeit
- * kennt — die gibt es meist erst am Liefertag.
+ * Die nächste offene Lieferung mit gebuchtem Fenster und — kurz vor bzw. am
+ * Liefertag — der Live-ETA des Fahrers. `null` ohne offene Lieferung.
+ *
+ * Das Fenster kommt aus der Lieferungsliste und steht ab der Bestellung fest;
+ * die Fahrerposition kennt Picnic erst bei laufender Tour. Vorher wirft
+ * `getDeliveryPosition` oder liefert keine ETA — beides ist kein Fehler, dann
+ * bleibt es beim Fenster.
  */
-export async function getDeliveryEta(): Promise<{
-	eta: string | null;
-	windowStart: string | null;
-	windowEnd: string | null;
-} | null> {
+export async function getNextDelivery(): Promise<DeliveryEta | null> {
 	await ensureLoggedIn();
-	const open = (await getClient().delivery.getDeliverySummaries()).find(
-		(delivery) => delivery.status !== 'COMPLETED' && delivery.status !== 'CANCELLED'
-	);
-	if (!open) return null;
-	const position = await getClient().delivery.getDeliveryPosition(open.id);
-	const eta = position.eta != null ? new Date(position.eta).toISOString() : null;
-	if (!eta && !position.etaWindowStart) return null;
-	return { eta, windowStart: position.etaWindowStart, windowEnd: position.etaWindowEnd };
+	const next = nextOpenDelivery(await getClient().delivery.getDeliverySummaries());
+	if (!next?.windowStart) return null;
+	let eta: string | null = null;
+	if (wantsLivePosition(next.windowStart)) {
+		try {
+			const position = await getClient().delivery.getDeliveryPosition(next.id);
+			eta = position.eta != null ? new Date(position.eta).toISOString() : null;
+		} catch {
+			// Tour noch nicht gestartet
+		}
+	}
+	return { windowStart: next.windowStart, windowEnd: next.windowEnd, eta };
+}
+
+/**
+ * Für Seiten, die die Lieferzeit nachladen (Streaming): `null` ohne
+ * Verbindung, und ein Picnic-Fehler wird geloggt statt die Seite zu brechen —
+ * dann fehlt eben nur der Hinweis.
+ */
+export function streamNextDelivery(): Promise<DeliveryEta | null> | null {
+	if (getConnectionState() !== 'connected') return null;
+	return getNextDelivery().catch((err) => {
+		logWarn('Picnic-Lieferzeit nicht abrufbar', { fehler: err instanceof Error ? err.message : String(err) });
+		return null;
+	});
 }
 
 export async function getCartQuantities(): Promise<Map<string, number>> {

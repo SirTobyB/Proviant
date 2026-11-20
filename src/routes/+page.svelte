@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { mhdStatus, mhdLabel, formatDate, MHD_BADGE_CLASSES } from '#lib/mhd.js';
 	import { translator } from '#lib/i18n/index.js';
+	import DeliveryEtaCard from '#lib/components/DeliveryEtaCard.svelte';
 
 	let { data } = $props();
 
@@ -36,6 +37,8 @@
 		</a>
 	</div>
 </div>
+
+<DeliveryEtaCard delivery={data.delivery} locale={data.locale} autoRefresh />
 
 {#if data.expiring.length > 0}
 	<section class="mt-6 max-w-2xl">

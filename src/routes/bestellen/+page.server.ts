@@ -6,7 +6,7 @@ import {
 	getConnectionState,
 	getCartQuantities,
 	getCartView,
-	getDeliveryEta,
+	streamNextDelivery,
 	getOpenOrderQuantities,
 	getReplacements,
 	type CartReplacement,
@@ -53,7 +53,6 @@ const MAX_REPLACEMENT_LOOKUPS = 5;
 export const load: PageServerLoad = async () => {
 	const connection = getConnectionState();
 	let cart: CartView | null = null;
-	let eta: Awaited<ReturnType<typeof getDeliveryEta>> = null;
 	const replacements: Record<string, CartReplacement[]> = {};
 	let suggestions = loadSuggestions().map((s) => ({ ...s, inCartQty: 0, onOrderQty: 0 }));
 	const covered: string[] = [];
@@ -67,13 +66,8 @@ export const load: PageServerLoad = async () => {
 	// vorgeschlagen. Beide Quellen unabhängig voneinander — fällt eine aus,
 	// bleibt der Abgleich mit der anderen erhalten.
 	if (connection === 'connected') {
-		const [cartResult, ordersResult, etaResult] = await Promise.allSettled([
-			getCartView(),
-			getOpenOrderQuantities(),
-			getDeliveryEta()
-		]);
+		const [cartResult, ordersResult] = await Promise.allSettled([getCartView(), getOpenOrderQuantities()]);
 		cart = cartResult.status === 'fulfilled' ? cartResult.value : null;
-		eta = etaResult.status === 'fulfilled' ? etaResult.value : null;
 		const cartQuantities = new Map<string, number>();
 		for (const line of cart?.lines ?? []) {
 			cartQuantities.set(line.productId, (cartQuantities.get(line.productId) ?? 0) + line.quantity);
@@ -139,7 +133,8 @@ export const load: PageServerLoad = async () => {
 		cartUnavailable,
 		openOrdersUnavailable,
 		cart,
-		eta,
+		// Gestreamt: im Browser formatiert, der Server rechnet in UTC
+		delivery: streamNextDelivery(),
 		replacements,
 		articleIds
 	};

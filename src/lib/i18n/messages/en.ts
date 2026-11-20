@@ -35,6 +35,13 @@ export const en = {
 	'stock.deliveryShort': 'Delivery',
 	'stock.journalShort': 'Journal',
 
+	'delivery.heading': 'Next Picnic delivery',
+	'delivery.today': 'Today',
+	'delivery.tomorrow': 'Tomorrow',
+	'delivery.window': '{day}, {range}',
+	'delivery.live': '{day} at about {time}',
+	'delivery.bookedWindow': 'window {range}',
+
 	'stocktake.title': 'Stocktake',
 	'stocktake.description':
 		'Everything in stock at a glance — enter the counted amount and save, the difference is booked automatically.',
@@ -308,7 +315,6 @@ export const en = {
 	'cart.inCart': '{n} in basket',
 	'cart.added': 'Added to the Picnic basket.',
 	'cart.linkFirst': 'Link with Picnic to order',
-	'order.eta': 'Your Picnic delivery arrives at about {time}.',
 	'order.tierHint': 'From {n} items {price} each – one more costs only {extra} extra',
 	'order.tierRaise': 'Increase to {n}',
 	'order.cart.title': 'Picnic basket',
