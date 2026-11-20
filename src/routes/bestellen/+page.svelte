@@ -5,7 +5,7 @@
 	import { savingsFor, totalFor } from '#lib/prices.js';
 	import { priceTiers, tierHint } from '#lib/priceTiers.js';
 	import CartPanel from '#lib/components/CartPanel.svelte';
-	import { BCP47 } from '#lib/i18n/index.js';
+	import DeliveryEtaCard from '#lib/components/DeliveryEtaCard.svelte';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -120,13 +120,6 @@
 		return tierHint(lineQuantity(item.id), unit, priceTiers(item.price));
 	}
 
-	function etaText(eta: { eta: string | null; windowStart: string | null; windowEnd: string | null }): string {
-		const time = (iso: string) =>
-			new Date(iso).toLocaleTimeString(BCP47[data.locale], { hour: '2-digit', minute: '2-digit' });
-		if (eta.eta) return time(eta.eta);
-		return eta.windowStart && eta.windowEnd ? `${time(eta.windowStart)}–${time(eta.windowEnd)}` : '';
-	}
-
 	const orderableCount = $derived(
 		data.suggestions.filter((s) => orderedQuantity(s) > 0).length
 	);
@@ -227,11 +220,7 @@
 	</div>
 {/if}
 
-{#if data.eta}
-	<div class="mt-4 max-w-2xl rounded-lg bg-green-100 px-4 py-3 text-sm text-green-800">
-		🚚 {t('order.eta', { time: etaText(data.eta) })}
-	</div>
-{/if}
+<DeliveryEtaCard delivery={data.delivery} locale={data.locale} />
 
 {#if data.cart}
 	<CartPanel

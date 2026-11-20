@@ -62,6 +62,11 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
   +/−-Korrektur mit frei wählbarer Menge direkt in der Artikelliste, in der
   Lagerort-Ansicht je Charge mit einem Klick (0 löscht die Charge); Chargen
   lassen sich bearbeiten und zwischen Lagerorten umlagern.
+- **Nächste Lieferung auf der Startseite** — die nächste offene
+  Picnic-Lieferung mit Tag und gebuchtem Fenster, um den Tag zu planen. Am
+  Liefertag tritt, sobald der Fahrer unterwegs ist, die genaue
+  voraussichtliche Ankunft an ihre Stelle und aktualisiert sich alle zwei
+  Minuten, solange die Seite offen ist.
 - **Lagerorte** (Admin) — anlegen, umbenennen und in der Reihenfolge
   verschieben. Gelöscht wird nie, sondern **stillgelegt**: ein stillgelegter
   Lagerort erscheint nirgends mehr zur Auswahl, seine Bestandshistorie und die
@@ -111,8 +116,8 @@ Picnic-Funktionen und eine FAQ zur Fehlersuche.
 - **Picnic-Warenkorb** — die Bestellseite zeigt den aktuellen Warenkorb: Mengen
   ändern, Produkte entfernen und Produkte, die Picnic nicht liefern kann,
   gegen einen von Picnics Ersatzvorschlägen tauschen. Dazu das gewählte
-  Lieferfenster, der Abstand zum Mindestbestellwert und, solange eine
-  Lieferung unterwegs ist, die voraussichtliche Ankunftszeit. Jede Änderung
+  Lieferfenster, der Abstand zum Mindestbestellwert und wann die nächste
+  Lieferung kommt (siehe unten). Jede Änderung
   wird bei Picnic nachgeprüft und gemeldet, falls sie nicht angekommen ist;
   das Lieferfenster wird nur in der Picnic-App geändert.
 - **Preise und Rabatte** — Bestellvorschläge, Rezepte, Rezeptliste, Wochenplan

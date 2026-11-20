@@ -60,6 +60,10 @@ a troubleshooting FAQ.
   "expiring soon" view. Quick +/− correction with a freely chosen amount right
   in the item list, and per batch with a single tap in the location view (0
   removes the batch); batches can be edited and moved between locations.
+- **Next delivery on the start page** — the next open Picnic delivery with its
+  day and booked window, so you can plan the day. On delivery day, as soon as
+  the driver is on the way, the exact expected arrival takes its place and
+  updates itself every two minutes while the page is open.
 - **Storage locations** (admin) — create, rename and reorder them. Nothing is
   ever deleted, only **retired**: a retired location disappears from every
   picker, while its stock history and journal entries stay readable. Retiring
@@ -107,8 +111,8 @@ a troubleshooting FAQ.
 - **Picnic basket** — the order page shows the current basket: change
   quantities, remove products, and swap products Picnic cannot deliver for one
   of its suggested replacements. It also shows the chosen delivery slot, how
-  far the basket is from the minimum order value and, while a delivery is on
-  its way, the expected arrival time. Every change is read back from Picnic and
+  far the basket is from the minimum order value and when the next delivery
+  arrives (see below). Every change is read back from Picnic and
   reported if it did not stick; the slot is only changed in the Picnic app.
 - **Prices and offers** — order suggestions, recipes, the recipe list, the
   meal plan and the delivery check show what things cost, based on cached

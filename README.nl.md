@@ -63,6 +63,11 @@ Picnic-functies en een FAQ voor probleemoplossing.
   Snelle +/−-correctie met een vrij te kiezen aantal in de artikellijst, en per
   partij met één tik in de locatieweergave (0 verwijdert de partij); partijen
   zijn te bewerken en tussen locaties te verplaatsen.
+- **Volgende levering op de startpagina** — de volgende openstaande
+  Picnic-levering met dag en geboekt tijdvak, om de dag te plannen. Op de
+  leverdag neemt, zodra de bezorger onderweg is, de precieze verwachte
+  aankomsttijd die plaats in en ververst zich elke twee minuten zolang de
+  pagina open is.
 - **Voorraadlocaties** (beheerder) — aanmaken, hernoemen en de volgorde
   wijzigen. Er wordt nooit verwijderd, alleen **buiten gebruik gesteld**: een
   buiten gebruik gestelde locatie verdwijnt uit elke keuzelijst, terwijl haar
@@ -115,8 +120,8 @@ Picnic-functies en een FAQ voor probleemoplossing.
 - **Picnic-mandje** — de bestelpagina toont het huidige mandje: aantallen
   wijzigen, producten verwijderen en producten die Picnic niet kan leveren
   ruilen voor een van Picnics vervangers. Daarbij het gekozen levermoment,
-  hoeveel er nog ontbreekt tot de minimale bestelwaarde en, zolang een
-  levering onderweg is, de verwachte aankomsttijd. Elke wijziging wordt bij
+  hoeveel er nog ontbreekt tot de minimale bestelwaarde en wanneer de
+  volgende levering komt (zie hieronder). Elke wijziging wordt bij
   Picnic nagecontroleerd en gemeld als ze niet is aangekomen; het
   levermoment wijzig je alleen in de Picnic-app.
 - **Prijzen en aanbiedingen** — bestelsuggesties, recepten, de receptenlijst,

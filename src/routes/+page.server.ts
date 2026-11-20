@@ -2,9 +2,12 @@ import { db } from '#lib/server/db/index.js';
 import { articles, stockEntries, storageLocations } from '#lib/server/db/schema.js';
 import { count, eq, sql } from 'drizzle-orm';
 import { MHD_SOON_DAYS } from '#lib/mhd.js';
+import { streamNextDelivery } from '#lib/server/picnic/index.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = () => {
+export const load: PageServerLoad = ({ depends }) => {
+	// Die Lieferkarte lädt sich am Liefertag per invalidate('app:delivery') neu
+	depends('app:delivery');
 	const locations = db
 		.select({
 			id: storageLocations.id,
@@ -52,6 +55,8 @@ export const load: PageServerLoad = () => {
 		locations,
 		articleCount: articleCount.value,
 		stockCount: stockCount.value,
-		expiring
+		expiring,
+		// Nicht abgewartet: Die Startseite soll nie auf Picnic warten
+		delivery: streamNextDelivery()
 	};
 };

@@ -23,6 +23,13 @@ export const nl: Messages = {
 	'stock.locations': 'Voorraadlocaties',
 	'stock.empty': 'Geen voorraad',
 	'stock.deliveryShort': 'Levering',
+
+	'delivery.heading': 'Volgende Picnic-levering',
+	'delivery.today': 'Vandaag',
+	'delivery.tomorrow': 'Morgen',
+	'delivery.window': '{day}, {range}',
+	'delivery.live': '{day} rond {time}',
+	'delivery.bookedWindow': 'tijdvak {range}',
 	'stock.journalShort': 'Journaal',
 
 	'stocktake.title': 'Inventarisatie',
@@ -300,7 +307,6 @@ export const nl: Messages = {
 	'cart.inCart': '{n} in winkelmand',
 	'cart.added': 'In de Picnic-winkelmand gelegd.',
 	'cart.linkFirst': 'Koppel met Picnic om te bestellen',
-	'order.eta': 'Jullie Picnic-levering komt naar verwachting om {time}.',
 	'order.tierHint': 'Vanaf {n} stuks {price} per stuk – 1 extra kost maar {extra} meer',
 	'order.tierRaise': 'Verhogen naar {n}',
 	'order.cart.title': 'Picnic-winkelmand',

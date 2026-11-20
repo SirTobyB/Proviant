@@ -8,6 +8,18 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- Die Startseite zeigt die nächste offene Picnic-Lieferung: vorher mit Tag
+  und gebuchtem Fenster, am Liefertag mit der genauen voraussichtlichen
+  Ankunft des Fahrers, die sich alle zwei Minuten selbst aktualisiert. Die
+  Startseite wartet dafür nicht auf Picnic, die Karte lädt nach.
+
+### Geändert
+
+- Der Lieferhinweis auf der Bestellseite erscheint jetzt ab der Bestellung
+  (bisher nur bei laufender Tour) und nennt auch den Tag.
+
 ### Behoben
 
 - Beim Import eigener Picnic-Rezepte wird die Notiz sauberer in Text
