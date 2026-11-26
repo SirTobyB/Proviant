@@ -8,6 +8,8 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+## [2.8.0] - 2026-11-26
+
 ### Geändert
 
 - Passwörter brauchen jetzt mindestens **12 Zeichen** statt 6 — beim Anlegen
@@ -490,7 +492,8 @@ Erste versionierte Fassung — der bisherige Funktionsumfang als Ausgangspunkt.
 - **Fehlerprotokollierung** mit Zeitstempel, Pfad und Fehler-ID im
   Container-Log.
 
-[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.7.1...HEAD
+[Unveröffentlicht]: https://github.com/SirTobyB/Proviant/compare/v2.8.0...HEAD
+[2.8.0]: https://github.com/SirTobyB/Proviant/compare/v2.7.1...v2.8.0
 [2.7.1]: https://github.com/SirTobyB/Proviant/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/SirTobyB/Proviant/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/SirTobyB/Proviant/compare/v2.5.0...v2.6.0
