@@ -4,6 +4,7 @@ import Database from 'better-sqlite3';
 import { sql } from 'drizzle-orm';
 import { scryptSync, randomBytes } from 'node:crypto';
 import * as schema from './schema';
+import { MIN_PASSWORD_LENGTH, passwordTooShort } from '#lib/passwordPolicy.js';
 import * as env from '$app/env/private';
 import { building } from '$app/env';
 
@@ -20,6 +21,14 @@ function seedAdmin(db: Db): void {
 	if (!env.ADMIN_USERNAME || !env.ADMIN_PASSWORD) {
 		console.warn(
 			'[auth] Keine Benutzer vorhanden und ADMIN_USERNAME/ADMIN_PASSWORD nicht gesetzt — es wurde kein Admin angelegt.'
+		);
+		return;
+	}
+	// Dieselbe Regel wie in der App: Ein kurzes Startpasswort bliebe sonst
+	// unbemerkt im Betrieb, weil es niemand mehr über die Oberfläche setzt
+	if (passwordTooShort(env.ADMIN_PASSWORD)) {
+		console.error(
+			`[auth] ADMIN_PASSWORD ist kürzer als ${MIN_PASSWORD_LENGTH} Zeichen — es wurde kein Admin angelegt. Längeres Passwort setzen und neu starten.`
 		);
 		return;
 	}
