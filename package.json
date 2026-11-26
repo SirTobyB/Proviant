@@ -49,10 +49,10 @@
 		}
 	},
 	"dependencies": {
-		"barcode-detector": "^3.2.3",
+		"barcode-detector": "^3.2.4",
 		"better-sqlite3": "^12.10.0",
 		"picnic-api": "^5.6.0",
-		"zxing-wasm": "3.1.6"
+		"zxing-wasm": "3.1.7"
 	},
 	"imports": {
 		"#lib": "./src/lib/index.js",
