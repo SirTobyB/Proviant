@@ -212,10 +212,15 @@ Useful scripts:
 ## Running with Docker
 
 ```sh
+cp .env.example .env                              # fill in credentials and first admin
 docker compose up -d                              # build locally
 # or pull the ready-made GHCR image for production:
 docker compose -f docker-compose.prod.yml up -d
 ```
+
+Both compose files read Picnic and admin credentials from `.env` (in Portainer:
+"Environment variables") instead of containing example values — so nobody ends
+up with a known default password.
 
 The app listens on port 3000; all persistent data (database, images, Picnic
 auth key) lives in the `./data` volume. Migrations and the storage location /
@@ -249,7 +254,7 @@ and the recipe basket do not work.
 | `DATA_DIR`        | Directory for images, Picnic image cache and auth key  | `/data`                       |
 | `ORIGIN`          | Public URL of the app (adapter-node CSRF protection)   | —                             |
 | `ADMIN_USERNAME`  | First admin (only on first start with no users)        | —                             |
-| `ADMIN_PASSWORD`  | Password of the first admin                            | —                             |
+| `ADMIN_PASSWORD`  | Password of the first admin (at least 12 characters, otherwise no admin is created) | — |
 | `ADMIN_EMAIL`     | Email of the first admin (optional)                    | —                             |
 | `PICNIC_USERNAME` | Picnic credentials for basket, deliveries, search      | —                             |
 | `PICNIC_PASSWORD` |                                                        | —                             |
@@ -257,8 +262,9 @@ and the recipe basket do not work.
 | `GIT_SHA` · `BUILD_TIME` | Set as build args during the CI build and shown on the account page under **Version** — that is how you check whether the server runs the build you expect. Unset locally → "local build". | — |
 
 > **Passwords containing special characters** (`#`, `$` …) must be quoted in
-> `.env` and in `docker-compose*.yml` — an unquoted `#` is otherwise cut off as
-> a comment.
+> `.env` — single quotes, so that `$` is not expanded either. An unquoted `#` is
+> otherwise cut off as a comment. All passwords in the app need at least
+> 12 characters.
 
 ## Contributing
 

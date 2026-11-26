@@ -222,10 +222,15 @@ Nützliche Skripte:
 ## Betrieb mit Docker
 
 ```sh
+cp .env.example .env                              # Zugangsdaten und ersten Admin eintragen
 docker compose up -d                              # lokal bauen
 # oder produktiv das fertige GHCR-Image:
 docker compose -f docker-compose.prod.yml up -d
 ```
+
+Beide Compose-Dateien lesen Picnic- und Admin-Zugangsdaten aus der `.env` (in
+Portainer: „Environment variables“), statt Beispielwerte zu enthalten — so
+läuft niemand mit einem bekannten Standardpasswort.
 
 Die App läuft auf Port 3000; alle persistenten Daten (Datenbank, Bilder,
 Picnic-Auth-Key) liegen im Volume `./data`. Migrationen und der Lagerort-/Admin-
@@ -260,16 +265,17 @@ Check und Rezept-Warenkorb nicht.
 | `DATA_DIR`        | Verzeichnis für Bilder, Picnic-Bildcache und Auth-Key  | `/data`                       |
 | `ORIGIN`          | Öffentliche URL der App (CSRF-Schutz von adapter-node) | —                             |
 | `ADMIN_USERNAME`  | Erster Admin (nur beim Erststart ohne Benutzer)        | —                             |
-| `ADMIN_PASSWORD`  | Passwort des ersten Admins                             | —                             |
+| `ADMIN_PASSWORD`  | Passwort des ersten Admins (mindestens 12 Zeichen, sonst wird kein Admin angelegt) | — |
 | `ADMIN_EMAIL`     | E-Mail des ersten Admins (optional)                    | —                             |
 | `PICNIC_USERNAME` | Picnic-Zugangsdaten für Warenkorb, Lieferungen, Suche  | —                             |
 | `PICNIC_PASSWORD` |                                                        | —                             |
 | `BODY_SIZE_LIMIT` | Max. Request-Größe (Foto-Uploads!)                     | `15M`                         |
 | `GIT_SHA` · `BUILD_TIME` | Werden beim CI-Build als Build-Args ins Image gesetzt und auf der Konto-Seite unter **Version** angezeigt — so lässt sich prüfen, ob der Server den erwarteten Stand fährt. Lokal ungesetzt → „lokaler Build". | — |
 
-> **Passwörter mit Sonderzeichen** (`#`, `$` …) in `.env` und in der
-> `docker-compose*.yml` immer in Anführungszeichen setzen — ein unquotiertes `#`
-> wird sonst als Kommentar abgeschnitten.
+> **Passwörter mit Sonderzeichen** (`#`, `$` …) in der `.env` immer in
+> einfache Anführungszeichen setzen, damit auch `$` nicht ersetzt wird — ein
+> unquotiertes `#` wird sonst als Kommentar abgeschnitten. Alle Passwörter der
+> App brauchen mindestens 12 Zeichen.
 
 ## Mitmachen
 

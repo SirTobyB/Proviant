@@ -1,6 +1,7 @@
 import { db } from '#lib/server/db/index.js';
 import { users } from '#lib/server/db/schema.js';
 import { hashPassword, verifyPassword } from '#lib/server/password.js';
+import { MIN_PASSWORD_LENGTH, passwordTooShort } from '#lib/passwordPolicy.js';
 import { deleteUserSessions, createSession, setSessionCookie } from '#lib/server/auth.js';
 import { clearLocaleCookie, LOCALE_COOKIE, setLocaleCookie } from '#lib/server/locale.js';
 import { isLocale, languageChoice, localeFromHeader, translator, DEFAULT_LOCALE } from '#lib/i18n/index.js';
@@ -78,7 +79,9 @@ export const actions: Actions = {
 		const next = String(fd.get('next') ?? '');
 		const confirm = String(fd.get('confirm') ?? '');
 
-		if (next.length < 6) return fail(400, { message: t('msg.newPasswordShort') });
+		if (passwordTooShort(next)) {
+			return fail(400, { message: t('msg.newPasswordShort', { n: MIN_PASSWORD_LENGTH }) });
+		}
 		if (next !== confirm) return fail(400, { message: t('msg.passwordsDiffer') });
 
 		const user = db.select().from(users).where(eq(users.username, username)).get();

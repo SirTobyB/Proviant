@@ -3,6 +3,8 @@
 #
 # Einmalig:  docker login ghcr.io -u DEIN-GITHUB-NAME   (PAT mit Scope
 #            read:packages) — nur nötig, solange das GHCR-Paket privat ist.
+# Vorher:    .env.example als .env neben diese Datei kopieren und ausfüllen
+#            (Zugangsdaten und erster Admin, siehe environment unten)
 # Start:     docker compose -f docker-compose.prod.yml up -d
 # Update:    docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
 #
@@ -29,16 +31,20 @@ services:
       # Öffentliche URL der App — adapter-node braucht sie für den
       # CSRF-Schutz der Formulare. MUSS zur Host-Regel unten passen.
       ORIGIN: "https://proviant.example.de" # <-- anpassen
-      # Picnic-Zugangsdaten. Werte immer in doppelte Anführungszeichen setzen —
-      # in YAML startet ein unquotiertes # einen Kommentar (dein Passwort enthält
-      # eins). In "..." bleibt das # erhalten.
-      PICNIC_USERNAME: "deine-picnic-email@example.de" # <-- anpassen
-      PICNIC_PASSWORD: "dein-picnic-passwort" # <-- anpassen
+      # Zugangsdaten stehen bewusst NICHT in dieser Datei, sondern in einer
+      # .env daneben (docker compose liest sie automatisch; in Portainer unter
+      # "Environment variables"). Vorlage: .env.example. So landet kein
+      # Passwort in einer Datei, die man versioniert oder weitergibt, und
+      # niemand übernimmt versehentlich einen Beispielwert.
+      # Werte mit $ oder # in der .env in einfache Anführungszeichen setzen.
+      PICNIC_USERNAME: ${PICNIC_USERNAME}
+      PICNIC_PASSWORD: ${PICNIC_PASSWORD}
       # Erster Admin-Benutzer — nur beim allerersten Start angelegt (wenn noch
-      # kein Benutzer existiert). Danach über die App verwalten.
-      ADMIN_USERNAME: "admin" # <-- anpassen
-      ADMIN_PASSWORD: "bitte-aendern" # <-- anpassen
-      ADMIN_EMAIL: "admin@example.de" # <-- anpassen
+      # kein Benutzer existiert). Das Passwort braucht mindestens 12 Zeichen,
+      # sonst wird kein Admin angelegt (siehe Container-Log).
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
     networks:
       - proxy
     labels:

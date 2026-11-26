@@ -232,10 +232,15 @@ Handige scripts:
 ## Draaien met Docker
 
 ```sh
+cp .env.example .env                              # inloggegevens en eerste beheerder invullen
 docker compose up -d                              # lokaal bouwen
 # of voor productie het kant-en-klare GHCR-image:
 docker compose -f docker-compose.prod.yml up -d
 ```
+
+Beide compose-bestanden lezen de Picnic- en beheerdersgegevens uit `.env` (in
+Portainer: „Environment variables") in plaats van voorbeeldwaarden te bevatten —
+zo draait niemand met een bekend standaardwachtwoord.
 
 De app luistert op poort 3000; alle persistente gegevens (database,
 afbeeldingen, Picnic-auth-key) staan in het volume `./data`. Migraties en de
@@ -271,16 +276,17 @@ bestelsuggesties, leveringscontrole en het receptenmandje niet.
 | `DATA_DIR`        | Map voor afbeeldingen, Picnic-beeldcache en auth-key    | `/data`                       |
 | `ORIGIN`          | Publieke URL van de app (CSRF-bescherming adapter-node) | —                             |
 | `ADMIN_USERNAME`  | Eerste beheerder (alleen bij eerste start zonder gebruikers) | —                        |
-| `ADMIN_PASSWORD`  | Wachtwoord van de eerste beheerder                      | —                             |
+| `ADMIN_PASSWORD`  | Wachtwoord van de eerste beheerder (minstens 12 tekens, anders wordt er geen beheerder aangemaakt) | — |
 | `ADMIN_EMAIL`     | E-mail van de eerste beheerder (optioneel)              | —                             |
 | `PICNIC_USERNAME` | Picnic-inloggegevens voor mandje, leveringen, zoeken    | —                             |
 | `PICNIC_PASSWORD` |                                                         | —                             |
 | `BODY_SIZE_LIMIT` | Maximale requestgrootte (foto-uploads!)                 | `15M`                         |
 | `GIT_SHA` · `BUILD_TIME` | Worden bij de CI-build als build-args in het image gezet en op de accountpagina onder **Versie** getoond — zo controleer je of de server de verwachte versie draait. Lokaal niet gezet → „lokale build". | — |
 
-> **Wachtwoorden met speciale tekens** (`#`, `$` …) moeten in `.env` en in
-> `docker-compose*.yml` altijd tussen aanhalingstekens staan — een `#` zonder
-> aanhalingstekens wordt anders als commentaar afgekapt.
+> **Wachtwoorden met speciale tekens** (`#`, `$` …) moeten in `.env` altijd
+> tussen enkele aanhalingstekens staan, zodat ook `$` niet wordt vervangen — een
+> `#` zonder aanhalingstekens wordt anders als commentaar afgekapt. Alle
+> wachtwoorden in de app hebben minstens 12 tekens nodig.
 
 ## Meedoen
 

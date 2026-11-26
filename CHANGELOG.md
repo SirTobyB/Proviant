@@ -8,6 +8,21 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/lang/d
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- Passwörter brauchen jetzt mindestens **12 Zeichen** statt 6 — beim Anlegen
+  und Ändern von Benutzern und auf der Konto-Seite. Die Anmeldung steht im
+  Internet, und erst die Länge macht gezieltes Raten aussichtslos. Bestehende
+  Passwörter gelten weiter, bis sie geändert werden.
+- Auch der erste Admin aus `ADMIN_USERNAME`/`ADMIN_PASSWORD` wird nur noch mit
+  einem Passwort ab 12 Zeichen angelegt; sonst steht im Container-Log, warum
+  kein Admin entstand.
+- `docker-compose.prod.yml` und `docker-compose.yml` enthalten keine
+  Beispiel-Zugangsdaten mehr (vorher u. a. `admin`/`bitte-aendern`), sondern
+  lesen Picnic- und Admin-Zugangsdaten aus einer `.env` (Vorlage
+  `.env.example`). Wer die Datei unverändert startet, bekommt damit keinen
+  Admin mit bekanntem Passwort, sondern eine Warnung.
+
 ## [2.7.1] - 2026-11-20
 
 ### Geändert

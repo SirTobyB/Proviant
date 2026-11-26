@@ -11,10 +11,11 @@ services:
       # Öffentliche URL der App; adapter-node braucht das für den
       # CSRF-Schutz bei Formularen (hinter Traefik anpassen).
       ORIGIN: "http://localhost:3000"
-      # Zugangsdaten für den Picnic-Account
-      PICNIC_USERNAME: ""
-      PICNIC_PASSWORD: ""
-      # Erster Admin (nur beim allerersten Start angelegt)
-      ADMIN_USERNAME: "admin"
-      ADMIN_PASSWORD: "admin"
-      ADMIN_EMAIL: "admin@example.de"
+      # Zugangsdaten aus der .env im Projektstamm (Vorlage: .env.example) —
+      # dieselbe Datei, die auch npm run dev liest
+      PICNIC_USERNAME: ${PICNIC_USERNAME:-}
+      PICNIC_PASSWORD: ${PICNIC_PASSWORD:-}
+      # Erster Admin (nur beim allerersten Start angelegt, Passwort ≥ 12 Zeichen)
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}

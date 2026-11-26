@@ -2,6 +2,7 @@ import { db } from '#lib/server/db/index.js';
 import { translator } from '#lib/i18n/index.js';
 import { users } from '#lib/server/db/schema.js';
 import { hashPassword } from '#lib/server/password.js';
+import { MIN_PASSWORD_LENGTH, passwordTooShort } from '#lib/passwordPolicy.js';
 import { auditNew } from '#lib/server/audit.js';
 import { deleteUserSessions } from '#lib/server/auth.js';
 import { eq, sql } from 'drizzle-orm';
@@ -40,7 +41,9 @@ export const actions: Actions = {
 			return fail(400, { message: t('msg.usernameRules') });
 		}
 		if (!EMAIL_RE.test(email)) return fail(400, { message: t('msg.invalidEmail') });
-		if (password.length < 6) return fail(400, { message: t('msg.passwordShort') });
+		if (passwordTooShort(password)) {
+			return fail(400, { message: t('msg.passwordShort', { n: MIN_PASSWORD_LENGTH }) });
+		}
 		if (db.select().from(users).where(eq(users.username, username)).get()) {
 			return fail(400, { message: t('msg.userExists', { name: username }) });
 		}
@@ -72,8 +75,8 @@ export const actions: Actions = {
 		if (username === locals.user?.username && role !== 'admin') {
 			return fail(400, { message: t('msg.cannotRemoveOwnAdmin') });
 		}
-		if (newPassword && newPassword.length < 6) {
-			return fail(400, { message: t('msg.passwordShort') });
+		if (newPassword && passwordTooShort(newPassword)) {
+			return fail(400, { message: t('msg.passwordShort', { n: MIN_PASSWORD_LENGTH }) });
 		}
 
 		db.update(users)
